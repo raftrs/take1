@@ -8,6 +8,8 @@ import BackButton from '@/components/BackButton'
 import SportBadge from '@/components/SportBadge'
 import YourCall from '@/components/YourCall'
 import GameNav from '@/components/GameNav'
+import TopLogo from '@/components/TopLogo'
+import PromptDeck from '@/components/PromptDeck'
 
 export default function NotablePage() {
   const { id } = useParams()
@@ -18,6 +20,7 @@ export default function NotablePage() {
   const [venueId, setVenueId] = useState(null)
   const [playerMap, setPlayerMap] = useState({})
   const [showBox, setShowBox] = useState(false)
+  const [story, setStory] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -111,6 +114,7 @@ export default function NotablePage() {
 
   return (
     <div>
+      <TopLogo />
       <BackButton />
       <GameNav />
       <div style={{ padding:'0 20px' }}>
@@ -133,6 +137,8 @@ export default function NotablePage() {
         </div>
         {game.description && <div style={{ fontSize:15, color:'var(--text)', lineHeight:1.85, marginTop:16, borderLeft:'3px solid var(--gold)', paddingLeft:16 }}>{game.description}</div>}
         <YourCall />
+        <PromptDeck type="game" onSelect={(prompt) => setStory(prompt)} />
+        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Say something..." value={story} onChange={e => setStory(e.target.value)} />
       </div>
 
       {perfs.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>

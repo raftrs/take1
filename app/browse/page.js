@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { formatDate, sportLabel, showScore, savePlaylist } from '@/lib/utils'
 import Link from 'next/link'
 import SportBadge from '@/components/SportBadge'
+import TopLogo from '@/components/TopLogo'
 
 const DECADES = ['1960s','1970s','1980s','1990s','2000s','2010s','2020s']
 const ROUNDS_NBA = ['First Round','Conference Semifinals','Conference Finals','NBA Finals']
@@ -160,6 +161,7 @@ export default function BrowsePage() {
   }
   return (
     <div>
+      <TopLogo />
       <div style={{ padding:'16px 20px 0', borderBottom:'2px solid var(--rule)' }}>
         <div style={{ fontSize:20, color:'var(--ink)', marginBottom:12 }}>Browse</div>
         <div style={{ display:'flex' }}>

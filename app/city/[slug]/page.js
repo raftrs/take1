@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase'
 import { formatDate, sportLabel, showScore, CITY_MAP, savePlaylist } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import SportBadge from '@/components/SportBadge'
+import TopLogo from '@/components/TopLogo'
+import PromptDeck from '@/components/PromptDeck'
 
 // Reverse lookup: given a primary city, find all suburb venue_city values that map to it
 function getSuburbs(primary) {
@@ -25,6 +27,7 @@ export default function CityPage() {
   const [games, setGames] = useState([])
   const [showAllGames, setShowAllGames] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [story, setStory] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -103,6 +106,7 @@ export default function CityPage() {
 
   return (
     <div>
+      <TopLogo />
       <BackButton />
       <div style={{ padding:'24px 20px 16px', borderBottom:'2px solid var(--rule)' }}>
         <div className="sans" style={{ fontSize:9, color:'var(--copper)', letterSpacing:2.5, fontWeight:700, marginBottom:6 }}>CITY</div>
@@ -182,6 +186,12 @@ export default function CityPage() {
         </Link>)}
         {!showAllGames && games.length > 15 && <div className="box-toggle" onClick={() => setShowAllGames(true)} style={{ textAlign:'center', marginTop:8 }}>Show all {games.length} games &darr;</div>}
         {showAllGames && games.length > 15 && <div className="box-toggle" onClick={() => setShowAllGames(false)} style={{ textAlign:'center', marginTop:8 }}>Show fewer &uarr;</div>}
+      </div></>)}
+
+      {teams.length >= 2 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
+      <div style={{ padding:20 }}>
+        <PromptDeck type="city" name={cityName} onSelect={(prompt) => setStory(prompt)} />
+        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Share yours..." value={story} onChange={e => setStory(e.target.value)} />
       </div></>)}
 
       <div style={{ height:80 }}></div>

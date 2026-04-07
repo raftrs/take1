@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { formatDate, showScore, savePlaylist } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
+import TopLogo from '@/components/TopLogo'
+import PromptDeck from '@/components/PromptDeck'
 
 export default function VenuePage() {
   const { id } = useParams()
@@ -13,6 +15,7 @@ export default function VenuePage() {
   const [games, setGames] = useState([])
   const [showAllGames, setShowAllGames] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [story, setStory] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -42,6 +45,7 @@ export default function VenuePage() {
 
   return (
     <div>
+      <TopLogo />
       <BackButton/>
       <div style={{ padding:'24px 20px 16px', borderBottom:'2px solid var(--rule)' }}>
         <div className="sans" style={{ fontSize:9, color:'var(--copper)', letterSpacing:2.5, fontWeight:700, marginBottom:10 }}>{label}</div>
@@ -122,6 +126,11 @@ export default function VenuePage() {
         {!showAllGames && games.length > 10 && <div className="box-toggle" onClick={() => setShowAllGames(true)} style={{ textAlign:'center', marginTop:8 }}>Show all {games.length} games &darr;</div>}
         {showAllGames && games.length > 10 && <div className="box-toggle" onClick={() => setShowAllGames(false)} style={{ textAlign:'center', marginTop:8 }}>Show fewer &uarr;</div>}
       </div></>}
+      <hr className="sec-rule"/><hr className="sec-rule-thin"/>
+      <div style={{ padding:20 }}>
+        <PromptDeck type="venue" name={venue.venue_name} onSelect={(prompt) => setStory(prompt)} />
+        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Share yours..." value={story} onChange={e => setStory(e.target.value)} />
+      </div>
       <div style={{ height:80 }}></div>
     </div>
   )

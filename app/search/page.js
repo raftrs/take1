@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { formatDate, sportLabel, showScore, normalizeCity } from '@/lib/utils'
 import Link from 'next/link'
 import SportBadge from '@/components/SportBadge'
+import TopLogo from '@/components/TopLogo'
 
 export default function SearchPage() {
   const [term, setTerm] = useState('')
@@ -90,6 +91,7 @@ export default function SearchPage() {
 
   return (
     <div>
+      <TopLogo />
       <div style={{ padding:'16px 20px', borderBottom:'2px solid var(--rule)' }}>
         <div style={{ fontSize:20, color:'var(--ink)', marginBottom:12 }}>Search</div>
         <input className="search-input" type="text" placeholder="Teams, players, venues, cities, games..." value={term}

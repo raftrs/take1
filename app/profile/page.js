@@ -1,6 +1,9 @@
+import TopLogo from '@/components/TopLogo'
+
 export default function ProfilePage() {
   return (
     <div>
+      <TopLogo />
       <div style={{ padding:'16px 20px', borderBottom:'2px solid var(--rule)' }}><div style={{ fontSize:20, color:'var(--ink)' }}>Profile</div></div>
       <div style={{ padding:'40px 20px', textAlign:'center', borderBottom:'1px solid var(--faint)' }}>
         <div style={{ fontSize:28, color:'var(--ink)', letterSpacing:4, marginBottom:8 }}>raftrs</div>

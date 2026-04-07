@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase'
 import { formatDate, savePlaylist } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import SportBadge from '@/components/SportBadge'
+import TopLogo from '@/components/TopLogo'
+import PromptDeck from '@/components/PromptDeck'
 
 const MAJOR_CONFIG = [
   { key: 'Masters', label: 'Masters' },
@@ -81,7 +83,7 @@ export default function PlayerPage() {
   const [nflGameLog, setNflGameLog] = useState([])
   const [majorBreakdown, setMajorBreakdown] = useState(null)
   const [golfResults, setGolfResults] = useState([])
-  const [storyMode, setStoryMode] = useState('encounters')
+  const [story, setStory] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -183,6 +185,7 @@ export default function PlayerPage() {
 
   return (
     <div>
+      <TopLogo />
       <BackButton />
       <div style={{ padding:20, borderBottom:'2px solid var(--rule)' }}>
         <div style={{ marginBottom:2 }}><SportBadge sport={sport}/></div>
@@ -289,18 +292,11 @@ export default function PlayerPage() {
         </ScrollList>
       </div></>)}
 
-      {/* ENCOUNTERS / REFLECTIONS - ABOVE game log */}
+      {/* FROM THE STANDS - ABOVE game log */}
       <hr className="sec-rule"/><hr className="sec-rule-thin"/>
       <div style={{ padding:20 }}>
-        <div className="att-toggle" style={{ marginBottom:16 }}>
-          <button className={`att-opt${storyMode==='encounters'?' on':''}`} onClick={() => setStoryMode('encounters')}>Encounters</button>
-          <button className={`att-opt${storyMode==='reflections'?' on':''}`} onClick={() => setStoryMode('reflections')}>Reflections</button>
-        </div>
-        {storyMode === 'encounters' ? (
-          <textarea className="story-textarea" placeholder={`Ran into ${firstName} at a restaurant... got an autograph at the arena... saw ${firstName} at the airport... shared an elevator...`}/>
-        ) : (
-          <textarea className="story-textarea" placeholder={`A memory of watching ${firstName} play... your favorite thing about the game... the moment you became a fan... the game you'll never forget...`}/>
-        )}
+        <PromptDeck type="player" name={player.player_name} onSelect={(prompt) => setStory(prompt)} />
+        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Share yours..." value={story} onChange={e => setStory(e.target.value)} />
       </div>
 
       {/* NBA/NFL GAME LOG - scrollable */}

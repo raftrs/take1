@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { getPlaylist } from '@/lib/utils'
 
@@ -20,6 +20,27 @@ export default function GameNav({ position = 'top' }) {
     setPos(`${idx + 1} of ${items.length}`)
   }, [pathname])
 
+  // Swipe detection (top instance only)
+  useEffect(() => {
+    if (position !== 'top') return
+    let startX = 0, startY = 0
+    function onStart(e) { startX = e.touches[0].clientX; startY = e.touches[0].clientY }
+    function onEnd(e) {
+      const dx = e.changedTouches[0].clientX - startX
+      const dy = e.changedTouches[0].clientY - startY
+      if (Math.abs(dx) > 75 && Math.abs(dy) < 50) {
+        const items = getPlaylist()
+        const idx = items.findIndex(i => i.href === pathname)
+        if (idx === -1) return
+        if (dx > 0 && idx > 0) router.replace(items[idx - 1].href)
+        if (dx < 0 && idx < items.length - 1) router.replace(items[idx + 1].href)
+      }
+    }
+    document.addEventListener('touchstart', onStart, { passive: true })
+    document.addEventListener('touchend', onEnd, { passive: true })
+    return () => { document.removeEventListener('touchstart', onStart); document.removeEventListener('touchend', onEnd) }
+  }, [position, pathname, router])
+
   if (!prev && !next) return null
 
   function go(item) {
@@ -28,7 +49,7 @@ export default function GameNav({ position = 'top' }) {
     router.replace(item.href)
   }
 
-  // Bottom: just text, no card
+  // Bottom: just text
   if (position === 'bottom') {
     if (!next) return null
     return (
@@ -39,9 +60,9 @@ export default function GameNav({ position = 'top' }) {
     )
   }
 
-  // Top: compact prev/next arrows
+  // Top: compact prev/next arrows with breathing room below
   return (
-    <div style={{ display:'flex', alignItems:'stretch', borderBottom:'1px solid var(--faint)', fontFamily:'Arial,sans-serif' }}>
+    <div style={{ display:'flex', alignItems:'stretch', borderBottom:'1px solid var(--faint)', marginBottom:8, fontFamily:'Arial,sans-serif' }}>
       <div
         onClick={() => prev && go(prev)}
         style={{ flex:1, padding:'10px 14px', cursor: prev ? 'pointer' : 'default', color: prev ? 'var(--copper)' : 'transparent', display:'flex', alignItems:'center', gap:4, minWidth:0 }}

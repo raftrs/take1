@@ -8,6 +8,8 @@ import BackButton from '@/components/BackButton'
 import SportBadge from '@/components/SportBadge'
 import YourCall from '@/components/YourCall'
 import GameNav from '@/components/GameNav'
+import TopLogo from '@/components/TopLogo'
+import PromptDeck from '@/components/PromptDeck'
 
 export default function GamePage() {
   const { id } = useParams()
@@ -18,6 +20,7 @@ export default function GamePage() {
   const [venueId, setVenueId] = useState(null)
   const [playerMap, setPlayerMap] = useState({})
   const [showBox, setShowBox] = useState(false)
+  const [story, setStory] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -109,6 +112,7 @@ export default function GamePage() {
 
   return (
     <div>
+      <TopLogo />
       <BackButton />
       <GameNav />
       <div style={{ padding:'0 20px' }}>
@@ -126,6 +130,8 @@ export default function GamePage() {
         </div>
         {game.context_blurb && <div className="blurb" style={{ marginTop:14 }}>{game.context_blurb}</div>}
         <YourCall />
+        <PromptDeck type="game" onSelect={(prompt) => setStory(prompt)} />
+        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Say something..." value={story} onChange={e => setStory(e.target.value)} />
       </div>
 
       {perfs.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>

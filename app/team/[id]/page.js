@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { formatDate, sportLabel, savePlaylist } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
+import TopLogo from '@/components/TopLogo'
+import PromptDeck from '@/components/PromptDeck'
 
 export default function TeamPage() {
   const { id } = useParams()
@@ -14,6 +16,7 @@ export default function TeamPage() {
   const [players, setPlayers] = useState([])
   const [venueId, setVenueId] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [story, setStory] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -58,6 +61,7 @@ export default function TeamPage() {
 
   return (
     <div>
+      <TopLogo />
       <BackButton/>
       <div style={{ borderBottom:'2px solid var(--rule)' }}>
         <div style={{ height:4, background:`linear-gradient(90deg,${color} 60%,${color2} 100%)` }}></div>
@@ -137,6 +141,11 @@ export default function TeamPage() {
           <div className="perf-name">{p.player_name}</div><div className="perf-sub">{p.position}{p.ppg?` \u00B7 ${p.ppg} PPG`:''}</div>
         </Link>)}</div>
       </div></>}
+      <hr className="sec-rule"/><hr className="sec-rule-thin"/>
+      <div style={{ padding:20 }}>
+        <PromptDeck type="team" name={team.full_name || team.team_name} onSelect={(prompt) => setStory(prompt)} />
+        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Share yours..." value={story} onChange={e => setStory(e.target.value)} />
+      </div>
       <div style={{ height:80 }}></div>
     </div>
   )

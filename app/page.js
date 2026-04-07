@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { formatDate, showScore, savePlaylist } from '@/lib/utils'
+import { formatDate, showScore, savePlaylist, golfMajorDisplay } from '@/lib/utils'
 import Link from 'next/link'
 import SportBadge from '@/components/SportBadge'
 
@@ -66,7 +66,7 @@ export default function HomePage() {
           <div className="hero-label"><SportBadge sport={hero.sport}/><span style={{ marginLeft:8 }}>FEATURED ALL-TIMER</span></div>
           <div className="hero-title">{hero.title}</div>
           {showScore(hero) && <div className="hero-score">{showScore(hero)}</div>}
-          {hero.sport === 'golf' && hero.home_team_abbr && <div className="hero-score">{hero.home_team_abbr}</div>}
+          {hero.sport === 'golf' && <div className="hero-score">{golfMajorDisplay(hero)}</div>}
           <div className="game-meta">{formatDate(hero.game_date)}</div>
           {hero.venue && <div className="game-meta">{hero.venue}</div>}
           {hero.description && <div className="hero-blurb">{hero.description}</div>}
@@ -80,7 +80,7 @@ export default function HomePage() {
 
       <hr className="sec-rule"/><hr className="sec-rule-thin"/>
       <div style={{ padding:'24px 20px', textAlign:'center' }}>
-        <div style={{ fontSize:18, color:'var(--ink)', lineHeight:1.4, marginBottom:8 }}>Every game tells a story. What are yours?</div>
+        <div style={{ fontSize:18, color:'var(--ink)', lineHeight:1.4, marginBottom:8 }}>Every game has a story. What are yours?</div>
         <div style={{ fontSize:13, color:'var(--muted)', lineHeight:1.6, maxWidth:300, margin:'0 auto 16px' }}>Rate the games that matter. Share the stories behind them. Build your personal collection.</div>
         <Link href="/search" style={{ display:'inline-block', padding:'10px 28px', background:'var(--copper)', color:'#fff', fontSize:12, fontFamily:'Arial,sans-serif', fontWeight:600, letterSpacing:1, textDecoration:'none' }}>FIND A GAME</Link>
       </div>

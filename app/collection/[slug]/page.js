@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { formatDate, showScore, savePlaylist } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import SportBadge from '@/components/SportBadge'
+import TopLogo from '@/components/TopLogo'
 
 export default function CollectionPage() {
   const { slug } = useParams()
@@ -37,6 +38,7 @@ export default function CollectionPage() {
   if (loading) return <div className="loading">Loading...</div>
   return (
     <div>
+      <TopLogo />
       <BackButton/>
       <div style={{ padding:'20px 20px 0' }}>
         <div className="sans" style={{ fontSize:9, color:'var(--gold)', letterSpacing:2.5, fontWeight:700, marginBottom:6 }}>COLLECTION</div>

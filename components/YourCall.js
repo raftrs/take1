@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-export default function YourCall() {
+export default function YourCall({ storyValue, onStoryChange }) {
   const [rating, setRating] = useState(0)
   const [att, setAtt] = useState(null)
   return (
@@ -17,8 +17,7 @@ export default function YourCall() {
         <button className={`att-opt${att==='there'?' on':''}`} onClick={() => setAtt(att==='there'?null:'there')}>I Was There</button>
         <button className={`att-opt${att==='watched'?' on':''}`} onClick={() => setAtt(att==='watched'?null:'watched')}>Watched It</button>
       </div>
-      <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Say something..." />
-      <div className="log-btn">LOG THIS GAME</div>
+      <div className="log-btn" style={{ marginTop:12 }}>LOG THIS GAME</div>
     </div>
   )
 }
