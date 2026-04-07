@@ -28,14 +28,13 @@ export default function GameNav({ position = 'top' }) {
     router.replace(item.href)
   }
 
-  // Bottom: show prominent "UP NEXT" card
+  // Bottom: just text, no card
   if (position === 'bottom') {
     if (!next) return null
     return (
-      <div onClick={() => go(next)} style={{ margin:'0 20px 20px', padding:'16px 20px', background:'var(--card)', border:'1px solid var(--faint)', borderTop:'3px solid var(--copper)', cursor:'pointer' }}>
-        <div className="sans" style={{ fontSize:9, color:'var(--copper)', letterSpacing:2, fontWeight:700, marginBottom:6 }}>UP NEXT {pos ? `\u00B7 ${pos}` : ''}</div>
-        <div style={{ fontSize:15, color:'var(--ink)', lineHeight:1.3 }}>{next.title}</div>
-        <div className="sans" style={{ fontSize:11, color:'var(--dim)', marginTop:6 }}>Keep scrolling &rarr;</div>
+      <div onClick={() => go(next)} style={{ padding:'16px 20px 8px', cursor:'pointer', textAlign:'center' }}>
+        <span className="sans" style={{ fontSize:12, color:'var(--copper)', fontWeight:600 }}>Up next: {next.title} &rarr;</span>
+        {pos && <span className="sans" style={{ fontSize:10, color:'var(--dim)', marginLeft:8 }}>({pos})</span>}
       </div>
     )
   }

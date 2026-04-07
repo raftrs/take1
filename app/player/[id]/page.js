@@ -7,16 +7,11 @@ import { formatDate, savePlaylist } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import SportBadge from '@/components/SportBadge'
 
-function MastersIcon() { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#006747" strokeWidth="1.5"><path d="M12 3C8 3 5 6 5 9c0 4 3 5 4 9h6c1-4 4-5 4-9 0-3-3-6-7-6z"/><path d="M9 18h6v2H9z"/></svg> }
-function USOpenIcon() { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#003366" strokeWidth="1.5"><path d="M12 2l2 5h5l-4 3.5 1.5 5L12 13l-4.5 2.5L9 10.5 5 7h5z"/></svg> }
-function OpenIcon() { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B4513" strokeWidth="1.5"><path d="M8 21h8M10 21V11M14 21V11M7 11h10l-2-8H9z"/></svg> }
-function PGAIcon() { return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a1a6c" strokeWidth="1.5"><path d="M12 2L4 8v6l8 8 8-8V8z"/></svg> }
-
 const MAJOR_CONFIG = [
-  { key: 'Masters', label: 'Masters', Icon: MastersIcon },
-  { key: 'U.S. Open', label: 'U.S. Open', Icon: USOpenIcon },
-  { key: 'The Open', label: 'The Open', Icon: OpenIcon },
-  { key: 'PGA Championship', label: 'PGA Champ.', Icon: PGAIcon },
+  { key: 'Masters', label: 'Masters' },
+  { key: 'U.S. Open', label: 'U.S. Open' },
+  { key: 'The Open', label: 'The Open' },
+  { key: 'PGA Championship', label: 'PGA Champ.' },
 ]
 
 function getNFLPositionGroup(pos) {
@@ -73,7 +68,7 @@ function nflGameLine(stats, pos) {
 
 // Scrollable list container - consistent pattern for all long lists
 function ScrollList({ children, maxH = 300 }) {
-  return <div style={{ maxHeight: maxH, overflowY: 'auto', marginRight: -4, paddingRight: 4 }}>{children}</div>
+  return <div style={{ maxHeight: maxH, overflowY: 'auto', marginRight: -4, paddingRight: 4, paddingBottom: 8 }}>{children}</div>
 }
 
 export default function PlayerPage() {
@@ -147,10 +142,13 @@ export default function PlayerPage() {
             })
             setGolfResults(results)
             const breakdown = {}
-            MAJOR_CONFIG.forEach(m => { breakdown[m.key] = 0 })
+            MAJOR_CONFIG.forEach(m => { breakdown[m.key] = { count: 0, wins: [] } })
             results.forEach(r => {
               if (r.position === 1) {
-                MAJOR_CONFIG.forEach(m => { if (r.title?.includes(m.key)) breakdown[m.key]++ })
+                MAJOR_CONFIG.forEach(m => { if (r.title?.includes(m.key)) {
+                  breakdown[m.key].count++
+                  breakdown[m.key].wins.push({ year: r.title?.match(/\d{4}/)?.[0], gameId: r.id })
+                }})
               }
             })
             setMajorBreakdown(breakdown)
@@ -247,13 +245,18 @@ export default function PlayerPage() {
       {isGolf && majorBreakdown && player.major_wins > 0 && (<div style={{ padding:'14px 20px', borderBottom:'1px solid var(--faint)' }}>
         <div className="sans" style={{ fontSize:9, color:'var(--dim)', letterSpacing:2, fontWeight:600, marginBottom:14 }}>MAJOR CHAMPIONSHIPS ({player.major_wins})</div>
         <div style={{ display:'flex', justifyContent:'space-around' }}>
-          {MAJOR_CONFIG.map(m => (
-            <div key={m.key} style={{ textAlign:'center', opacity: majorBreakdown[m.key] > 0 ? 1 : 0.3 }}>
-              <m.Icon />
-              <div style={{ fontSize:22, color: majorBreakdown[m.key] > 0 ? 'var(--ink)' : 'var(--dim)', marginTop:4, lineHeight:1 }}>{majorBreakdown[m.key]}</div>
-              <div className="sans" style={{ fontSize:8, color:'var(--dim)', letterSpacing:0.5, fontWeight:600, marginTop:4, maxWidth:60, lineHeight:1.2 }}>{m.label}</div>
-            </div>
-          ))}
+          {MAJOR_CONFIG.map(m => {
+            const d = majorBreakdown[m.key]
+            return (
+              <div key={m.key} style={{ textAlign:'center', opacity: d.count > 0 ? 1 : 0.3, flex:1 }}>
+                <div style={{ fontSize:24, color: d.count > 0 ? 'var(--ink)' : 'var(--dim)', lineHeight:1, fontWeight:d.count > 0 ? 700 : 400 }}>{d.count}</div>
+                <div className="sans" style={{ fontSize:9, color:'var(--dim)', letterSpacing:0.5, fontWeight:600, marginTop:4 }}>{m.label}</div>
+                {d.wins.length > 0 && <div style={{ marginTop:6 }}>{d.wins.map(w =>
+                  <Link key={w.gameId} href={`/game/${w.gameId}`} className="sans" style={{ display:'block', fontSize:10, color:'var(--copper)', marginTop:2 }}>{w.year}</Link>
+                )}</div>}
+              </div>
+            )
+          })}
         </div>
       </div>)}
 
@@ -294,19 +297,9 @@ export default function PlayerPage() {
           <button className={`att-opt${storyMode==='reflections'?' on':''}`} onClick={() => setStoryMode('reflections')}>Reflections</button>
         </div>
         {storyMode === 'encounters' ? (
-          <>
-            <div style={{ fontSize:13, color:'var(--muted)', marginBottom:12, lineHeight:1.6 }}>
-              That time you ran into {firstName} at the airport. The autograph at the hotel lobby. The nod from across the restaurant.
-            </div>
-            <textarea className="story-textarea" placeholder={`I was at the grocery store and ${firstName} was in the checkout line next to me...`}/>
-          </>
+          <textarea className="story-textarea" placeholder={`Ran into ${firstName} at a restaurant... got an autograph at the arena... saw ${firstName} at the airport... shared an elevator...`}/>
         ) : (
-          <>
-            <div style={{ fontSize:13, color:'var(--muted)', marginBottom:12, lineHeight:1.6 }}>
-              A memory, a moment, a feeling. What {firstName} means to you as a fan and why.
-            </div>
-            <textarea className="story-textarea" placeholder={`The thing about ${firstName} that people don't talk about enough is...`}/>
-          </>
+          <textarea className="story-textarea" placeholder={`A memory of watching ${firstName} play... your favorite thing about the game... the moment you became a fan... the game you'll never forget...`}/>
         )}
       </div>
 
