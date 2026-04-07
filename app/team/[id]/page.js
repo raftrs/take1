@@ -76,7 +76,16 @@ export default function TeamPage() {
 
       {ch > 0 && <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--faint)' }}>
         <div className="sans" style={{ fontSize:9, color:'var(--dim)', letterSpacing:2, fontWeight:600, marginBottom:10 }}>CHAMPIONSHIPS</div>
-        <div style={{ display:'flex', flexWrap:'wrap', gap:4, justifyContent:'center' }}>{Array.from({length:ch}).map((_,i) => <div key={i} style={{ width:28, height:38, background:color, clipPath:'polygon(0 0,100% 0,100% 85%,50% 100%,0 85%)' }}></div>)}</div>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:6, justifyContent:'center' }}>
+          {(team.championship_years || '').split(',').map(y => y.trim()).filter(Boolean).map((year, i) => {
+            const isSupersonics = team.team_abbr === 'OKC' && year === '1979'
+            const bannerColor = isSupersonics ? '#00653A' : color
+            return <div key={i} style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
+              <div style={{ width:28, height:38, background:bannerColor, clipPath:'polygon(0 0,100% 0,100% 85%,50% 100%,0 85%)' }}></div>
+              <div className="sans" style={{ fontSize:8, color:'var(--dim)', marginTop:3, fontWeight:600 }}>{year}</div>
+            </div>
+          })}
+        </div>
         <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:8, textAlign:'center' }}>{ch} championship{ch!==1?'s':''}</div>
       </div>}
 

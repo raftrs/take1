@@ -3,28 +3,28 @@ import { useState, useCallback } from 'react'
 
 const PROMPTS = {
   player: (name) => [
-    `The argument I always make about ${name} is...`,
+    `The argument I always make about ${name}...`,
     `My hottest ${name} take that nobody agrees with...`,
     `The moment I knew ${name} was different...`,
     `I was at _____ when ${name}...`,
     `${name} reminds me of...`,
     `The thing people get wrong about ${name}...`,
-    `My favorite ${name} game and why...`,
     `If I had to explain ${name} to someone who never watched...`,
     `The play I can still see in my head...`,
     `${name} in one word, and here's why...`,
+    `The first time I saw ${name} play live...`,
   ],
   game: () => [
     `I was at _____ watching this with...`,
     `The text I sent after this game...`,
     `Where I was when this happened...`,
-    `This game matters to me because...`,
     `The moment I knew it was over...`,
     `I'll never forget when...`,
     `The call I made before the game started...`,
     `What I tell people about this game...`,
     `The thing nobody talks about from this game...`,
     `How this game ended my night...`,
+    `The person I wish had seen this game...`,
   ],
   venue: (name) => [
     `What it feels like walking up to ${name || 'this place'}...`,
@@ -43,24 +43,24 @@ const PROMPTS = {
     `The player from ${name || 'this team'} I respect the most...`,
     `My honest take on ${name || 'this team'}'s fans...`,
     `The best game I ever saw ${name || 'this team'} play...`,
-    `What ${name || 'this team'} means to their city...`,
     `The season I'll never forget...`,
     `The trade or draft pick that changed everything...`,
     `If I had to pick one moment in ${name || 'this team'}'s history...`,
     `What people outside the fanbase don't get...`,
     `The coach or player who set the tone...`,
+    `My first memory of ${name || 'this team'}...`,
   ],
   city: (name) => [
     `What people don't understand about being a sports fan in ${name}...`,
     `The best place to watch a game in ${name}...`,
     `Game day in ${name} feels like...`,
-    `The fans here...`,
     `The rivalry that defines ${name} sports...`,
     `My favorite sports memory in ${name}...`,
     `The bar where everything happened...`,
     `What ${name} sounds like after a championship...`,
     `Growing up watching sports in ${name}...`,
     `The thing about ${name} fans that outsiders don't see...`,
+    `What ${name} loses if it ever loses a team...`,
   ],
 }
 
@@ -94,11 +94,11 @@ export default function PromptDeck({ type = 'game', name = '', onSelect }) {
       <div style={{ display:'flex', gap:8, overflowX:'auto', paddingBottom:4, WebkitOverflowScrolling:'touch' }}>
         {visible.map((prompt, i) => (
           <div key={i} onClick={() => onSelect && onSelect(prompt)} style={{
-            flexShrink:0, width:200, padding:'14px 16px',
-            background:'var(--copper)', border:'1.5px solid var(--gold)',
-            cursor:'pointer', transition:'opacity 0.15s',
+            flexShrink:0, width:200, padding:'12px 14px 12px 16px',
+            background:'var(--card)', borderLeft:'3px solid var(--copper)',
+            cursor:'pointer', borderTop:'1px solid var(--faint)', borderRight:'1px solid var(--faint)', borderBottom:'1px solid var(--faint)',
           }}>
-            <div style={{ fontSize:13, color:'#f5f0e8', fontFamily:"'Crete Round',Georgia,serif", lineHeight:1.5 }}>{prompt}</div>
+            <div style={{ fontSize:13, color:'var(--copper)', fontFamily:"'Crete Round',Georgia,serif", lineHeight:1.5 }}>{prompt}</div>
           </div>
         ))}
       </div>

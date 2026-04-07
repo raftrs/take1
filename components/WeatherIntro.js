@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-const DOMES = [
+const DOMES = new Set([
   'Mercedes-Benz Stadium', 'Georgia Dome',
   'Caesars Superdome', 'Mercedes-Benz Superdome', 'Louisiana Superdome',
   'Lucas Oil Stadium', 'RCA Dome',
@@ -9,20 +9,11 @@ const DOMES = [
   'AT&T Stadium', 'Texas Stadium',
   'Allegiant Stadium',
   'U.S. Bank Stadium', 'Metrodome', 'Hubert H. Humphrey Metrodome',
-  'SoFi Stadium', // open-air canopy but feels enclosed - actually NOT a dome, remove
   'State Farm Stadium', 'University of Phoenix Stadium',
   'Ford Field', 'Pontiac Silverdome', 'Silverdome',
   'Edward Jones Dome', 'Trans World Dome',
   'Kingdome',
-  'Carrier Dome',
-]
-// Remove SoFi - it's open air with a canopy
-const DOME_SET = new Set(DOMES.filter(d => d !== 'SoFi Stadium'))
-
-function isDome(venue) {
-  if (!venue) return false
-  return DOME_SET.has(venue)
-}
+])
 
 export default function WeatherIntro({ weather, sport, venue }) {
   const [visible, setVisible] = useState(false)
@@ -30,9 +21,8 @@ export default function WeatherIntro({ weather, sport, venue }) {
 
   useEffect(() => {
     if (!weather) return
-    // Only animate for outdoor football and golf
     if (sport === 'basketball') return
-    if (sport === 'football' && isDome(venue)) return
+    if (sport === 'football' && DOMES.has(venue)) return
 
     const condition = sport === 'golf'
       ? (Array.isArray(weather) ? weather[weather.length - 1]?.condition : weather?.condition)
@@ -42,7 +32,6 @@ export default function WeatherIntro({ weather, sport, venue }) {
     const c = condition.toLowerCase()
     if (c === 'snow' || c === 'rain' || c === 'drizzle' || c === 'thunderstorm') {
       setVisible(true)
-      // Fade out after 2.5s
       setTimeout(() => setOpacity(0), 2500)
       setTimeout(() => setVisible(false), 3200)
     }
@@ -53,60 +42,52 @@ export default function WeatherIntro({ weather, sport, venue }) {
   const condition = sport === 'golf'
     ? (Array.isArray(weather) ? weather[weather.length - 1]?.condition : weather?.condition)
     : weather?.condition
-  const c = (condition || '').toLowerCase()
-  const isSnow = c === 'snow'
+  const isSnow = (condition || '').toLowerCase() === 'snow'
 
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       pointerEvents: 'none', zIndex: 100,
-      opacity: opacity, transition: 'opacity 0.7s ease-out',
+      opacity, transition: 'opacity 0.7s ease-out',
       overflow: 'hidden',
+      background: isSnow ? 'rgba(180,195,210,0.12)' : 'rgba(100,100,110,0.08)',
     }}>
       {isSnow ? (
-        // Snowflakes
         <div style={{ position: 'absolute', inset: 0 }}>
-          {Array.from({ length: 40 }).map((_, i) => (
+          {Array.from({ length: 60 }).map((_, i) => (
             <div key={i} style={{
               position: 'absolute',
               left: `${Math.random() * 100}%`,
               top: `-${Math.random() * 20}px`,
-              width: `${3 + Math.random() * 5}px`,
-              height: `${3 + Math.random() * 5}px`,
-              background: 'rgba(255,255,255,0.8)',
+              width: `${4 + Math.random() * 6}px`,
+              height: `${4 + Math.random() * 6}px`,
+              background: `rgba(140,150,160,${0.5 + Math.random() * 0.3})`,
               borderRadius: '50%',
-              animation: `snowfall ${2 + Math.random() * 3}s linear ${Math.random() * 2}s infinite`,
-              filter: `blur(${Math.random() > 0.5 ? 1 : 0}px)`,
+              animation: `snowfall-${i % 3} ${2 + Math.random() * 3}s linear ${Math.random() * 2}s infinite`,
             }} />
           ))}
           <style>{`
-            @keyframes snowfall {
-              0% { transform: translateY(-10px) translateX(0); opacity: 1; }
-              50% { transform: translateY(50vh) translateX(${Math.random() > 0.5 ? '' : '-'}20px); opacity: 0.8; }
-              100% { transform: translateY(100vh) translateX(${Math.random() > 0.5 ? '' : '-'}40px); opacity: 0; }
-            }
+            @keyframes snowfall-0 { 0%{transform:translateY(-10px) translateX(0);opacity:0.8} 100%{transform:translateY(100vh) translateX(30px);opacity:0} }
+            @keyframes snowfall-1 { 0%{transform:translateY(-10px) translateX(0);opacity:0.7} 100%{transform:translateY(100vh) translateX(-25px);opacity:0} }
+            @keyframes snowfall-2 { 0%{transform:translateY(-10px) translateX(0);opacity:0.9} 100%{transform:translateY(100vh) translateX(15px);opacity:0} }
           `}</style>
         </div>
       ) : (
-        // Rain streaks
         <div style={{ position: 'absolute', inset: 0 }}>
-          {Array.from({ length: 50 }).map((_, i) => (
+          {Array.from({ length: 60 }).map((_, i) => (
             <div key={i} style={{
               position: 'absolute',
               left: `${Math.random() * 100}%`,
               top: `-${10 + Math.random() * 30}px`,
-              width: '1.5px',
-              height: `${15 + Math.random() * 20}px`,
-              background: 'rgba(160,152,136,0.4)',
+              width: '2px',
+              height: `${18 + Math.random() * 25}px`,
+              background: `rgba(80,75,68,${0.3 + Math.random() * 0.2})`,
               transform: 'rotate(12deg)',
-              animation: `rainfall ${0.4 + Math.random() * 0.4}s linear ${Math.random() * 0.5}s infinite`,
+              animation: `rainfall ${0.3 + Math.random() * 0.4}s linear ${Math.random() * 0.5}s infinite`,
             }} />
           ))}
           <style>{`
-            @keyframes rainfall {
-              0% { transform: translateY(-30px) rotate(12deg); opacity: 0.6; }
-              100% { transform: translateY(100vh) rotate(12deg); opacity: 0; }
-            }
+            @keyframes rainfall { 0%{transform:translateY(-30px) rotate(12deg);opacity:0.5} 100%{transform:translateY(100vh) rotate(12deg);opacity:0} }
           `}</style>
         </div>
       )}
