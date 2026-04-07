@@ -30,16 +30,15 @@ export default function CityPage() {
     async function load() {
       // All venue_city values that belong to this city (primary + suburbs)
       const suburbs = getSuburbs(cityName)
-      // Strip state portion from suburb names to avoid commas breaking Supabase OR filters
-      const searchTerms = [...new Set(suburbs.map(s => s.split(',')[0].trim()))]
 
       // Teams: match on city field
       const { data: tm } = await supabase.from('teams').select('id,team_abbr,team_name,full_name,sport,primary_color,secondary_color,championships,arena')
         .eq('active', true).ilike('city', `%${cityName}%`).order('sport')
       setTeams(tm || [])
 
-      // Venues: match on any search term (primary city + suburb city names)
-      const venueFilters = searchTerms.map(s => `venue_city.ilike.%${s}%`).join(',')
+      // Venues: match on any suburb variant
+      // Build an OR filter for all suburb values
+      const venueFilters = suburbs.map(s => `venue_city.ilike.%${s}%`).join(',')
       const { data: vn } = await supabase.from('venues').select('id,venue_name,venue_city,sport,description')
         .or(venueFilters).order('venue_name')
       setVenues(vn || [])
@@ -47,34 +46,27 @@ export default function CityPage() {
       // Get venue names for game/notable queries
       const venueNames = (vn || []).map(v => v.venue_name)
 
+      // Also find games by venue_city directly (catches games at venues not in our venues table)
+      const cityFilters = suburbs.map(s => `venue_city.ilike.%${s}%`).join(',')
+
       // All-Timers at venues in this city
       if (venueNames.length > 0) {
         const { data: at } = await supabase.from('notable_games').select('id,title,game_date,sport,tier,venue')
           .eq('tier', 1).in('venue', venueNames).order('game_date', { ascending: false })
-        // Also check by venue_city for notables at venues not in our venues table
-        const vcFilters = searchTerms.map(s => `venue_city.ilike.%${s}%`).join(',')
-        const { data: at2 } = await supabase.from('notable_games').select('id,title,game_date,sport,tier,venue')
-          .eq('tier', 1).or(vcFilters).order('game_date', { ascending: false })
-        const merged = [...(at || [])]
-        if (at2) at2.forEach(g => { if (!merged.find(m => m.id === g.id)) merged.push(g) })
-        merged.sort((a, b) => (b.game_date || '').localeCompare(a.game_date || ''))
-        setAllTimers(merged)
+        setAllTimers(at || [])
       }
 
-      // Games: search by venue name AND venue_city
-      const vcGameFilters = searchTerms.map(s => `venue_city.ilike.%${s}%`).join(',')
-      let allGames = []
+      // Games at venues in this city
       if (venueNames.length > 0) {
         const { data: gs } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title')
           .in('venue', venueNames).order('game_date', { ascending: false }).limit(50)
-        allGames = gs || []
+        setGames(gs || [])
+      } else {
+        // Fallback: search by venue_city if no venues found
+        const { data: gs } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title')
+          .or(cityFilters).order('game_date', { ascending: false }).limit(50)
+        setGames(gs || [])
       }
-      // Also grab games by venue_city to catch venues not in our table
-      const { data: gs2 } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title')
-        .or(vcGameFilters).order('game_date', { ascending: false }).limit(50)
-      if (gs2) gs2.forEach(g => { if (!allGames.find(m => m.id === g.id)) allGames.push(g) })
-      allGames.sort((a, b) => (b.game_date || '').localeCompare(a.game_date || ''))
-      setGames(allGames)
 
       setLoading(false)
     }
