@@ -1,0 +1,494 @@
+[
+  {
+    "game_id": 3190,
+    "all_timer": true,
+    "title": "Banner 18",
+    "reason": "Celtics clinch their 18th championship, breaking tie with Lakers for most NBA titles"
+  },
+  {
+    "game_id": 3106,
+    "all_timer": true,
+    "title": "Denver's First Championship",
+    "reason": "Nuggets capture their first NBA title in franchise history with Jokic's Finals MVP performance"
+  },
+  {
+    "game_id": 3158,
+    "all_timer": true,
+    "title": "Butler's 56",
+    "reason": "Jimmy Butler's legendary 56-point playoff performance puts Miami one win from stunning Milwaukee"
+  },
+  {
+    "game_id": 3019,
+    "all_timer": true,
+    "title": "Curry's Coronation",
+    "reason": "Curry finally wins Finals MVP with championship-clinching performance"
+  },
+  {
+    "game_id": 3026,
+    "all_timer": true,
+    "title": "Butler's 47",
+    "reason": "47-point elimination game performance to force Game 7 is legendary"
+  },
+  {
+    "game_id": 20623,
+    "all_timer": true,
+    "title": "The Lions Collapse",
+    "reason": "Historic 17-point comeback in NFC Championship game with devastating loss for Detroit"
+  },
+  {
+    "game_id": 20610,
+    "all_timer": true,
+    "title": "Mahomes Rallies KC",
+    "reason": "massive conference championship comeback to force overtime and reach Super Bowl"
+  },
+  {
+    "game_id": 20596,
+    "all_timer": true,
+    "title": "Burrow's 18-Point Miracle",
+    "reason": "historic comeback to reach first Super Bowl since 1988"
+  },
+  {
+    "game_id": 20578,
+    "all_timer": true,
+    "title": "Browns End Drought",
+    "reason": "Cleveland's first playoff win in 18 years in explosive fashion"
+  },
+  {
+    "game_id": 20571,
+    "all_timer": true,
+    "title": "Mostert's 220",
+    "reason": "Most dominant individual performance in NFC Championship history"
+  },
+  {
+    "game_id": 20567,
+    "all_timer": true,
+    "title": "Titans Stun Ravens",
+    "reason": "Massive upset of top-seeded Baltimore ended Lamar's MVP season"
+  },
+  {
+    "game_id": 20560,
+    "all_timer": true,
+    "title": "Overtime Heartbreak",
+    "reason": "Patriots rally from 14-0 down against Mahomes to reach third straight Super Bowl in AFC Championship"
+  },
+  {
+    "game_id": 20535,
+    "all_timer": true,
+    "title": "Rodgers Magic",
+    "reason": "Game-winning TD to Jared Cook with 12 seconds left stuns Cowboys 34-31 in divisional round"
+  },
+  {
+    "game_id": 20526,
+    "all_timer": true,
+    "title": "Mile High Redemption",
+    "reason": "Von Miller's defensive masterpiece against Brady that sent Denver to Super Bowl 50"
+  },
+  {
+    "game_id": 20519,
+    "all_timer": true,
+    "title": "Burfict's Nightmare",
+    "reason": "Wild Card game decided by late penalties and Steelers comeback"
+  },
+  {
+    "game_id": 20493,
+    "all_timer": true,
+    "title": "17-0 Comeback",
+    "reason": "49ers overcoming 17-0 first-half deficit in Conference Championship is classic"
+  },
+  {
+    "game_id": 20449,
+    "all_timer": true,
+    "title": "Fitz's Flight",
+    "reason": "Larry Fitzgerald's legendary performance (9 catches, 152 yards, 3 TDs) sends Cardinals to first Super Bowl"
+  },
+  {
+    "game_id": 20439,
+    "all_timer": true,
+    "title": "Giants Freeze Out Packers",
+    "reason": "Stunning upset in frigid Lambeau with dominant rushing attack that led to Super Bowl run"
+  },
+  {
+    "game_id": 20436,
+    "all_timer": true,
+    "title": "Rivers on a Torn ACL",
+    "reason": "Legendary quarterback performance playing through serious injury to upset Peyton's Colts"
+  },
+  {
+    "game_id": 20414,
+    "all_timer": true,
+    "title": "The Bettis Fumble Game",
+    "reason": "Wild finish with goal-line fumble, interception return, and Ben's tackle creating incredible drama"
+  },
+  {
+    "game_id": 20415,
+    "all_timer": true,
+    "title": "Steve Smith's 218",
+    "reason": "Historic 218-yard receiving performance with game-winning touchdown catch"
+  },
+  {
+    "game_id": 20404,
+    "all_timer": true,
+    "title": "Three Points for Peyton",
+    "reason": "Patriots holding the league's best offense and Peyton Manning to just 3 points was a defining defensive masterpiece"
+  },
+  {
+    "game_id": 20730,
+    "all_timer": true,
+    "title": "Pereira's Heartbreak",
+    "reason": "double bogey on 72nd hole while leading first major is devastating"
+  },
+  {
+    "game_id": 20723,
+    "all_timer": true,
+    "title": "Bryson's Winged Foot",
+    "reason": "revolutionized approach to majors with power game"
+  },
+  {
+    "game_id": 20717,
+    "all_timer": true,
+    "title": "Tiger's 64",
+    "reason": "best major round ever for Tiger marked his return"
+  },
+  {
+    "game_id": 20712,
+    "all_timer": true,
+    "title": "Sergio's Masters",
+    "reason": "ended decades of major heartbreak in playoff"
+  },
+  {
+    "game_id": 20710,
+    "all_timer": true,
+    "title": "The Penalty Controversy",
+    "reason": "USGA penalty drama nearly cost DJ his first major"
+  },
+  {
+    "game_id": 20709,
+    "all_timer": true,
+    "title": "Spieth's Meltdown",
+    "reason": "one of the most shocking collapses in major history"
+  },
+  {
+    "game_id": 20707,
+    "all_timer": true,
+    "title": "DJ's Three-Putt",
+    "reason": "heartbreaking three-putt from 12 feet cost first major"
+  },
+  {
+    "game_id": 20700,
+    "all_timer": true,
+    "title": "Phil's Open at Muirfield",
+    "reason": "Legendary closing 66 in brutal conditions for his breakthrough Open win"
+  },
+  {
+    "game_id": 20699,
+    "all_timer": true,
+    "title": "Phil's U.S. Open Heartbreak",
+    "reason": "Another devastating near-miss for Phil's only missing major"
+  },
+  {
+    "game_id": 20696,
+    "all_timer": true,
+    "title": "Scott's Lytham Collapse",
+    "reason": "Epic final round meltdown from four shots ahead is golf tragedy"
+  },
+  {
+    "game_id": 20694,
+    "all_timer": true,
+    "title": "The Bubba Hook",
+    "reason": "One of the greatest shots in Masters history won him the green jacket"
+  },
+  {
+    "game_id": 20691,
+    "all_timer": true,
+    "title": "Rory's Redemption",
+    "reason": "Dominant bounce-back performance just weeks after Augusta collapse"
+  },
+  {
+    "game_id": 20690,
+    "all_timer": true,
+    "title": "Four in a Row",
+    "reason": "Birdying the final four holes at Augusta is Masters legend"
+  },
+  {
+    "game_id": 20689,
+    "all_timer": true,
+    "title": "Dustin's Bunker Blunder",
+    "reason": "Crushing penalty on 18th that cost him his first major"
+  },
+  {
+    "game_id": 20686,
+    "all_timer": true,
+    "title": "Phil's Emotional Win",
+    "reason": "Won days after wife's cancer diagnosis in deeply moving triumph"
+  },
+  {
+    "game_id": 20685,
+    "all_timer": true,
+    "title": "Yang Beats Tiger",
+    "reason": "First player ever to beat Tiger with a 54-hole lead in a major"
+  },
+  {
+    "game_id": 20684,
+    "all_timer": true,
+    "title": "Watson's Near Miracle",
+    "reason": "59-year-old Watson nearly becoming oldest major winner ever"
+  },
+  {
+    "game_id": 20679,
+    "all_timer": true,
+    "title": "Broken Leg Miracle",
+    "reason": "Tiger wins his 14th major on a broken leg, limping through 91 holes in an epic playoff at Torrey Pines"
+  },
+  {
+    "game_id": 20676,
+    "all_timer": true,
+    "title": "Garcia's Carnoustie Collapse",
+    "reason": "Garc\u00eda holds one-shot lead on 18th tee needing par to win his first major but pulls drive and chunks into Barry Burn"
+  },
+  {
+    "game_id": 20671,
+    "all_timer": true,
+    "title": "Phil's Final Hole Meltdown",
+    "reason": "Mickelson needs only par on 18th with one-shot lead to finally win U.S. Open but hits driver into hospitality tents"
+  },
+  {
+    "game_id": 20992,
+    "all_timer": true,
+    "title": "Wild Thing at St Andrews",
+    "reason": "John Daly winning at golf's most sacred venue while battling personal demons is iconic"
+  },
+  {
+    "game_id": 20991,
+    "all_timer": true,
+    "title": "The 4-Wood",
+    "reason": "Corey Pavin's legendary 228-yard approach shot on 72nd hole is one of greatest clutch shots in major history"
+  },
+  {
+    "game_id": 20990,
+    "all_timer": true,
+    "title": "Harvey's Angel",
+    "reason": "Ben Crenshaw winning Masters days after mentor Harvey Penick's funeral creates emotional masterpiece"
+  },
+  {
+    "game_id": 20977,
+    "all_timer": true,
+    "title": "Wild Thing",
+    "reason": "Unknown ninth alternate becomes major champion with bombs-away driving"
+  },
+  {
+    "game_id": 20971,
+    "all_timer": true,
+    "title": "Irwin's Victory Lap",
+    "reason": "45-foot birdie putt and famous celebration sprint defines the moment"
+  },
+  {
+    "game_id": 20968,
+    "all_timer": true,
+    "title": "Troon Thriller",
+    "reason": "Wild four-hole playoff comeback from five shots back"
+  },
+  {
+    "game_id": 20966,
+    "all_timer": true,
+    "title": "Hoch's Miss",
+    "reason": "Two-footer to win major followed by Faldo's five straight birdies"
+  },
+  {
+    "game_id": 20962,
+    "all_timer": true,
+    "title": "Bunker Magic",
+    "reason": "Improbable bunker shot on 72nd hole to win Masters"
+  },
+  {
+    "game_id": 20958,
+    "all_timer": true,
+    "title": "The Miracle Chip",
+    "reason": "140-foot chip shot to win Masters playoff is iconic"
+  },
+  {
+    "game_id": 20949,
+    "all_timer": true,
+    "title": "Seve's St Andrews Magic",
+    "reason": "Ballesteros dancing around the Old Course with pure artistry is golf poetry"
+  },
+  {
+    "game_id": 20935,
+    "all_timer": true,
+    "title": "Nicklaus at 46",
+    "reason": "Nicklaus winning 18th major at age 46 after trailing by six shots is the greatest Masters ever"
+  },
+  {
+    "game_id": 20933,
+    "all_timer": true,
+    "title": "Baltusrol 63",
+    "reason": "Nicklaus answering age questions with record-tying 63 is iconic"
+  },
+  {
+    "game_id": 20932,
+    "all_timer": true,
+    "title": "Seve's Car Park Miracle",
+    "reason": "Young Ballesteros playing magical shots from impossible places is legendary"
+  },
+  {
+    "game_id": 20924,
+    "all_timer": true,
+    "title": "Player's Sunday 64",
+    "reason": "Seven-shot comeback with a 64 in final round at age 42 is historic Augusta performance"
+  },
+  {
+    "game_id": 20922,
+    "all_timer": true,
+    "title": "Death Threat Sunday",
+    "reason": "FBI death threat warning during final round of major creates unprecedented drama"
+  },
+  {
+    "game_id": 20921,
+    "all_timer": true,
+    "title": "Watson vs Jack '77",
+    "reason": "Classic Masters duel between two legends trading shots over final rounds"
+  },
+  {
+    "game_id": 20910,
+    "all_timer": true,
+    "title": "7-Over Wins",
+    "reason": "Most brutal U.S. Open setup in years with winning score of 7-over par"
+  },
+  {
+    "game_id": 20906,
+    "all_timer": true,
+    "title": "Miller's 63",
+    "reason": "Historic final-round 63 at brutal Oakmont remains legendary major championship performance"
+  },
+  {
+    "game_id": 20905,
+    "all_timer": true,
+    "title": "The Scorecard Error",
+    "reason": "De Vicenzo's incorrect scorecard tragedy cost him Masters playoff and created golf's most infamous rules moment"
+  },
+  {
+    "game_id": 20903,
+    "all_timer": true,
+    "title": "Trevino's Miracle Chip",
+    "reason": "Legendary chip-in on 71st hole stole Open Championship and broke Tony Jacklin's heart"
+  },
+  {
+    "game_id": 20902,
+    "all_timer": true,
+    "title": "The 1-Iron",
+    "reason": "Nicklaus's near-ace with 1-iron on 17th at Pebble Beach is one of golf's most iconic shots"
+  },
+  {
+    "game_id": 20900,
+    "all_timer": true,
+    "title": "Nicklaus Completes the Slam",
+    "reason": "Nicklaus completed career Grand Slam at age 31, joining golf's most exclusive club"
+  },
+  {
+    "game_id": 20898,
+    "all_timer": true,
+    "title": "The Rubber Snake",
+    "reason": "Trevino's playoff mind games with rubber snake set tone for famous U.S. Open victory over Nicklaus"
+  },
+  {
+    "game_id": 20893,
+    "all_timer": true,
+    "title": "Palmer's Last Stand",
+    "reason": "Casper overcame 7-shot deficit to beat Palmer in playoff, crushing Arnie's Army dreams"
+  },
+  {
+    "game_id": 20891,
+    "all_timer": true,
+    "title": "Britain's Drought Ends",
+    "reason": "Jacklin became first British Open winner in 18 years, ending painful national drought"
+  },
+  {
+    "game_id": 20886,
+    "all_timer": true,
+    "title": "Trevino's Breakthrough",
+    "reason": "Wisecracking range pro shocked golf establishment with first major victory"
+  },
+  {
+    "game_id": 20882,
+    "all_timer": true,
+    "title": "Record Breaker",
+    "reason": "Nicklaus shattered Ben Hogan's U.S. Open scoring record with final-round 65"
+  },
+  {
+    "game_id": 20878,
+    "all_timer": true,
+    "title": "Palmer's Collapse",
+    "reason": "Leading by seven with nine holes left and losing at Olympic Club is one of golf's greatest collapses"
+  },
+  {
+    "game_id": 20870,
+    "all_timer": true,
+    "title": "Venturi's Agony",
+    "reason": "Nearly collapsing from heat exhaustion while winning the U.S. Open is one of golf's most heroic moments"
+  },
+  {
+    "game_id": 20862,
+    "all_timer": true,
+    "title": "The Torch Passes",
+    "reason": "22-year-old Nicklaus beating Palmer at his home course marked golf's changing of the guard"
+  },
+  {
+    "game_id": 20861,
+    "all_timer": true,
+    "title": "Palmer's Charge",
+    "reason": "Palmer's five-shot Sunday comeback for his third Masters is classic Arnie's Army drama"
+  },
+  {
+    "game_id": 20859,
+    "all_timer": true,
+    "title": "The 6-Iron Shot",
+    "reason": "Palmer's famous 6-iron from deep rough at Birkdale is one of the most iconic shots in Open history"
+  },
+  {
+    "game_id": 20857,
+    "all_timer": true,
+    "title": "International Breakthrough",
+    "reason": "Player becoming first international Masters winner broke Augusta's American dominance"
+  },
+  {
+    "game_id": 20853,
+    "all_timer": true,
+    "title": "Arnie's Charge",
+    "reason": "Palmer's legendary seven-shot comeback with back-to-back eagles launched his Masters mystique"
+  },
+  {
+    "game_id": 20841,
+    "all_timer": true,
+    "title": "Ford's Bunker Shot",
+    "reason": "holing out from greenside bunker on 18th to win major is pure golf drama"
+  },
+  {
+    "game_id": 20834,
+    "all_timer": true,
+    "title": "Fleck's Miracle",
+    "reason": "unknown municipal pro beating Hogan in playoff is golf's greatest upset"
+  },
+  {
+    "game_id": 20827,
+    "all_timer": true,
+    "title": "Hogan's Only Open",
+    "reason": "The greatest American golfer's singular British Open triumph at Carnoustie in brutal conditions"
+  },
+  {
+    "game_id": 20826,
+    "all_timer": true,
+    "title": "Oakmont Redemption",
+    "reason": "Hogan's third U.S. Open just four years after near-fatal car crash"
+  },
+  {
+    "game_id": 20825,
+    "all_timer": true,
+    "title": "Hogan's Return",
+    "reason": "Hogan's Masters victory just two years after nearly dying in bus collision"
+  },
+  {
+    "game_id": 20818,
+    "all_timer": true,
+    "title": "Hogan Tames The Monster",
+    "reason": "Hogan's miraculous comeback victory at brutal Oakland Hills setup"
+  }
+]

@@ -10,6 +10,8 @@ import YourCall from '@/components/YourCall'
 import GameNav from '@/components/GameNav'
 import TopLogo from '@/components/TopLogo'
 import PromptDeck from '@/components/PromptDeck'
+import WeatherIntro from '@/components/WeatherIntro'
+import WeatherDisplay from '@/components/WeatherDisplay'
 
 export default function NotablePage() {
   const { id } = useParams()
@@ -21,6 +23,7 @@ export default function NotablePage() {
   const [playerMap, setPlayerMap] = useState({})
   const [showBox, setShowBox] = useState(false)
   const [story, setStory] = useState('')
+  const [weather, setWeather] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -39,7 +42,10 @@ export default function NotablePage() {
         if (v?.[0]) setVenueId(v[0].id)
       }
       if (g.game_id) {
-        const { data: linked } = await supabase.from('games').select('id,nba_game_id').eq('id', g.game_id).single()
+        const { data: linked } = await supabase.from('games').select('id,nba_game_id,weather').eq('id', g.game_id).single()
+        if (linked?.weather) {
+          setWeather(typeof linked.weather === 'string' ? JSON.parse(linked.weather) : linked.weather)
+        }
         if (linked?.nba_game_id) {
           if (sp === 'basketball') {
             const { data: bs } = await supabase.from('box_scores').select('*').eq('nba_game_id', linked.nba_game_id).order('points', { ascending: false })
@@ -117,6 +123,7 @@ export default function NotablePage() {
       <TopLogo />
       <BackButton />
       <GameNav />
+      <WeatherIntro weather={weather} sport={sp} venue={game.venue} />
       <div style={{ padding:'0 20px' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14 }}>
           {/* FIX #53: Only show ALL-TIMER badge for tier 1 */}
@@ -134,6 +141,7 @@ export default function NotablePage() {
         <div className="game-meta">
           <div>{formatDate(game.game_date)}{game.game_type ? ` \u00B7 ${capType(game.game_type)}` : ''}</div>
           {game.venue && <div><VL/>{game.venue_city && <> <span style={{color:'var(--dim)'}}>&middot;</span> <CL/></>}</div>}
+          <WeatherDisplay weather={weather} sport={sp} />
         </div>
         {game.description && <div style={{ fontSize:15, color:'var(--text)', lineHeight:1.85, marginTop:16, borderLeft:'3px solid var(--gold)', paddingLeft:16 }}>{game.description}</div>}
         <YourCall />

@@ -10,6 +10,8 @@ import YourCall from '@/components/YourCall'
 import GameNav from '@/components/GameNav'
 import TopLogo from '@/components/TopLogo'
 import PromptDeck from '@/components/PromptDeck'
+import WeatherIntro from '@/components/WeatherIntro'
+import WeatherDisplay from '@/components/WeatherDisplay'
 
 export default function GamePage() {
   const { id } = useParams()
@@ -115,6 +117,7 @@ export default function GamePage() {
       <TopLogo />
       <BackButton />
       <GameNav />
+      <WeatherIntro weather={typeof game.weather === 'string' ? JSON.parse(game.weather) : game.weather} sport={sp} venue={game.venue} />
       <div style={{ padding:'0 20px' }}>
         <div style={{ marginBottom:8 }}><SportBadge sport={sp}/></div>
         {!isGolf && showScore(game) ? (
@@ -127,6 +130,7 @@ export default function GamePage() {
         <div className="game-meta">
           <div>{formatDate(game.game_date)}{game.series_info ? ` \u00B7 ${capType(game.series_info)}` : ''}</div>
           {game.venue && <div><VL/>{game.venue_city && <> <span style={{color:'var(--dim)'}}>&middot;</span> <CL/></>}</div>}
+          <WeatherDisplay weather={typeof game.weather === 'string' ? JSON.parse(game.weather) : game.weather} sport={sp} />
         </div>
         {game.context_blurb && <div className="blurb" style={{ marginTop:14 }}>{game.context_blurb}</div>}
         <YourCall />
