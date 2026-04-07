@@ -7,6 +7,7 @@ import { formatDate, capType, sortPerformers, getWinner, showScore, normalizeCit
 import BackButton from '@/components/BackButton'
 import SportBadge from '@/components/SportBadge'
 import YourCall from '@/components/YourCall'
+import GameNav from '@/components/GameNav'
 
 export default function NotablePage() {
   const { id } = useParams()
@@ -111,6 +112,7 @@ export default function NotablePage() {
   return (
     <div>
       <BackButton />
+      <GameNav />
       <div style={{ padding:'0 20px' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14 }}>
           {/* FIX #53: Only show ALL-TIMER badge for tier 1 */}

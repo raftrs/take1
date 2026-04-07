@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { formatDate, sportLabel, showScore } from '@/lib/utils'
+import { formatDate, sportLabel, showScore, savePlaylist } from '@/lib/utils'
 import Link from 'next/link'
 import SportBadge from '@/components/SportBadge'
 
@@ -17,7 +17,7 @@ export default function BrowsePage() {
   const [ats, setAts] = useState([])
   const [players, setPlayers] = useState([])
   const [browseCities, setBrowseCities] = useState([])
-  const [filters, setFilters] = useState({ team:null, venue:null, decade:null, round:null, player:null, city:null })
+  const [filters, setFilters] = useState({ team:null, teamSport:null, teamLabel:null, venue:null, decade:null, round:null, player:null, city:null })
   const [expanded, setExpanded] = useState(null)
   const [filterSearch, setFilterSearch] = useState('')
   const [filteredGames, setFilteredGames] = useState([])
@@ -63,7 +63,11 @@ export default function BrowsePage() {
     setFiltering(true)
     let q = supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title').order('game_date',{ascending:false}).limit(50)
     if (sv) q = q.eq('sport', sv)
-    if (f.team) q = q.or(`home_team_abbr.eq.${f.team},away_team_abbr.eq.${f.team}`)
+    if (f.team) {
+      q = q.or(`home_team_abbr.eq.${f.team},away_team_abbr.eq.${f.team}`)
+      // Fix: also filter by team's sport to disambiguate CHI (Bulls vs Bears)
+      if (f.teamSport && !sv) q = q.eq('sport', f.teamSport)
+    }
     if (f.venue) q = q.eq('venue', f.venue)
     if (f.decade) { const y=parseInt(f.decade); q=q.gte('game_date',`${y}-01-01`).lt('game_date',`${y+10}-01-01`) }
     if (f.round) q = q.ilike('series_info', `%${f.round}%`)
@@ -116,8 +120,8 @@ export default function BrowsePage() {
   }, [sv])
 
   function setF(k,v) { const n={...filters,[k]:v}; setFilters(n); setExpanded(null); setFilterSearch(''); applyFilters(n) }
-  function clearF(k) { const n={...filters,[k]:null}; setFilters(n); applyFilters(n) }
-  function clearAll() { const n={team:null,venue:null,decade:null,round:null,player:null,city:null}; setFilters(n); setFilteredGames([]) }
+  function clearF(k) { const n={...filters,[k]:null}; if(k==='team'){n.teamSport=null;n.teamLabel=null} setFilters(n); applyFilters(n) }
+  function clearAll() { const n={team:null,teamSport:null,teamLabel:null,venue:null,decade:null,round:null,player:null,city:null}; setFilters(n); setFilteredGames([]) }
   const roundOpts = sport==='football'?ROUNDS_NFL:sport==='golf'?ROUNDS_GOLF:sport==='basketball'?ROUNDS_NBA:[...ROUNDS_NBA,...ROUNDS_NFL,...ROUNDS_GOLF]
 
   // Player search for filter dropdown
@@ -149,7 +153,7 @@ export default function BrowsePage() {
 
   function switchSport(s) {
     setSport(s)
-    const n = { ...filters, team: null, round: null, player: null }
+    const n = { ...filters, team: null, teamSport: null, round: null, player: null }
     setFilters(n)
     if (n.venue || n.decade || n.city) applyFilters(n)
     else setFilteredGames([])
@@ -169,8 +173,9 @@ export default function BrowsePage() {
       <div style={{ padding:'10px 20px', borderBottom:'1px solid var(--faint)', display:'flex', gap:6, flexWrap:'wrap', alignItems:'center' }}>
         {filterDefs.map(f => {
           const v=filters[f.k], isO=expanded===f.k
+          const display = f.k === 'team' && filters.teamLabel ? filters.teamLabel : v
           return <button key={f.k} onClick={() => setExpanded(isO?null:f.k)} style={{ padding:'6px 12px', fontSize:11, fontFamily:'Arial,sans-serif', fontWeight:600, background:v?'var(--copper)':'var(--card)', color:v?'#fff':'var(--dim)', border:`1px solid ${v?'var(--copper)':'var(--faint)'}`, cursor:'pointer' }}>
-            {v||f.l} {v ? <span onClick={e=>{e.stopPropagation();clearF(f.k)}} style={{marginLeft:4,cursor:'pointer'}}>&times;</span> : '\u25BE'}
+            {display||f.l} {v ? <span onClick={e=>{e.stopPropagation();clearF(f.k)}} style={{marginLeft:4,cursor:'pointer'}}>&times;</span> : '\u25BE'}
           </button>
         })}
         {hasFilters && <button onClick={clearAll} style={{ padding:'6px 10px', fontSize:10, fontFamily:'Arial,sans-serif', background:'none', border:'none', color:'var(--copper)', cursor:'pointer' }}>Clear all</button>}
@@ -179,7 +184,7 @@ export default function BrowsePage() {
       {expanded==='team' && <div style={{ padding:'10px 20px', borderBottom:'1px solid var(--faint)', background:'var(--surface)', maxHeight:250, overflowY:'auto' }}>
         <input className="search-input" placeholder="Search teams..." value={filterSearch} onChange={e=>setFilterSearch(e.target.value)} style={{ marginBottom:8, fontSize:12, padding:'8px 12px' }}/>
         {teams.filter(t=>!filterSearch||t.full_name?.toLowerCase().includes(filterSearch.toLowerCase())).map(t =>
-          <div key={t.id} onClick={()=>setF('team',t.team_abbr)} style={{ padding:'8px 0', cursor:'pointer', fontSize:13, color:'var(--ink)', borderBottom:'1px solid var(--faint)', display:'flex', alignItems:'center', gap:8 }}>
+          <div key={t.id} onClick={()=>{const n={...filters,team:t.team_abbr,teamSport:t.sport,teamLabel:t.full_name||t.team_abbr};setFilters(n);setExpanded(null);setFilterSearch('');applyFilters(n)}} style={{ padding:'8px 0', cursor:'pointer', fontSize:13, color:'var(--ink)', borderBottom:'1px solid var(--faint)', display:'flex', alignItems:'center', gap:8 }}>
             <span style={{ width:8, height:8, borderRadius:'50%', background:t.primary_color||'var(--dim)', display:'inline-block' }}></span>{t.full_name}
           </div>)}
       </div>}
@@ -217,7 +222,10 @@ export default function BrowsePage() {
       {hasFilters && <div style={{ padding:20 }}>
         {filtering ? <div className="loading">Loading...</div> : <>
           <div className="sec-head">{filteredGames.length} GAME{filteredGames.length!==1?'S':''}</div>
-          {filteredGames.map(g => <Link key={g.id} href={`/game/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
+          {filteredGames.map((g, idx) => <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
+            const playlist = filteredGames.map(fg => ({ href: `/game/${fg.id}`, title: showScore(fg) || fg.title || `${fg.away_team_abbr} @ ${fg.home_team_abbr}` }))
+            savePlaylist(playlist, idx)
+          }} className="game-row" style={{ padding:'10px 0' }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}><SportBadge sport={g.sport}/><span style={{ fontSize:14, color:'var(--ink)' }}>{showScore(g) || g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</span></div>
             <div style={{ display:'flex', justifyContent:'space-between', marginTop:3 }}><span className="sans" style={{ fontSize:10, color:'var(--copper)' }}>{g.series_info}</span><span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</span></div>
           </Link>)}
@@ -226,7 +234,14 @@ export default function BrowsePage() {
       </div>}
 
       {!hasFilters && <div style={{ padding:20 }}>
-        {teams.length > 0 && !isGolf && <><div className="sec-head">TEAMS</div><div className="team-grid">{teams.map(t => <Link key={t.id} href={`/team/${t.id}`} className="team-chip" style={{ borderLeftColor:t.primary_color||'var(--faint)' }}>{t.team_abbr}</Link>)}</div></>}
+        {teams.length > 0 && !isGolf && (() => {
+          const nbaTeams = teams.filter(t => t.sport === 'basketball').sort((a,b) => (a.team_abbr||'').localeCompare(b.team_abbr||''))
+          const nflTeams = teams.filter(t => t.sport === 'football').sort((a,b) => (a.team_abbr||'').localeCompare(b.team_abbr||''))
+          return <>
+            {(sport === 'all' || sport === 'basketball') && nbaTeams.length > 0 && <><div className="sec-head">NBA</div><div className="team-grid">{nbaTeams.map(t => <Link key={t.id} href={`/team/${t.id}`} className="team-chip" style={{ borderLeftColor:t.primary_color||'var(--faint)' }}>{t.team_abbr}</Link>)}</div></>}
+            {(sport === 'all' || sport === 'football') && nflTeams.length > 0 && <><div className="sec-head" style={{ marginTop:nbaTeams.length > 0 ? 20 : 0 }}>NFL</div><div className="team-grid">{nflTeams.map(t => <Link key={t.id} href={`/team/${t.id}`} className="team-chip" style={{ borderLeftColor:t.primary_color||'var(--faint)' }}>{t.team_abbr}</Link>)}</div></>}
+          </>
+        })()}
         {ats.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>ALL-TIMERS</div>{ats.slice(0,6).map(g => <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'8px 0' }}><div style={{ display:'flex', alignItems:'center', gap:8 }}><SportBadge sport={g.sport}/><span style={{ fontSize:13, color:'var(--ink)' }}>{g.title}</span></div><div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2, marginLeft:44 }}>{formatDate(g.game_date)}</div></Link>)}</>}
         {browseCities.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>CITIES</div><div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>{browseCities.map(c => <Link key={c} href={`/city/${encodeURIComponent(c)}`} style={{ padding:'6px 12px', fontSize:11, fontFamily:'Arial,sans-serif', background:'var(--card)', border:'1px solid var(--faint)', color:'var(--ink)', textDecoration:'none' }}>{c}</Link>)}</div></>}
         {venues.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>{isGolf?'COURSES':'VENUES'}</div><div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>{venues.slice(0,20).map(v => <Link key={v.id} href={`/venue/${v.id}`} style={{ padding:'6px 12px', fontSize:11, fontFamily:'Arial,sans-serif', background:'var(--card)', border:'1px solid var(--faint)', color:'var(--ink)', textDecoration:'none' }}>{v.venue_name}</Link>)}</div></>}

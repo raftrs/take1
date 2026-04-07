@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { formatDate, showScore } from '@/lib/utils'
+import { formatDate, showScore, savePlaylist } from '@/lib/utils'
 import Link from 'next/link'
 import SportBadge from '@/components/SportBadge'
 
@@ -13,6 +13,7 @@ export default function HomePage() {
   const [hero, setHero] = useState(null)
   const [colls, setColls] = useState([])
   const [recent, setRecent] = useState([])
+  const [allTimerList, setAllTimerList] = useState([])
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -20,6 +21,10 @@ export default function HomePage() {
       // FIX #53: Only tier 1 for hero
       const { data: pool } = await supabase.from('notable_games').select('*').eq('tier', 1).not('description', 'is', null).limit(50)
       if (pool?.length > 0) setHero(pool[Math.floor(Math.random() * pool.length)])
+
+      // All tier 1 for "Scroll the All-Timers"
+      const { data: atAll } = await supabase.from('notable_games').select('id,title').eq('tier', 1).not('description', 'is', null).order('game_date', { ascending: false })
+      setAllTimerList(atAll || [])
 
       const { data: cd } = await supabase.from('notable_games').select('id,title,game_date,away_team_abbr,home_team_abbr,away_score,home_score,sport,collections')
         .not('collections', 'is', null).eq('tier', 1).order('game_date', { ascending: false }).limit(500)
@@ -53,7 +58,11 @@ export default function HomePage() {
       </div>
 
       {hero && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
-        <Link href={`/notable/${hero.id}`} className="hero-link">
+        <Link href={`/notable/${hero.id}`} className="hero-link" onClick={() => {
+          const playlist = allTimerList.map(g => ({ href: `/notable/${g.id}`, title: g.title }))
+          const idx = allTimerList.findIndex(g => g.id === hero.id)
+          savePlaylist(playlist, idx >= 0 ? idx : 0)
+        }}>
           <div className="hero-label"><SportBadge sport={hero.sport}/><span style={{ marginLeft:8 }}>FEATURED ALL-TIMER</span></div>
           <div className="hero-title">{hero.title}</div>
           {showScore(hero) && <div className="hero-score">{showScore(hero)}</div>}
@@ -68,6 +77,11 @@ export default function HomePage() {
         <div style={{ fontSize:18, color:'var(--ink)', lineHeight:1.4, marginBottom:8 }}>Every game tells a story. What are yours?</div>
         <div style={{ fontSize:13, color:'var(--muted)', lineHeight:1.6, maxWidth:300, margin:'0 auto 16px' }}>Rate the games that matter. Share the stories behind them. Build your personal collection.</div>
         <Link href="/search" style={{ display:'inline-block', padding:'10px 28px', background:'var(--copper)', color:'#fff', fontSize:12, fontFamily:'Arial,sans-serif', fontWeight:600, letterSpacing:1, textDecoration:'none' }}>FIND A GAME</Link>
+        {allTimerList.length > 0 && <div style={{ marginTop:12 }}><span onClick={() => {
+          const playlist = allTimerList.map(g => ({ href: `/notable/${g.id}`, title: g.title }))
+          savePlaylist(playlist, 0)
+          window.location.href = playlist[0].href
+        }} style={{ display:'inline-block', padding:'10px 28px', background:'var(--gold)', color:'#fff', fontSize:12, fontFamily:'Arial,sans-serif', fontWeight:600, letterSpacing:1, cursor:'pointer' }}>SCROLL THE ALL-TIMERS</span></div>}
       </div>
 
       {colls.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>

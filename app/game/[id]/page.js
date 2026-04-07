@@ -7,6 +7,7 @@ import { formatDate, capType, sortPerformers, getWinner, showScore, normalizeCit
 import BackButton from '@/components/BackButton'
 import SportBadge from '@/components/SportBadge'
 import YourCall from '@/components/YourCall'
+import GameNav from '@/components/GameNav'
 
 export default function GamePage() {
   const { id } = useParams()
@@ -109,6 +110,7 @@ export default function GamePage() {
   return (
     <div>
       <BackButton />
+      <GameNav />
       <div style={{ padding:'0 20px' }}>
         <div style={{ marginBottom:8 }}><SportBadge sport={sp}/></div>
         {!isGolf && showScore(game) ? (

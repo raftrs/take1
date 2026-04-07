@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { formatDate, showScore } from '@/lib/utils'
+import { formatDate, showScore, savePlaylist } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 
 export default function VenuePage() {
@@ -19,15 +19,16 @@ export default function VenuePage() {
       const { data: v } = await supabase.from('venues').select('*').eq('id', id).single()
       if (!v) { setLoading(false); return }
       setVenue(v)
-      const { data: ng } = await supabase.from('notable_games').select('id,title,game_date,away_team_abbr,home_team_abbr,away_score,home_score,sport,tier')
+      const { data: ng } = await supabase.from('notable_games').select('id,title,game_date,away_team_abbr,home_team_abbr,away_score,home_score,sport,tier,game_id,collections')
         .eq('venue', v.venue_name).order('game_date', {ascending:false}).limit(20)
       setNotable(ng||[])
+      const notableGameIds = (ng||[]).map(n => n.game_id).filter(Boolean)
       // FIX #52: Get more games. FIX #65: no home_score filter for golf
       let gq = supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,series_info,sport,title')
         .eq('venue', v.venue_name).order('game_date', {ascending:false}).limit(50)
       if (v.sport !== 'golf') gq = gq.gt('home_score', 0)
       const { data: gs } = await gq
-      setGames(gs||[])
+      setGames((gs||[]).filter(g => !notableGameIds.includes(g.id)))
       setLoading(false)
     }
     load()
@@ -71,10 +72,15 @@ export default function VenuePage() {
         const allTimerGames = notable.filter(g => g.tier === 1)
         const superBowls = notable.filter(g => g.tier !== 1 && g.title?.includes('Super Bowl'))
         const otherNotable = notable.filter(g => g.tier !== 1 && !g.title?.includes('Super Bowl'))
+        const allNotablePlaylist = notable.map(g => ({ href: `/notable/${g.id}`, title: g.title }))
+        function handleNotableClick(g) {
+          const idx = notable.findIndex(n => n.id === g.id)
+          savePlaylist(allNotablePlaylist, idx >= 0 ? idx : 0)
+        }
         return <>
           {allTimerGames.length > 0 && <><hr className="sec-rule" style={{marginTop:16}}/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
             <div className="sec-head">ALL-TIMERS HERE</div>
-            {allTimerGames.map(g => <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
+            {allTimerGames.map(g => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleNotableClick(g)} className="game-row" style={{ padding:'10px 0' }}>
               <span className="at-badge-sm">&#9733; ALL-TIMER</span>
               <div style={{ fontSize:14, color:'var(--ink)', marginTop:4 }}>{g.title}</div>
               <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{formatDate(g.game_date)}</div>
@@ -82,7 +88,7 @@ export default function VenuePage() {
           </div></>}
           {superBowls.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
             <div className="sec-head">SUPER BOWLS</div>
-            {superBowls.map(g => <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
+            {superBowls.map(g => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleNotableClick(g)} className="game-row" style={{ padding:'10px 0' }}>
               <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#013369" strokeWidth="1.5"><path d="M12 2L4 8v6l8 8 8-8V8z"/></svg>
                 <span style={{ fontSize:14, color:'var(--ink)' }}>{g.title}</span>
@@ -92,9 +98,10 @@ export default function VenuePage() {
           </div></>}
           {otherNotable.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
             <div className="sec-head">{isGolf ? 'NOTABLE TOURNAMENTS' : 'NOTABLE GAMES'}</div>
-            {otherNotable.map(g => <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
+            {otherNotable.map(g => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleNotableClick(g)} className="game-row" style={{ padding:'10px 0' }}>
               <div style={{ fontSize:14, color:'var(--ink)' }}>{g.title}</div>
               <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{formatDate(g.game_date)}</div>
+              {Array.isArray(g.collections) && g.collections.length > 0 && <div className="sans" style={{ fontSize:9, color:'var(--copper)', marginTop:4, letterSpacing:0.5 }}>{g.collections.join(' \u00B7 ')}</div>}
             </Link>)}
           </div></>}
         </>

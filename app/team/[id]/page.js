@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { formatDate, sportLabel } from '@/lib/utils'
+import { formatDate, sportLabel, savePlaylist } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 
 export default function TeamPage() {
@@ -22,15 +22,20 @@ export default function TeamPage() {
       setTeam(t)
       const abbr = t.team_abbr||t.abbreviation, sp = t.sport||'basketball'
 
-      const { data: ng } = await supabase.from('notable_games').select('id,title,game_date,away_team_abbr,home_team_abbr,away_score,home_score,tier')
+      const { data: ng } = await supabase.from('notable_games').select('id,title,game_date,away_team_abbr,home_team_abbr,away_score,home_score,tier,game_id,collections')
         .eq('sport',sp).or(`home_team_abbr.eq.${abbr},away_team_abbr.eq.${abbr}`).order('game_date',{ascending:false}).limit(10)
       setNotable(ng||[])
 
+      // Get game_ids from notables so we can exclude them from archives
+      const notableGameIds = (ng||[]).map(n => n.game_id).filter(Boolean)
+
       let gq = supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,series_info,sport')
-        .eq('sport',sp).or(`home_team_abbr.eq.${abbr},away_team_abbr.eq.${abbr}`).order('game_date',{ascending:false}).limit(10)
+        .eq('sport',sp).or(`home_team_abbr.eq.${abbr},away_team_abbr.eq.${abbr}`).order('game_date',{ascending:false}).limit(30)
       if (sp !== 'golf') gq = gq.gt('home_score', 0)
       const { data: gs } = await gq
-      setGames(gs||[])
+      // Filter out games that already appear in the notable section
+      const filtered = (gs||[]).filter(g => !notableGameIds.includes(g.id)).slice(0, 10)
+      setGames(filtered)
 
       if (sp==='basketball') {
         const { data: bs } = await supabase.from('box_scores').select('player_name').eq('team_abbr',abbr).limit(500)
@@ -82,11 +87,16 @@ export default function TeamPage() {
       {notable.length > 0 && (() => {
         const allTimerGames = notable.filter(g => g.tier === 1)
         const otherNotable = notable.filter(g => g.tier !== 1)
+        const allNotablePlaylist = notable.map(g => ({ href: `/notable/${g.id}`, title: g.title }))
+        function handleNotableClick(g) {
+          const idx = notable.findIndex(n => n.id === g.id)
+          savePlaylist(allNotablePlaylist, idx >= 0 ? idx : 0)
+        }
         return <>
           {allTimerGames.length > 0 && <><hr className="sec-rule" style={{marginTop:16}}/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
             <div className="sec-head">ALL-TIMERS</div>
             <div style={{ maxHeight:300, overflowY:'auto' }}>
-              {allTimerGames.map(g => <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
+              {allTimerGames.map(g => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleNotableClick(g)} className="game-row" style={{ padding:'10px 0' }}>
                 <span className="at-badge-sm">&#9733; ALL-TIMER</span>
                 <div style={{ fontSize:14, color:'var(--ink)', marginTop:4 }}>{g.title}</div>
                 <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{formatDate(g.game_date)}</div>
@@ -96,9 +106,10 @@ export default function TeamPage() {
           {otherNotable.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
             <div className="sec-head">{sp === 'golf' ? 'NOTABLE TOURNAMENTS' : 'NOTABLE GAMES'}</div>
             <div style={{ maxHeight:300, overflowY:'auto' }}>
-              {otherNotable.map(g => <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
+              {otherNotable.map(g => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleNotableClick(g)} className="game-row" style={{ padding:'10px 0' }}>
                 <div style={{ fontSize:14, color:'var(--ink)' }}>{g.title}</div>
                 <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{formatDate(g.game_date)}</div>
+                {Array.isArray(g.collections) && g.collections.length > 0 && <div className="sans" style={{ fontSize:9, color:'var(--copper)', marginTop:4, letterSpacing:0.5 }}>{g.collections.join(' \u00B7 ')}</div>}
               </Link>)}
             </div>
           </div></>}

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { formatDate } from '@/lib/utils'
+import { formatDate, savePlaylist } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import SportBadge from '@/components/SportBadge'
 
@@ -271,7 +271,10 @@ export default function PlayerPage() {
       {allTimers.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div className="sec-head">ALL-TIMERS ({allTimers.length})</div>
         <ScrollList maxH={280}>
-          {allTimers.map(g => <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'8px 0' }}>
+          {allTimers.map((g, idx) => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => {
+            const playlist = allTimers.map(a => ({ href: `/notable/${a.id}`, title: a.title }))
+            savePlaylist(playlist, idx)
+          }} className="game-row" style={{ padding:'8px 0' }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <span className="at-badge-sm">&#9733;</span>
               <div>
