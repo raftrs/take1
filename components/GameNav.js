@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { getPlaylist } from '@/lib/utils'
 
-export default function GameNav() {
+export default function GameNav({ position = 'top' }) {
   const router = useRouter()
   const pathname = usePathname()
   const [prev, setPrev] = useState(null)
@@ -28,6 +28,19 @@ export default function GameNav() {
     router.replace(item.href)
   }
 
+  // Bottom: show prominent "UP NEXT" card
+  if (position === 'bottom') {
+    if (!next) return null
+    return (
+      <div onClick={() => go(next)} style={{ margin:'0 20px 20px', padding:'16px 20px', background:'var(--card)', border:'1px solid var(--faint)', borderTop:'3px solid var(--copper)', cursor:'pointer' }}>
+        <div className="sans" style={{ fontSize:9, color:'var(--copper)', letterSpacing:2, fontWeight:700, marginBottom:6 }}>UP NEXT {pos ? `\u00B7 ${pos}` : ''}</div>
+        <div style={{ fontSize:15, color:'var(--ink)', lineHeight:1.3 }}>{next.title}</div>
+        <div className="sans" style={{ fontSize:11, color:'var(--dim)', marginTop:6 }}>Keep scrolling &rarr;</div>
+      </div>
+    )
+  }
+
+  // Top: compact prev/next arrows
   return (
     <div style={{ display:'flex', alignItems:'stretch', borderBottom:'1px solid var(--faint)', fontFamily:'Arial,sans-serif' }}>
       <div

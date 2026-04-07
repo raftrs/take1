@@ -70,18 +70,19 @@ export default function HomePage() {
           <div className="game-meta">{formatDate(hero.game_date)}</div>
           {hero.venue && <div className="game-meta">{hero.venue}</div>}
           {hero.description && <div className="hero-blurb">{hero.description}</div>}
-        </Link></>)}
+        </Link>
+        {allTimerList.length > 0 && <div style={{ padding:'0 20px 16px' }}><span className="sans" onClick={() => {
+          const playlist = allTimerList.map(g => ({ href: `/notable/${g.id}`, title: g.title }))
+          savePlaylist(playlist, 0)
+          window.location.href = playlist[0].href
+        }} style={{ fontSize:11, color:'var(--copper)', cursor:'pointer' }}>Scroll all {allTimerList.length} All-Timers &rarr;</span></div>}
+      </>)}
 
       <hr className="sec-rule"/><hr className="sec-rule-thin"/>
       <div style={{ padding:'24px 20px', textAlign:'center' }}>
         <div style={{ fontSize:18, color:'var(--ink)', lineHeight:1.4, marginBottom:8 }}>Every game tells a story. What are yours?</div>
         <div style={{ fontSize:13, color:'var(--muted)', lineHeight:1.6, maxWidth:300, margin:'0 auto 16px' }}>Rate the games that matter. Share the stories behind them. Build your personal collection.</div>
         <Link href="/search" style={{ display:'inline-block', padding:'10px 28px', background:'var(--copper)', color:'#fff', fontSize:12, fontFamily:'Arial,sans-serif', fontWeight:600, letterSpacing:1, textDecoration:'none' }}>FIND A GAME</Link>
-        {allTimerList.length > 0 && <div style={{ marginTop:12 }}><span onClick={() => {
-          const playlist = allTimerList.map(g => ({ href: `/notable/${g.id}`, title: g.title }))
-          savePlaylist(playlist, 0)
-          window.location.href = playlist[0].href
-        }} style={{ display:'inline-block', padding:'10px 28px', background:'var(--gold)', color:'#fff', fontSize:12, fontFamily:'Arial,sans-serif', fontWeight:600, letterSpacing:1, cursor:'pointer' }}>SCROLL THE ALL-TIMERS</span></div>}
       </div>
 
       {colls.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>

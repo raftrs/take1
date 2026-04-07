@@ -110,7 +110,10 @@ export default function VenuePage() {
       {games.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div className="sec-head">{isGolf ? 'MAJORS HOSTED' : 'FROM THE ARCHIVES'}</div>
         {!isGolf && <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:-10, marginBottom:14 }}>Playoff and championship games</div>}
-        {displayGames.map(g => <Link key={g.id} href={`/game/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
+        {displayGames.map((g, idx) => <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
+          const playlist = games.map(gm => ({ href: `/game/${gm.id}`, title: isGolf ? gm.title : (showScore(gm) || `${gm.away_team_abbr} @ ${gm.home_team_abbr}`) }))
+          savePlaylist(playlist, idx)
+        }} className="game-row" style={{ padding:'10px 0' }}>
           {isGolf ? <div style={{ fontSize:14, color:'var(--ink)' }}>{g.title}</div> :
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}><span style={{ fontSize:14, color:'var(--ink)' }}>{showScore(g) || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</span><span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</span></div>}
           {isGolf && <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{formatDate(g.game_date)}</div>}

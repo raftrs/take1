@@ -119,7 +119,10 @@ export default function TeamPage() {
       {games.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div className="sec-head">FROM THE ARCHIVES</div>
         <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:-10, marginBottom:14 }}>Playoff and championship games</div>
-        {games.map(g => <Link key={g.id} href={`/game/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
+        {games.map((g, idx) => <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
+          const playlist = games.map(gm => ({ href: `/game/${gm.id}`, title: gm.sport === 'golf' ? gm.title : `${gm.away_team_abbr} ${gm.away_score} / ${gm.home_score} ${gm.home_team_abbr}` }))
+          savePlaylist(playlist, idx)
+        }} className="game-row" style={{ padding:'10px 0' }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
             <span style={{ fontSize:14, color:'var(--ink)' }}>{g.sport === 'golf' ? g.title : `${g.away_team_abbr} ${g.away_score} / ${g.home_score} ${g.home_team_abbr}`}</span>
             <span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</span>

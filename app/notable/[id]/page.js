@@ -176,6 +176,7 @@ export default function NotablePage() {
         <div style={{ padding:20 }}><div className="sec-head">COLLECTIONS</div>
           <div>{game.collections.map(c => <Link key={c} href={`/collection/${encodeURIComponent(c)}`} className="coll-tag">{c}</Link>)}</div>
         </div></>)}
+      <GameNav position="bottom" />
       <div style={{ height:80 }}></div>
     </div>
   )

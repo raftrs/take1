@@ -167,7 +167,10 @@ export default function CityPage() {
       {games.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div className="sec-head">FROM THE ARCHIVES</div>
         <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:-10, marginBottom:14 }}>Playoff and championship games in {cityName}</div>
-        {displayGames.map(g => <Link key={g.id} href={`/game/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
+        {displayGames.map((g, idx) => <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
+          const playlist = games.map(gm => ({ href: `/game/${gm.id}`, title: showScore(gm) || gm.title || `${gm.away_team_abbr} @ ${gm.home_team_abbr}` }))
+          savePlaylist(playlist, idx)
+        }} className="game-row" style={{ padding:'10px 0' }}>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             <SportBadge sport={g.sport}/>
             <span style={{ fontSize:14, color:'var(--ink)' }}>{showScore(g) || g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</span>

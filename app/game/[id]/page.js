@@ -165,6 +165,7 @@ export default function GamePage() {
         <table className="box-table"><thead><tr><th>Pos</th><th style={{textAlign:'left'}}>Player</th><th>R1</th><th>R2</th><th>R3</th><th>R4</th><th>Tot</th></tr></thead>
         <tbody>{golf.slice(0,20).map((p,i)=><tr key={i}><td>{p.position}</td><td style={{textAlign:'left'}}><PL n={p.player_name}/></td><td>{p.round_1}</td><td>{p.round_2}</td><td>{p.round_3}</td><td>{p.round_4}</td><td className="pts">{p.total_score}</td></tr>)}</tbody></table>
       </div></>)}
+      <GameNav position="bottom" />
       <div style={{ height:80 }}></div>
     </div>
   )
