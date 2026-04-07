@@ -32,8 +32,8 @@ export default function WeatherIntro({ weather, sport, venue }) {
     const c = condition.toLowerCase()
     if (c === 'snow' || c === 'rain' || c === 'drizzle' || c === 'thunderstorm') {
       setVisible(true)
-      setTimeout(() => setOpacity(0), 2500)
-      setTimeout(() => setVisible(false), 3200)
+      setTimeout(() => setOpacity(0), 5000)
+      setTimeout(() => setVisible(false), 6000)
     }
   }, [weather, sport, venue])
 
@@ -48,7 +48,7 @@ export default function WeatherIntro({ weather, sport, venue }) {
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       pointerEvents: 'none', zIndex: 100,
-      opacity, transition: 'opacity 0.7s ease-out',
+      opacity, transition: 'opacity 1.2s ease-out',
       overflow: 'hidden',
       background: isSnow ? 'rgba(180,195,210,0.12)' : 'rgba(100,100,110,0.08)',
     }}>

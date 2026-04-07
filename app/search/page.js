@@ -25,13 +25,19 @@ export default function SearchPage() {
   const fetchSuggestions = useCallback(async (q) => {
     if (q.length < 2) { setSuggestions([]); return }
     const results = []
-    const { data: tm } = await supabase.from('teams').select('id,full_name,city,sport,primary_color').or(`full_name.ilike.%${q}%,city.ilike.%${q}%,team_abbr.ilike.%${q}%`).eq('active', true).limit(3)
-    if (tm) tm.forEach(t => results.push({ type:'team', id:t.id, label:t.full_name, sub:sportLabel(t.sport), href:`/team/${t.id}`, color:t.primary_color }))
-    const { data: vn } = await supabase.from('venues').select('id,venue_name,venue_city,sport').or(`venue_name.ilike.%${q}%,venue_city.ilike.%${q}%`).limit(3)
-    if (vn) vn.forEach(v => results.push({ type:'venue', id:v.id, label:v.venue_name, sub:`${v.venue_city||''} ${v.sport?sportLabel(v.sport):''}`.trim(), href:`/venue/${v.id}` }))
-    const { data: pl } = await supabase.from('players').select('id,player_name,position,sport').ilike('player_name', `%${q}%`).order('career_points', { ascending: false }).limit(3)
+    // Players first (most common search) - higher limit
+    const { data: pl } = await supabase.from('players').select('id,player_name,position,sport').ilike('player_name', `%${q}%`).order('career_points', { ascending: false }).limit(5)
     if (pl) pl.forEach(p => results.push({ type:'player', id:p.id, label:p.player_name, sub:[p.position, sportLabel(p.sport)].filter(Boolean).join(' \u00B7 '), href:`/player/${p.id}` }))
-    // City suggestions
+    // Teams
+    const { data: tm } = await supabase.from('teams').select('id,full_name,city,sport,primary_color').or(`full_name.ilike.%${q}%,city.ilike.%${q}%,team_abbr.ilike.%${q}%,team_name.ilike.%${q}%`).eq('active', true).limit(3)
+    if (tm) tm.forEach(t => { if (!results.find(r => r.label === t.full_name)) results.push({ type:'team', id:t.id, label:t.full_name, sub:sportLabel(t.sport), href:`/team/${t.id}`, color:t.primary_color }) })
+    // Notable games (All-Timers) - search titles
+    const { data: ng } = await supabase.from('notable_games').select('id,title,sport,game_date').ilike('title', `%${q}%`).order('game_date', { ascending: false }).limit(3)
+    if (ng) ng.forEach(n => results.push({ type:'notable', label:n.title, sub:`${sportLabel(n.sport)} \u00B7 ${n.game_date?.split('-')[0]||''}`, href:`/notable/${n.id}` }))
+    // Venues
+    const { data: vn } = await supabase.from('venues').select('id,venue_name,venue_city,sport').or(`venue_name.ilike.%${q}%,venue_city.ilike.%${q}%`).limit(3)
+    if (vn) vn.forEach(v => { if (!results.find(r => r.label === v.venue_name)) results.push({ type:'venue', id:v.id, label:v.venue_name, sub:`${v.venue_city||''} ${v.sport?sportLabel(v.sport):''}`.trim(), href:`/venue/${v.id}` }) })
+    // Cities
     const { data: cv } = await supabase.from('venues').select('venue_city').ilike('venue_city', `%${q}%`).limit(5)
     const { data: ct2 } = await supabase.from('teams').select('city').ilike('city', `%${q}%`).eq('active', true).limit(5)
     if (cv || ct2) {
@@ -107,6 +113,7 @@ export default function SearchPage() {
                 {s.type === 'team' && <div style={{ width:10, height:10, borderRadius:'50%', background:s.color||'var(--dim)', flexShrink:0 }}></div>}
                 {s.type === 'venue' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--copper)" strokeWidth="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>}
                 {s.type === 'player' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--copper)" strokeWidth="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0112 0v1"/></svg>}
+                {s.type === 'notable' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>}
                 {s.type === 'city' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--dim)" strokeWidth="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>}
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:14, color:'var(--ink)' }}>{s.label}</div>

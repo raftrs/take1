@@ -124,7 +124,7 @@ export default function NotablePage() {
       <BackButton />
       <GameNav />
       <WeatherIntro weather={weather} sport={sp} venue={game.venue} />
-      <div style={{ padding:'0 20px' }}>
+      <div style={{ padding:'0 20px', marginTop:12 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14 }}>
           {/* FIX #53: Only show ALL-TIMER badge for tier 1 */}
           {isTier1 && <span className="at-badge-sm">&#9733; ALL-TIMER</span>}
@@ -145,8 +145,10 @@ export default function NotablePage() {
         </div>
         {game.description && <div style={{ fontSize:15, color:'var(--text)', lineHeight:1.85, marginTop:16, borderLeft:'3px solid var(--gold)', paddingLeft:16 }}>{game.description}</div>}
         <YourCall />
-        <PromptDeck type="game" onSelect={(prompt) => setStory(prompt)} />
-        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Say something..." value={story} onChange={e => setStory(e.target.value)} />
+        <div style={{ marginTop:24 }}>
+          <PromptDeck type="game" onSelect={(prompt) => setStory(prompt)} />
+          <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Or write your own..." value={story} onChange={e => setStory(e.target.value)} />
+        </div>
       </div>
 
       {perfs.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>

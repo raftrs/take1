@@ -118,7 +118,7 @@ export default function GamePage() {
       <BackButton />
       <GameNav />
       <WeatherIntro weather={typeof game.weather === 'string' ? JSON.parse(game.weather) : game.weather} sport={sp} venue={game.venue} />
-      <div style={{ padding:'0 20px' }}>
+      <div style={{ padding:'0 20px', marginTop:12 }}>
         <div style={{ marginBottom:8 }}><SportBadge sport={sp}/></div>
         {!isGolf && showScore(game) ? (
           <div className="scoreboard">
@@ -134,8 +134,10 @@ export default function GamePage() {
         </div>
         {game.context_blurb && <div className="blurb" style={{ marginTop:14 }}>{game.context_blurb}</div>}
         <YourCall />
-        <PromptDeck type="game" onSelect={(prompt) => setStory(prompt)} />
-        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Say something..." value={story} onChange={e => setStory(e.target.value)} />
+        <div style={{ marginTop:24 }}>
+          <PromptDeck type="game" onSelect={(prompt) => setStory(prompt)} />
+          <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Or write your own..." value={story} onChange={e => setStory(e.target.value)} />
+        </div>
       </div>
 
       {perfs.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>

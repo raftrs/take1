@@ -296,7 +296,7 @@ export default function PlayerPage() {
       <hr className="sec-rule"/><hr className="sec-rule-thin"/>
       <div style={{ padding:20 }}>
         <PromptDeck type="player" name={player.player_name} onSelect={(prompt) => setStory(prompt)} />
-        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Share yours..." value={story} onChange={e => setStory(e.target.value)} />
+        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Or write your own..." value={story} onChange={e => setStory(e.target.value)} />
       </div>
 
       {/* NBA/NFL GAME LOG - scrollable */}

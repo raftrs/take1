@@ -76,31 +76,50 @@ function shuffle(arr) {
 export default function PromptDeck({ type = 'game', name = '', onSelect }) {
   const getPrompts = PROMPTS[type] || PROMPTS.game
   const allPrompts = getPrompts(name)
-  const [visible, setVisible] = useState(() => shuffle(allPrompts).slice(0, 3))
+  const [stack, setStack] = useState(() => shuffle(allPrompts))
+  const front = stack[0] || ''
 
-  const reshuffle = useCallback(() => {
-    setVisible(shuffle(allPrompts).slice(0, 3))
-  }, [allPrompts])
+  const doShuffle = useCallback(() => {
+    setStack(prev => {
+      const next = [...prev.slice(1), prev[0]]
+      return next
+    })
+  }, [])
 
   return (
     <div>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
         <div className="sans" style={{ fontSize:9, color:'var(--dim)', letterSpacing:2, fontWeight:600 }}>FROM THE STANDS</div>
-        <div onClick={reshuffle} style={{ cursor:'pointer', display:'flex', alignItems:'center', gap:4, color:'var(--dim)' }}>
+        <div onClick={doShuffle} style={{ cursor:'pointer', display:'flex', alignItems:'center', gap:4, color:'var(--copper)' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
-          <span className="sans" style={{ fontSize:9, fontWeight:600, letterSpacing:1 }}>SHUFFLE</span>
+          <span className="sans" style={{ fontSize:9, fontWeight:600, letterSpacing:1 }}>SHUFFLE PROMPTS</span>
         </div>
       </div>
-      <div style={{ display:'flex', gap:8, overflowX:'auto', paddingBottom:4, WebkitOverflowScrolling:'touch' }}>
-        {visible.map((prompt, i) => (
-          <div key={i} onClick={() => onSelect && onSelect(prompt)} style={{
-            flexShrink:0, width:200, padding:'12px 14px 12px 16px',
-            background:'var(--card)', borderLeft:'3px solid var(--copper)',
-            cursor:'pointer', borderTop:'1px solid var(--faint)', borderRight:'1px solid var(--faint)', borderBottom:'1px solid var(--faint)',
-          }}>
-            <div style={{ fontSize:13, color:'var(--copper)', fontFamily:"'Crete Round',Georgia,serif", lineHeight:1.5 }}>{prompt}</div>
-          </div>
-        ))}
+      <div style={{ position:'relative', height:140, marginBottom:8 }} onClick={() => onSelect && onSelect(front)}>
+        {/* Back card 2 */}
+        <div style={{
+          position:'absolute', top:4, left:'50%', transform:'translateX(-50%) rotate(6deg)',
+          width:220, height:120, background:'var(--card)',
+          borderLeft:'3px solid var(--faint)', borderTop:'1px solid var(--faint)', borderRight:'1px solid var(--faint)', borderBottom:'1px solid var(--faint)',
+          zIndex:1,
+        }} />
+        {/* Back card 1 */}
+        <div style={{
+          position:'absolute', top:2, left:'50%', transform:'translateX(-50%) rotate(3deg)',
+          width:220, height:120, background:'var(--card)',
+          borderLeft:'3px solid var(--faint)', borderTop:'1px solid var(--faint)', borderRight:'1px solid var(--faint)', borderBottom:'1px solid var(--faint)',
+          zIndex:2,
+        }} />
+        {/* Front card */}
+        <div style={{
+          position:'absolute', top:0, left:'50%', transform:'translateX(-50%) rotate(0deg)',
+          width:220, height:120, background:'var(--card)',
+          borderLeft:'3px solid var(--copper)', borderTop:'1px solid var(--faint)', borderRight:'1px solid var(--faint)', borderBottom:'1px solid var(--faint)',
+          zIndex:3, cursor:'pointer', padding:'16px 18px',
+          display:'flex', alignItems:'center',
+        }}>
+          <div style={{ fontSize:14, color:'var(--copper)', fontFamily:"'Crete Round',Georgia,serif", lineHeight:1.5 }}>{front}</div>
+        </div>
       </div>
     </div>
   )

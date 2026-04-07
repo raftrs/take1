@@ -77,7 +77,7 @@ export default function TeamPage() {
       {ch > 0 && <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--faint)' }}>
         <div className="sans" style={{ fontSize:9, color:'var(--dim)', letterSpacing:2, fontWeight:600, marginBottom:10 }}>CHAMPIONSHIPS</div>
         <div style={{ display:'flex', flexWrap:'wrap', gap:6, justifyContent:'center' }}>
-          {(team.championship_years || '').split(',').map(y => y.trim()).filter(Boolean).map((year, i) => {
+          {(team.championship_years || '').split(',').map(y => y.trim()).filter(Boolean).sort((a,b) => parseInt(a) - parseInt(b)).map((year, i) => {
             const isSupersonics = team.team_abbr === 'OKC' && year === '1979'
             const bannerColor = isSupersonics ? '#00653A' : color
             return <div key={i} style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
@@ -153,7 +153,7 @@ export default function TeamPage() {
       <hr className="sec-rule"/><hr className="sec-rule-thin"/>
       <div style={{ padding:20 }}>
         <PromptDeck type="team" name={team.full_name || team.team_name} onSelect={(prompt) => setStory(prompt)} />
-        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Share yours..." value={story} onChange={e => setStory(e.target.value)} />
+        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Or write your own..." value={story} onChange={e => setStory(e.target.value)} />
       </div>
       <div style={{ height:80 }}></div>
     </div>
