@@ -167,6 +167,12 @@ export default function CityPage() {
         </Link>)}
       </div></>)}
 
+      {teams.length >= 2 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
+      <div style={{ padding:20 }}>
+        <PromptDeck type="city" name={cityName} onSelect={(prompt) => setStory(prompt)} />
+        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Or write your own..." value={story} onChange={e => setStory(e.target.value)} />
+      </div></>)}
+
       {/* GAMES */}
       {games.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div className="sec-head">FROM THE ARCHIVES</div>
@@ -186,12 +192,6 @@ export default function CityPage() {
         </Link>)}
         {!showAllGames && games.length > 15 && <div className="box-toggle" onClick={() => setShowAllGames(true)} style={{ textAlign:'center', marginTop:8 }}>Show all {games.length} games &darr;</div>}
         {showAllGames && games.length > 15 && <div className="box-toggle" onClick={() => setShowAllGames(false)} style={{ textAlign:'center', marginTop:8 }}>Show fewer &uarr;</div>}
-      </div></>)}
-
-      {teams.length >= 2 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
-      <div style={{ padding:20 }}>
-        <PromptDeck type="city" name={cityName} onSelect={(prompt) => setStory(prompt)} />
-        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Or write your own..." value={story} onChange={e => setStory(e.target.value)} />
       </div></>)}
 
       <div style={{ height:80 }}></div>

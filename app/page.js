@@ -35,7 +35,8 @@ export default function HomePage() {
           if (m[c].games.length < 3) m[c].games.push(g)
         })})
         Object.values(m).forEach(c => c.games.sort((a,b) => (a.sport==='golf'?1:0)-(b.sport==='golf'?1:0)))
-        setColls(Object.values(m).filter(c => c.games.length >= 2).sort((a,b) => b.games.length - a.games.length).slice(0, 6))
+        const skip = new Set(['Game 7s', 'Super Bowls', 'Greatest Playoff Games', 'Greatest Super Bowls', 'Greatest Majors'])
+        setColls(Object.values(m).filter(c => c.games.length >= 2 && !skip.has(c.name)).sort((a,b) => b.games.length - a.games.length).slice(0, 6))
       }
 
       const { data: rg } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,context_blurb,sport,series_info')
@@ -97,6 +98,9 @@ export default function HomePage() {
           )}</div>
           <Link href={`/collection/${encodeURIComponent(c.name)}`} className="sans" style={{ fontSize:11, color:'var(--copper)', marginTop:4, display:'inline-block' }}>View all &rarr;</Link>
         </div>)}
+        <div style={{ textAlign:'center', marginTop:8 }}>
+          <Link href="/collections" className="sans" style={{ fontSize:12, color:'var(--copper)', fontWeight:600, letterSpacing:0.5 }}>See all Collections &rarr;</Link>
+        </div>
       </div></>)}
 
       {recent.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>

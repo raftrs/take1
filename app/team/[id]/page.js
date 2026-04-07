@@ -129,6 +129,12 @@ export default function TeamPage() {
         </>
       })()}
 
+      <hr className="sec-rule"/><hr className="sec-rule-thin"/>
+      <div style={{ padding:20 }}>
+        <PromptDeck type="team" name={team.full_name || team.team_name} onSelect={(prompt) => setStory(prompt)} />
+        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Or write your own..." value={story} onChange={e => setStory(e.target.value)} />
+      </div>
+
       {games.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div className="sec-head">FROM THE ARCHIVES</div>
         <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:-10, marginBottom:14 }}>Playoff and championship games</div>
@@ -150,11 +156,6 @@ export default function TeamPage() {
           <div className="perf-name">{p.player_name}</div><div className="perf-sub">{p.position}{p.ppg?` \u00B7 ${p.ppg} PPG`:''}</div>
         </Link>)}</div>
       </div></>}
-      <hr className="sec-rule"/><hr className="sec-rule-thin"/>
-      <div style={{ padding:20 }}>
-        <PromptDeck type="team" name={team.full_name || team.team_name} onSelect={(prompt) => setStory(prompt)} />
-        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Or write your own..." value={story} onChange={e => setStory(e.target.value)} />
-      </div>
       <div style={{ height:80 }}></div>
     </div>
   )

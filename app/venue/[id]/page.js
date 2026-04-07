@@ -111,6 +111,12 @@ export default function VenuePage() {
         </>
       })()}
 
+      <hr className="sec-rule"/><hr className="sec-rule-thin"/>
+      <div style={{ padding:20 }}>
+        <PromptDeck type="venue" name={venue.venue_name} onSelect={(prompt) => setStory(prompt)} />
+        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Or write your own..." value={story} onChange={e => setStory(e.target.value)} />
+      </div>
+
       {games.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div className="sec-head">{isGolf ? 'MAJORS HOSTED' : 'FROM THE ARCHIVES'}</div>
         {!isGolf && <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:-10, marginBottom:14 }}>Playoff and championship games</div>}
@@ -126,11 +132,6 @@ export default function VenuePage() {
         {!showAllGames && games.length > 10 && <div className="box-toggle" onClick={() => setShowAllGames(true)} style={{ textAlign:'center', marginTop:8 }}>Show all {games.length} games &darr;</div>}
         {showAllGames && games.length > 10 && <div className="box-toggle" onClick={() => setShowAllGames(false)} style={{ textAlign:'center', marginTop:8 }}>Show fewer &uarr;</div>}
       </div></>}
-      <hr className="sec-rule"/><hr className="sec-rule-thin"/>
-      <div style={{ padding:20 }}>
-        <PromptDeck type="venue" name={venue.venue_name} onSelect={(prompt) => setStory(prompt)} />
-        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Or write your own..." value={story} onChange={e => setStory(e.target.value)} />
-      </div>
       <div style={{ height:80 }}></div>
     </div>
   )

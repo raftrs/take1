@@ -193,8 +193,11 @@ export default function PlayerPage() {
         <div className="sans" style={{ fontSize:11, color:'var(--dim)', marginTop:6 }}>{[player.position, player.height, player.experience].filter(Boolean).join(' \u00B7 ')}</div>
         {player.draft_info && <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{player.draft_info}</div>}
         <div style={{ marginTop:8 }}>
-          <span className="sans" style={{ fontSize:10, fontWeight:600, letterSpacing:1, padding:'3px 8px', background:player.active?'rgba(181,86,58,0.08)':'var(--surface)', color:player.active?'var(--copper)':'var(--dim)', border:`1px solid ${player.active?'var(--copper)':'var(--faint)'}` }}>{player.active?'ACTIVE':'RETIRED'}</span>
-          {player.debut_year && <span className="sans" style={{ fontSize:10, color:'var(--dim)', marginLeft:8 }}>Since {player.debut_year}</span>}
+          {(() => {
+            const isActive = player.active && (!player.debut_year || player.debut_year >= 2010)
+            return <span className="sans" style={{ fontSize:10, fontWeight:600, letterSpacing:1, padding:'3px 8px', background:isActive?'rgba(181,86,58,0.08)':'var(--surface)', color:isActive?'var(--copper)':'var(--dim)', border:`1px solid ${isActive?'var(--copper)':'var(--faint)'}` }}>{isActive?'ACTIVE':'RETIRED'}</span>
+          })()}
+          {player.debut_year && <span className="sans" style={{ fontSize:10, color:'var(--dim)', marginLeft:8 }}>{player.active && (!player.debut_year || player.debut_year >= 2010) ? 'Since' : ''} {player.debut_year}</span>}
         </div>
       </div>
 
@@ -223,9 +226,9 @@ export default function PlayerPage() {
         <div className="sans" style={{ fontSize:9, color:'var(--dim)', letterSpacing:2, fontWeight:600, marginBottom:10 }}>CAREER STATS</div>
         <div style={{ display:'flex', flexWrap:'wrap' }}>
           {nflCareer.map((s,i,a) =>
-            <div key={i} style={{ flex:'1 0 auto', minWidth:60, textAlign:'center', padding:'4px 8px', borderRight:i<a.length-1?'1px solid var(--faint)':'none' }}>
-              <div style={{ fontSize:18, color:'var(--ink)' }}>{s.v}</div>
-              <div className="sans" style={{ fontSize:8, color:'var(--dim)', letterSpacing:1, fontWeight:600, marginTop:2 }}>{s.l}</div>
+            <div key={i} style={{ flex:'1 0 auto', minWidth:45, textAlign:'center', padding:'4px 4px', borderRight:i<a.length-1?'1px solid var(--faint)':'none' }}>
+              <div style={{ fontSize:17, color:'var(--ink)' }}>{s.v}</div>
+              <div className="sans" style={{ fontSize:7, color:'var(--dim)', letterSpacing:0.5, fontWeight:600, marginTop:2 }}>{s.l}</div>
             </div>
           )}
         </div>
@@ -236,9 +239,9 @@ export default function PlayerPage() {
         <div className="sans" style={{ fontSize:9, color:'var(--dim)', letterSpacing:2, fontWeight:600, marginBottom:10 }}>PLAYOFF STATS</div>
         <div style={{ display:'flex', flexWrap:'wrap' }}>
           {nflPlayoffStats.map((s,i,a) =>
-            <div key={i} style={{ flex:'1 0 auto', minWidth:60, textAlign:'center', padding:'4px 8px', borderRight:i<a.length-1?'1px solid var(--faint)':'none' }}>
-              <div style={{ fontSize:18, color:'var(--ink)' }}>{s.v}</div>
-              <div className="sans" style={{ fontSize:8, color:'var(--dim)', letterSpacing:1, fontWeight:600, marginTop:2 }}>{s.l}</div>
+            <div key={i} style={{ flex:'1 0 auto', minWidth:45, textAlign:'center', padding:'4px 4px', borderRight:i<a.length-1?'1px solid var(--faint)':'none' }}>
+              <div style={{ fontSize:17, color:'var(--ink)' }}>{s.v}</div>
+              <div className="sans" style={{ fontSize:7, color:'var(--dim)', letterSpacing:0.5, fontWeight:600, marginTop:2 }}>{s.l}</div>
             </div>
           )}
         </div>

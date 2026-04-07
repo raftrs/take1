@@ -80,10 +80,7 @@ export default function PromptDeck({ type = 'game', name = '', onSelect }) {
   const front = stack[0] || ''
 
   const doShuffle = useCallback(() => {
-    setStack(prev => {
-      const next = [...prev.slice(1), prev[0]]
-      return next
-    })
+    setStack(prev => [...prev.slice(1), prev[0]])
   }, [])
 
   return (
@@ -95,30 +92,30 @@ export default function PromptDeck({ type = 'game', name = '', onSelect }) {
           <span className="sans" style={{ fontSize:9, fontWeight:600, letterSpacing:1 }}>SHUFFLE PROMPTS</span>
         </div>
       </div>
-      <div style={{ position:'relative', height:140, marginBottom:8 }} onClick={() => onSelect && onSelect(front)}>
+      <div style={{ position:'relative', height:170, marginBottom:8 }} onClick={() => onSelect && onSelect(front)}>
         {/* Back card 2 */}
         <div style={{
-          position:'absolute', top:4, left:'50%', transform:'translateX(-50%) rotate(6deg)',
-          width:220, height:120, background:'var(--card)',
+          position:'absolute', top:6, left:'50%', transform:'translateX(-48%) rotate(6deg)',
+          width:160, height:150, background:'var(--card)', borderRadius:6,
           borderLeft:'3px solid var(--faint)', borderTop:'1px solid var(--faint)', borderRight:'1px solid var(--faint)', borderBottom:'1px solid var(--faint)',
           zIndex:1,
         }} />
         {/* Back card 1 */}
         <div style={{
-          position:'absolute', top:2, left:'50%', transform:'translateX(-50%) rotate(3deg)',
-          width:220, height:120, background:'var(--card)',
+          position:'absolute', top:3, left:'50%', transform:'translateX(-49%) rotate(3deg)',
+          width:160, height:150, background:'var(--card)', borderRadius:6,
           borderLeft:'3px solid var(--faint)', borderTop:'1px solid var(--faint)', borderRight:'1px solid var(--faint)', borderBottom:'1px solid var(--faint)',
           zIndex:2,
         }} />
         {/* Front card */}
         <div style={{
           position:'absolute', top:0, left:'50%', transform:'translateX(-50%) rotate(0deg)',
-          width:220, height:120, background:'var(--card)',
+          width:160, height:150, background:'var(--card)', borderRadius:6,
           borderLeft:'3px solid var(--copper)', borderTop:'1px solid var(--faint)', borderRight:'1px solid var(--faint)', borderBottom:'1px solid var(--faint)',
           zIndex:3, cursor:'pointer', padding:'16px 18px',
           display:'flex', alignItems:'center',
         }}>
-          <div style={{ fontSize:14, color:'var(--copper)', fontFamily:"'Crete Round',Georgia,serif", lineHeight:1.5 }}>{front}</div>
+          <div style={{ fontSize:13, color:'var(--copper)', fontFamily:"'Crete Round',Georgia,serif", lineHeight:1.5 }}>{front}</div>
         </div>
       </div>
     </div>
