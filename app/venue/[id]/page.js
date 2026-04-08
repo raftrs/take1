@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { formatDate, showScore, savePlaylist } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import TopLogo from '@/components/TopLogo'
-import PromptDeck from '@/components/PromptDeck'
+
 
 export default function VenuePage() {
   const { id } = useParams()
@@ -16,6 +16,7 @@ export default function VenuePage() {
   const [showAllGames, setShowAllGames] = useState(false)
   const [loading, setLoading] = useState(true)
   const [story, setStory] = useState('')
+  const [archiveSort, setArchiveSort] = useState('desc')
 
   useEffect(() => {
     async function load() {
@@ -113,14 +114,19 @@ export default function VenuePage() {
 
       <hr className="sec-rule"/><hr className="sec-rule-thin"/>
       <div style={{ padding:20 }}>
-        <PromptDeck type="venue" name={venue.venue_name} onSelect={(prompt) => setStory(prompt)} />
-        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Or write your own..." value={story} onChange={e => setStory(e.target.value)} />
+        <div className="sec-head">SAY SOMETHING</div>
+        <textarea className="story-textarea" placeholder={`Say something about ${venue.venue_name}...`} value={story} onChange={e => setStory(e.target.value)} />
       </div>
 
       {games.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
-        <div className="sec-head">{isGolf ? 'MAJORS HOSTED' : 'FROM THE ARCHIVES'}</div>
-        {!isGolf && <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:-10, marginBottom:14 }}>Playoff and championship games</div>}
-        {displayGames.map((g, idx) => <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+          <div className="sec-head" style={{ marginBottom:0 }}>{isGolf ? 'MAJORS HOSTED' : 'FROM THE ARCHIVES'}</div>
+          <div style={{ display:'flex', gap:0 }}>
+            {['Recent','Oldest'].map(s => <button key={s} onClick={() => setArchiveSort(s==='Recent'?'desc':'asc')} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===archiveSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===archiveSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
+          </div>
+        </div>
+        {!isGolf && <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Playoff and championship games</div>}
+        {(() => { const sorted = [...(showAllGames ? games : games.slice(0, 10))].sort((a,b) => archiveSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||'')); return sorted.map((g, idx) => <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
           const playlist = games.map(gm => ({ href: `/game/${gm.id}`, title: isGolf ? gm.title : (showScore(gm) || `${gm.away_team_abbr} @ ${gm.home_team_abbr}`) }))
           savePlaylist(playlist, idx)
         }} className="game-row" style={{ padding:'10px 0' }}>
@@ -128,7 +134,7 @@ export default function VenuePage() {
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}><span style={{ fontSize:14, color:'var(--ink)' }}>{showScore(g) || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</span><span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</span></div>}
           {isGolf && <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{formatDate(g.game_date)}</div>}
           {g.series_info && !isGolf && <div className="sans" style={{ fontSize:10, color:'var(--copper)', marginTop:2 }}>{g.series_info}</div>}
-        </Link>)}
+        </Link>) })()}
         {!showAllGames && games.length > 10 && <div className="box-toggle" onClick={() => setShowAllGames(true)} style={{ textAlign:'center', marginTop:8 }}>Show all {games.length} games &darr;</div>}
         {showAllGames && games.length > 10 && <div className="box-toggle" onClick={() => setShowAllGames(false)} style={{ textAlign:'center', marginTop:8 }}>Show fewer &uarr;</div>}
       </div></>}

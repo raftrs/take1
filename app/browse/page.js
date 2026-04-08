@@ -18,14 +18,15 @@ export default function BrowsePage() {
   const [ats, setAts] = useState([])
   const [players, setPlayers] = useState([])
   const [browseCities, setBrowseCities] = useState([])
-  const [filters, setFilters] = useState({ team:null, teamSport:null, teamLabel:null, venue:null, decade:null, round:null, player:null, city:null })
+  const [filters, setFilters] = useState({ team:null, teamSport:null, teamLabel:null, venue:null, decade:null, round:null, player:null, city:null, year:null })
   const [expanded, setExpanded] = useState(null)
   const [filterSearch, setFilterSearch] = useState('')
   const [filteredGames, setFilteredGames] = useState([])
   const [filtering, setFiltering] = useState(false)
   const [playerOptions, setPlayerOptions] = useState([])
   const [cityOptions, setCityOptions] = useState([])
-  const hasFilters = filters.team||filters.venue||filters.decade||filters.round||filters.player||filters.city
+  const [browseSort, setBrowseSort] = useState('desc')
+  const hasFilters = filters.team||filters.venue||filters.decade||filters.round||filters.player||filters.city||filters.year
   const sv = sport==='all'?null:sport
   const isGolf = sport === 'golf'
 
@@ -60,9 +61,9 @@ export default function BrowsePage() {
   }, [sport, sv])
 
   const applyFilters = useCallback(async (f) => {
-    if (!f.team&&!f.venue&&!f.decade&&!f.round&&!f.player&&!f.city) { setFilteredGames([]); return }
+    if (!f.team&&!f.venue&&!f.decade&&!f.round&&!f.player&&!f.city&&!f.year) { setFilteredGames([]); return }
     setFiltering(true)
-    let q = supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title').order('game_date',{ascending:false}).limit(50)
+    let q = supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title').order('game_date',{ascending:browseSort==='asc'}).limit(50)
     if (sv) q = q.eq('sport', sv)
     if (f.team) {
       q = q.or(`home_team_abbr.eq.${f.team},away_team_abbr.eq.${f.team}`)
@@ -71,6 +72,7 @@ export default function BrowsePage() {
     }
     if (f.venue) q = q.eq('venue', f.venue)
     if (f.decade) { const y=parseInt(f.decade); q=q.gte('game_date',`${y}-01-01`).lt('game_date',`${y+10}-01-01`) }
+    if (f.year && !f.decade) { q=q.gte('game_date',`${f.year}-01-01`).lte('game_date',`${f.year}-12-31`) }
     if (f.round) q = q.ilike('series_info', `%${f.round}%`)
 
     // City filter - find venues in this city, filter games by those venues
@@ -118,11 +120,11 @@ export default function BrowsePage() {
       }
     }
     const { data } = await q; setFilteredGames(data||[]); setFiltering(false)
-  }, [sv])
+  }, [sv, browseSort])
 
   function setF(k,v) { const n={...filters,[k]:v}; setFilters(n); setExpanded(null); setFilterSearch(''); applyFilters(n) }
   function clearF(k) { const n={...filters,[k]:null}; if(k==='team'){n.teamSport=null;n.teamLabel=null} setFilters(n); applyFilters(n) }
-  function clearAll() { const n={team:null,teamSport:null,teamLabel:null,venue:null,decade:null,round:null,player:null,city:null}; setFilters(n); setFilteredGames([]) }
+  function clearAll() { const n={team:null,teamSport:null,teamLabel:null,venue:null,decade:null,round:null,player:null,city:null,year:null}; setFilters(n); setFilteredGames([]) }
   const roundOpts = sport==='football'?ROUNDS_NFL:sport==='golf'?ROUNDS_GOLF:sport==='basketball'?ROUNDS_NBA:[...ROUNDS_NBA,...ROUNDS_NFL,...ROUNDS_GOLF]
 
   // Player search for filter dropdown
@@ -221,9 +223,24 @@ export default function BrowsePage() {
         {roundOpts.map(r => <div key={r} onClick={()=>setF('round',r)} style={{ padding:'8px 0', cursor:'pointer', fontSize:13, color:'var(--ink)', borderBottom:'1px solid var(--faint)' }}>{r}</div>)}
       </div>}
 
+      {/* Year scroller */}
+      <div style={{ padding:'8px 20px', borderBottom:'1px solid var(--faint)', overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
+        <div style={{ display:'flex', gap:4 }}>
+          {(() => { const yrs = []; for (let y = new Date().getFullYear(); y >= 1967; y--) yrs.push(y); return yrs.map(y => (
+            <button key={y} onClick={() => { const n = {...filters, year: filters.year===String(y)?null:String(y), decade:null}; setFilters(n); applyFilters(n) }}
+              className="sans" style={{ padding:'4px 10px', flexShrink:0, fontSize:11, fontWeight:filters.year===String(y)?700:500, backgroundColor:filters.year===String(y)?'var(--copper)':'transparent', color:filters.year===String(y)?'#fff':'var(--dim)', border:filters.year===String(y)?'1.5px solid var(--copper)':'1.5px solid var(--faint)', borderRadius:20, cursor:'pointer', whiteSpace:'nowrap' }}>{y}</button>
+          )) })()}
+        </div>
+      </div>
+
       {hasFilters && <div style={{ padding:20 }}>
         {filtering ? <div className="loading">Loading...</div> : <>
-          <div className="sec-head">{filteredGames.length} GAME{filteredGames.length!==1?'S':''}</div>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+            <div className="sec-head" style={{ marginBottom:0 }}>{filteredGames.length} GAME{filteredGames.length!==1?'S':''}</div>
+            <div style={{ display:'flex', gap:0 }}>
+              {['Recent','Oldest'].map(s => <button key={s} onClick={() => { setBrowseSort(s==='Recent'?'desc':'asc'); applyFilters(filters) }} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===browseSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===browseSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
+            </div>
+          </div>
           {filteredGames.map((g, idx) => <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
             const playlist = filteredGames.map(fg => ({ href: `/game/${fg.id}`, title: showScore(fg) || fg.title || `${fg.away_team_abbr} @ ${fg.home_team_abbr}` }))
             savePlaylist(playlist, idx)

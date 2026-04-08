@@ -7,7 +7,7 @@ import { formatDate, savePlaylist } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import SportBadge from '@/components/SportBadge'
 import TopLogo from '@/components/TopLogo'
-import PromptDeck from '@/components/PromptDeck'
+
 
 const MAJOR_CONFIG = [
   { key: 'Masters', label: 'Masters' },
@@ -85,6 +85,7 @@ export default function PlayerPage() {
   const [golfResults, setGolfResults] = useState([])
   const [story, setStory] = useState('')
   const [loading, setLoading] = useState(true)
+  const [gameSort, setGameSort] = useState('desc')
 
   useEffect(() => {
     async function load() {
@@ -295,18 +296,23 @@ export default function PlayerPage() {
         </ScrollList>
       </div></>)}
 
-      {/* FROM THE STANDS - ABOVE game log */}
+      {/* FROM THE STANDS */}
       <hr className="sec-rule"/><hr className="sec-rule-thin"/>
       <div style={{ padding:20 }}>
-        <PromptDeck type="player" name={player.player_name} onSelect={(prompt) => setStory(prompt)} />
-        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Or write your own..." value={story} onChange={e => setStory(e.target.value)} />
+        <div className="sec-head">SAY SOMETHING</div>
+        <textarea className="story-textarea" placeholder={`Say something about ${player.player_name}...`} value={story} onChange={e => setStory(e.target.value)} />
       </div>
 
       {/* NBA/NFL GAME LOG - scrollable */}
       {activeGameLog.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
-        <div className="sec-head">PLAYOFF GAMES ({activeGameLog.length})</div>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+          <div className="sec-head" style={{ marginBottom:0 }}>PLAYOFF GAMES ({activeGameLog.length})</div>
+          <div style={{ display:'flex', gap:0 }}>
+            {['Recent','Oldest'].map(s => <button key={s} onClick={() => setGameSort(s==='Recent'?'desc':'asc')} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===gameSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===gameSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
+          </div>
+        </div>
         <ScrollList maxH={340}>
-          {activeGameLog.map(g => <Link key={g.id} href={`/game/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
+          {[...activeGameLog].sort((a,b) => gameSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||'')).map(g => <Link key={g.id} href={`/game/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
               <span style={{ fontSize:14, color:'var(--ink)' }}>{g.away_team_abbr} {g.away_score} / {g.home_score} {g.home_team_abbr}</span>
               <span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</span>
@@ -320,9 +326,14 @@ export default function PlayerPage() {
 
       {/* GOLF TOURNAMENT HISTORY - scrollable */}
       {isGolf && golfResults.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
-        <div className="sec-head">MAJOR RESULTS ({golfResults.length})</div>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+          <div className="sec-head" style={{ marginBottom:0 }}>MAJOR RESULTS ({golfResults.length})</div>
+          <div style={{ display:'flex', gap:0 }}>
+            {['Recent','Oldest'].map(s => <button key={s} onClick={() => setGameSort(s==='Recent'?'desc':'asc')} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===gameSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===gameSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
+          </div>
+        </div>
         <ScrollList maxH={340}>
-          {golfResults.map(g => <Link key={g.id} href={`/game/${g.id}`} className="game-row" style={{ padding:'8px 0' }}>
+          {[...golfResults].sort((a,b) => gameSort==='desc' ? (b.game_date||b.title||'').localeCompare(a.game_date||a.title||'') : (a.game_date||a.title||'').localeCompare(b.game_date||b.title||'')).map(g => <Link key={g.id} href={`/game/${g.id}`} className="game-row" style={{ padding:'8px 0' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
               <span style={{ fontSize:13, color:'var(--ink)' }}>{g.title}</span>
               <span className="sans" style={{ fontSize:10, color: g.position === 1 ? 'var(--gold)' : 'var(--dim)', fontWeight: g.position === 1 ? 700 : 400 }}>

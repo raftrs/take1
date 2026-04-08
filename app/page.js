@@ -15,6 +15,8 @@ export default function HomePage() {
   const [recent, setRecent] = useState([])
   const [allTimerList, setAllTimerList] = useState([])
   const [loaded, setLoaded] = useState(false)
+  const [atSort, setAtSort] = useState('desc')
+  const [recentSort, setRecentSort] = useState('desc')
 
   useEffect(() => {
     async function load() {
@@ -73,9 +75,14 @@ export default function HomePage() {
           {hero.description && <div className="hero-blurb">{hero.description}</div>}
         </Link>
         {allTimerList.length > 0 && <div style={{ padding:'0 20px 16px' }}>
-          <div className="sec-head">ALL-TIMERS</div>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+            <div className="sec-head" style={{ marginBottom:0 }}>ALL-TIMERS</div>
+            <div style={{ display:'flex', gap:0 }}>
+              {['Recent','Oldest'].map(s => <button key={s} onClick={() => setAtSort(s==='Recent'?'desc':'asc')} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===atSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===atSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
+            </div>
+          </div>
           <div style={{ maxHeight:320, overflowY:'auto', paddingRight:4 }}>
-            {allTimerList.map((g, idx) => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => {
+            {[...allTimerList].sort((a,b) => atSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||'')).map((g, idx) => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => {
               const playlist = allTimerList.map(gm => ({ href: `/notable/${gm.id}`, title: gm.title }))
               savePlaylist(playlist, idx)
             }} className="game-row" style={{ padding:'8px 0', display:'flex', alignItems:'center', gap:10 }}>
@@ -114,9 +121,14 @@ export default function HomePage() {
       </div></>)}
 
       {recent.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
-        <div className="sec-head">LATEST IN THE ARCHIVE<Link href="/browse" className="sec-link">Browse all &rarr;</Link></div>
-        <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:-10, marginBottom:14 }}>Recently added playoff and championship games</div>
-        {recent.map(g => <Link key={g.id} href={`/game/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+          <div className="sec-head" style={{ marginBottom:0 }}>LATEST IN THE ARCHIVE<Link href="/browse" className="sec-link">Browse all &rarr;</Link></div>
+          <div style={{ display:'flex', gap:0 }}>
+            {['Recent','Oldest'].map(s => <button key={s} onClick={() => setRecentSort(s==='Recent'?'desc':'asc')} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===recentSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===recentSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
+          </div>
+        </div>
+        <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Recently added playoff and championship games</div>
+        {[...recent].sort((a,b) => recentSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||'')).map(g => <Link key={g.id} href={`/game/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}><SportBadge sport={g.sport}/>
               <span style={{ fontSize:14, color:'var(--ink)' }}>{showScore(g) || g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</span>

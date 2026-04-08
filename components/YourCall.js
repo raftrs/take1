@@ -1,67 +1,191 @@
-'use client'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/auth'
-import { supabase } from '@/lib/supabase'
+'use client';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 export default function YourCall({ gameId, notableGameId, onLogged }) {
-  const { user } = useAuth()
-  const router = useRouter()
-  const [rating, setRating] = useState(0)
-  const [att, setAtt] = useState(null)
-  const [logged, setLogged] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const { user, profile } = useAuth();
+  const router = useRouter();
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [attended, setAttended] = useState(null); // null = not set, true = there, false = watched
+  const [logged, setLogged] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [existingLog, setExistingLog] = useState(null);
 
   useEffect(() => {
-    if (!user || !gameId) return
-    supabase.from('user_games').select('id,rating,attended').eq('user_id', user.id).eq('game_id', gameId).single()
+    if (!user || !gameId) return;
+    supabase
+      .from('user_games')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('game_id', gameId)
+      .maybeSingle()
       .then(({ data }) => {
         if (data) {
-          setLogged(true)
-          setRating(data.rating || 0)
-          setAtt(data.attended ? 'there' : 'watched')
+          setExistingLog(data);
+          setRating(data.rating || 0);
+          setAttended(data.attended);
+          setLogged(true);
         }
-      })
-  }, [user, gameId])
+      });
+  }, [user, gameId]);
 
-  async function handleLog() {
-    if (!user) { router.push('/auth'); return }
-    if (!rating && !att) return
-    setSaving(true)
-    const payload = {
-      user_id: user.id,
-      game_id: gameId,
-      notable_game_id: notableGameId || null,
-      rating: rating || null,
-      attended: att === 'there',
+  const handleLog = async () => {
+    if (!user) {
+      router.push('/auth');
+      return;
     }
-    if (logged) {
-      await supabase.from('user_games').update(payload).eq('user_id', user.id).eq('game_id', gameId)
-    } else {
-      await supabase.from('user_games').upsert(payload)
+    if (rating === 0 && attended === null) return;
+
+    setLoading(true);
+    try {
+      const payload = {
+        user_id: user.id,
+        game_id: gameId,
+        notable_game_id: notableGameId || null,
+        rating: rating || null,
+        attended: attended === true,
+      };
+
+      if (existingLog) {
+        await supabase
+          .from('user_games')
+          .update(payload)
+          .eq('id', existingLog.id);
+      } else {
+        await supabase
+          .from('user_games')
+          .insert(payload);
+      }
+
+      setLogged(true);
+      if (onLogged) onLogged();
+    } catch (err) {
+      console.error('Log error:', err);
     }
-    setLogged(true)
-    setSaving(false)
-    if (onLogged) onLogged({ gameId, rating, attended: att === 'there' })
+    setLoading(false);
+  };
+
+  if (logged && !existingLog) {
+    return (
+      <div style={{ padding: '20px 0', textAlign: 'center' }}>
+        <p style={{
+          fontFamily: "'Crete Round', Georgia, serif",
+          fontSize: 14,
+          color: '#b5563a',
+          fontWeight: 700,
+          letterSpacing: 1.5,
+          textTransform: 'uppercase',
+        }}>
+          LOGGED
+        </p>
+      </div>
+    );
   }
 
+  const displayRating = hoverRating || rating;
+
   return (
-    <div style={{ padding:'16px 0' }}>
-      <div className="sec-head">YOUR CALL</div>
-      <div className="star-row">
-        {[1,2,3,4,5].map(n => (
-          <button key={n} className={`star-btn ${rating >= n ? 'on' : ''}`} onClick={() => setRating(rating === n ? 0 : n)}>
-            <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    <div style={{ padding: '24px 0' }}>
+      {/* Section header */}
+      <h3 style={{
+        fontFamily: "'Crete Round', Georgia, serif",
+        fontSize: 13,
+        color: '#a09888',
+        textTransform: 'uppercase',
+        letterSpacing: 2,
+        marginBottom: 16,
+      }}>
+        Your Call
+      </h3>
+
+      {/* Stars */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+        {[1, 2, 3, 4, 5].map(n => (
+          <button
+            key={n}
+            onClick={() => setRating(n === rating ? 0 : n)}
+            onMouseEnter={() => setHoverRating(n)}
+            onMouseLeave={() => setHoverRating(0)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 28,
+              color: n <= displayRating ? '#c49a2a' : '#e5ddd1',
+              padding: 0,
+              lineHeight: 1,
+            }}
+          >
+            ★
           </button>
         ))}
       </div>
-      <div className="att-toggle">
-        <button className={`att-opt${att==='there'?' on':''}`} onClick={() => setAtt(att==='there'?null:'there')}>I Was There</button>
-        <button className={`att-opt${att==='watched'?' on':''}`} onClick={() => setAtt(att==='watched'?null:'watched')}>Watched It</button>
+
+      {/* Attendance toggle */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+        <button
+          onClick={() => setAttended(attended === true ? null : true)}
+          style={{
+            padding: '8px 16px',
+            fontFamily: 'Manrope, Arial, sans-serif',
+            fontSize: 13,
+            fontWeight: 600,
+            border: attended === true ? '2px solid #b5563a' : '2px solid #e5ddd1',
+            borderRadius: 4,
+            backgroundColor: attended === true ? '#b5563a' : 'transparent',
+            color: attended === true ? '#f5f0e8' : '#a09888',
+            cursor: 'pointer',
+            letterSpacing: 0.5,
+          }}
+        >
+          I Was There
+        </button>
+        <button
+          onClick={() => setAttended(attended === false ? null : false)}
+          style={{
+            padding: '8px 16px',
+            fontFamily: 'Manrope, Arial, sans-serif',
+            fontSize: 13,
+            fontWeight: 600,
+            border: attended === false ? '2px solid #b5563a' : '2px solid #e5ddd1',
+            borderRadius: 4,
+            backgroundColor: attended === false ? '#b5563a' : 'transparent',
+            color: attended === false ? '#f5f0e8' : '#a09888',
+            cursor: 'pointer',
+            letterSpacing: 0.5,
+          }}
+        >
+          Watched It
+        </button>
       </div>
-      <div className="log-btn" style={{ marginTop:12, opacity: saving ? 0.6 : 1 }} onClick={handleLog}>
-        {saving ? 'SAVING...' : logged ? '✓ LOGGED' : 'LOG THIS GAME'}
-      </div>
+
+      {/* Log button */}
+      {!logged && (
+        <button
+          onClick={handleLog}
+          disabled={loading || (rating === 0 && attended === null)}
+          style={{
+            display: 'block',
+            width: '100%',
+            padding: '14px 0',
+            backgroundColor: (rating > 0 || attended !== null) ? '#b5563a' : '#e5ddd1',
+            color: (rating > 0 || attended !== null) ? '#f5f0e8' : '#a09888',
+            border: 'none',
+            borderRadius: 4,
+            fontFamily: "'Crete Round', Georgia, serif",
+            fontSize: 15,
+            fontWeight: 700,
+            letterSpacing: 1.5,
+            cursor: (rating > 0 || attended !== null) ? 'pointer' : 'default',
+            opacity: loading ? 0.6 : 1,
+          }}
+        >
+          {loading ? 'LOGGING...' : 'LOG THIS GAME'}
+        </button>
+      )}
     </div>
-  )
+  );
 }

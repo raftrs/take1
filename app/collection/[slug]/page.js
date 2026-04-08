@@ -13,6 +13,7 @@ export default function CollectionPage() {
   const name = decodeURIComponent(slug)
   const [games, setGames] = useState([])
   const [loading, setLoading] = useState(true)
+  const [collSort, setCollSort] = useState('asc')
   const restored = useRef(false)
 
   useEffect(() => { async function ld() {
@@ -46,7 +47,11 @@ export default function CollectionPage() {
         <div className="sans" style={{ fontSize:12, color:'var(--dim)' }}>{games.length} game{games.length!==1?'s':''}</div>
       </div>
       <hr className="sec-rule" style={{marginTop:16}}/><hr className="sec-rule-thin"/>
-      <div style={{ padding:20 }}>{games.map((g, idx) => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleClick(idx)} className="game-row" style={{ padding:'12px 0' }}>
+      <div style={{ padding:20 }}>
+        <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:10 }}>
+          {['Oldest','Recent'].map(s => <button key={s} onClick={() => setCollSort(s==='Recent'?'desc':'asc')} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===collSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===collSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
+        </div>
+        {[...games].sort((a,b) => collSort==='asc' ? (a.game_date||'').localeCompare(b.game_date||'') : (b.game_date||'').localeCompare(a.game_date||'')).map((g, idx) => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleClick(idx)} className="game-row" style={{ padding:'12px 0' }}>
         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
           {g.tier === 1 && <span className="at-badge-sm">&#9733; ALL-TIMER</span>}
           <SportBadge sport={g.sport}/>

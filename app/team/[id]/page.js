@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { formatDate, sportLabel, savePlaylist } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import TopLogo from '@/components/TopLogo'
-import PromptDeck from '@/components/PromptDeck'
+
 
 export default function TeamPage() {
   const { id } = useParams()
@@ -17,6 +17,7 @@ export default function TeamPage() {
   const [venueId, setVenueId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [story, setStory] = useState('')
+  const [archiveSort, setArchiveSort] = useState('desc')
 
   useEffect(() => {
     async function load() {
@@ -131,14 +132,19 @@ export default function TeamPage() {
 
       <hr className="sec-rule"/><hr className="sec-rule-thin"/>
       <div style={{ padding:20 }}>
-        <PromptDeck type="team" name={team.full_name || team.team_name} onSelect={(prompt) => setStory(prompt)} />
-        <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Or write your own..." value={story} onChange={e => setStory(e.target.value)} />
+        <div className="sec-head">SAY SOMETHING</div>
+        <textarea className="story-textarea" placeholder={`Say something about the ${team.full_name || team.team_name}...`} value={story} onChange={e => setStory(e.target.value)} />
       </div>
 
       {games.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
-        <div className="sec-head">FROM THE ARCHIVES</div>
-        <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:-10, marginBottom:14 }}>Playoff and championship games</div>
-        {games.map((g, idx) => <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+          <div className="sec-head" style={{ marginBottom:0 }}>FROM THE ARCHIVES</div>
+          <div style={{ display:'flex', gap:0 }}>
+            {['Recent','Oldest'].map(s => <button key={s} onClick={() => setArchiveSort(s==='Recent'?'desc':'asc')} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===archiveSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===archiveSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
+          </div>
+        </div>
+        <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Playoff and championship games</div>
+        {[...games].sort((a,b) => archiveSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||'')).map((g, idx) => <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
           const playlist = games.map(gm => ({ href: `/game/${gm.id}`, title: gm.sport === 'golf' ? gm.title : `${gm.away_team_abbr} ${gm.away_score} / ${gm.home_score} ${gm.home_team_abbr}` }))
           savePlaylist(playlist, idx)
         }} className="game-row" style={{ padding:'10px 0' }}>
