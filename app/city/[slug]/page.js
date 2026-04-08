@@ -71,23 +71,23 @@ export default function CityPage() {
       atResults.sort((a, b) => (b.game_date || '').localeCompare(a.game_date || ''))
       setAllTimers(atResults)
 
-      // Games: by venue name, venue_city, OR team abbreviation
+      // Games: by venue name, venue_city, OR team abbreviation - PLAYOFF ONLY
       let allGames = []
       if (venueNames.length > 0) {
         const { data: gs } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title')
-          .in('venue', venueNames).order('game_date', { ascending: false }).limit(50)
+          .in('venue', venueNames).not('series_info', 'is', null).order('game_date', { ascending: false }).limit(50)
         if (gs) allGames = gs
       }
       // Also grab games by venue_city
       const vcGameFilters = searchTerms.map(s => `venue_city.ilike.%${s}%`).join(',')
       const { data: gs2 } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title')
-        .or(vcGameFilters).order('game_date', { ascending: false }).limit(50)
+        .or(vcGameFilters).not('series_info', 'is', null).order('game_date', { ascending: false }).limit(50)
       if (gs2) gs2.forEach(g => { if (!allGames.find(m => m.id === g.id)) allGames.push(g) })
       // Also grab home games for local teams
       if (teamAbbrs.length > 0) {
         for (const abbr of teamAbbrs) {
           const { data: gs3 } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title')
-            .eq('home_team_abbr', abbr).order('game_date', { ascending: false }).limit(30)
+            .eq('home_team_abbr', abbr).not('series_info', 'is', null).order('game_date', { ascending: false }).limit(30)
           if (gs3) gs3.forEach(g => { if (!allGames.find(m => m.id === g.id)) allGames.push(g) })
         }
       }

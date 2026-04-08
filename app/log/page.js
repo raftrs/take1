@@ -305,34 +305,59 @@ function RecentlyPlayed() {
   const router = useRouter();
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [rpSport, setRpSport] = useState('all');
   useEffect(() => {
-    supabase.from('games')
+    setLoading(true);
+    let q = supabase.from('games')
       .select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,sport,series_info')
-      .order('game_date', { ascending: false }).limit(6)
-      .then(({ data }) => { setGames(data || []); setLoading(false); });
-  }, []);
+      .order('game_date', { ascending: false }).limit(10);
+    if (rpSport !== 'all') q = q.eq('sport', rpSport);
+    q.then(({ data }) => { setGames(data || []); setLoading(false); });
+  }, [rpSport]);
   return (
     <div style={secStyle}>
       <h3 style={secHead}>Recently Played</h3>
-      <p className="sans" style={{ fontSize: 11, color: dim, marginBottom: 12, marginTop: -8, fontStyle: 'italic' }}>From the playoff and championship archives</p>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 12, marginTop: -4 }}>
+        {[{k:'all',l:'All'},{k:'basketball',l:'NBA'},{k:'football',l:'NFL'},{k:'golf',l:'PGA'},{k:'baseball',l:'MLB'}].map(s => (
+          <button key={s.k} onClick={() => setRpSport(s.k)} className="sans" style={{
+            padding:'4px 10px', fontSize:10, fontWeight:600, letterSpacing:0.5,
+            border: rpSport===s.k ? `1.5px solid ${copper}` : `1.5px solid ${faint}`,
+            borderRadius:4, backgroundColor: rpSport===s.k ? copper : 'transparent',
+            color: rpSport===s.k ? '#fff' : dim, cursor:'pointer',
+          }}>{s.l}</button>
+        ))}
+      </div>
       {loading ? <p className="sans" style={{ color: dim, fontSize: 13 }}>Loading...</p> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {games.map(g => (
+          {games.map(g => {
+            const aw = Number(g.away_score), hw = Number(g.home_score)
+            const awayWon = aw > hw, homeWon = hw > aw
+            const isPlayoff = g.series_info && g.series_info.length > 0
+            return (
             <button key={g.id} onClick={() => router.push(`/game/${g.id}`)} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '10px 12px', backgroundColor: card, border: `1px solid ${faint}`,
+              borderLeft: isPlayoff ? `3px solid ${copper}` : `1px solid ${faint}`,
               borderRadius: 4, cursor: 'pointer', textAlign: 'left', width: '100%',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
                 <SportBadge sport={g.sport} />
                 <div>
-                  <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 14, color: ink, fontWeight: 700 }}>{showScore(g)}</div>
-                  {g.series_info && <div className="sans" style={{ fontSize: 11, color: dim }}>{g.series_info}</div>}
+                  {g.sport !== 'golf' && g.home_score != null ? (
+                    <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 14 }}>
+                      <span style={{ color: awayWon ? ink : dim, fontWeight: awayWon ? 700 : 400 }}>{g.away_team_abbr} {g.away_score}</span>
+                      <span style={{ color: dim }}> / </span>
+                      <span style={{ color: homeWon ? ink : dim, fontWeight: homeWon ? 700 : 400 }}>{g.home_score} {g.home_team_abbr}</span>
+                    </div>
+                  ) : (
+                    <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 14, color: ink }}>{g.title || showScore(g)}</div>
+                  )}
+                  {g.series_info && <div className="sans" style={{ fontSize: 10, color: copper }}>{g.series_info}</div>}
                 </div>
               </div>
               <span className="sans" style={{ fontSize: 11, color: dim, whiteSpace: 'nowrap' }}>{formatDate(g.game_date)}</span>
             </button>
-          ))}
+          )})}
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import TopLogo from '@/components/TopLogo'
@@ -115,7 +116,7 @@ export default function ProfilePage() {
 
         {/* THE FIVE BANNERS */}
         <div style={{ marginTop:16 }}>
-          <div className="sans" style={{ fontSize:8, color:'var(--dim)', letterSpacing:2, fontWeight:600, marginBottom:8 }}>MY ALL-TIMERS</div>
+          <div className="sans" style={{ fontSize:8, color:'var(--dim)', letterSpacing:2, fontWeight:600, marginBottom:8 }}>MY RAFTERS</div>
           <div style={{ display:'flex', gap:6 }}>
             {[1,2,3,4,5].map(pos => {
               const fav = favorites.find(f => f.position === pos)
@@ -136,13 +137,13 @@ export default function ProfilePage() {
       {/* STAT GRID */}
       <div style={{ display:'flex', borderBottom:'1px solid var(--faint)' }}>
         {[
-          { v: stats.logged, l: 'LOGGED' },
-          { v: stats.attended, l: 'ATTENDED' },
-          { v: stats.venues, l: 'VENUES' },
-          { v: stats.stories, l: 'STORIES' },
-          { v: stats.encounters, l: 'MET' },
+          { v: stats.logged, l: 'LOGGED', href: null, action: () => setShowLogs(true) },
+          { v: stats.attended, l: 'ATTENDED', href: null, action: () => setShowLogs(true) },
+          { v: stats.venues, l: 'VENUES', href: '/venues' },
+          { v: stats.stories, l: 'STORIES', href: null, action: () => setShowLogs(true) },
+          { v: stats.encounters, l: 'MET', href: null },
         ].map((s, i) => (
-          <div key={i} style={{ flex:1, textAlign:'center', padding:'14px 4px', borderRight: i < 4 ? '1px solid var(--faint)' : 'none' }}>
+          <div key={i} onClick={() => { if (s.href) window.location.href = s.href; else if (s.action) s.action() }} style={{ flex:1, textAlign:'center', padding:'14px 4px', borderRight: i < 4 ? '1px solid var(--faint)' : 'none', cursor: (s.href || s.action) ? 'pointer' : 'default' }}>
             <div style={{ fontSize:20, color:'var(--ink)' }}>{s.v}</div>
             <div className="sans" style={{ fontSize:7, color:'var(--dim)', letterSpacing:1, fontWeight:600, marginTop:2 }}>{s.l}</div>
           </div>

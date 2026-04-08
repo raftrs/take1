@@ -80,9 +80,12 @@ a{color:inherit;text-decoration:none;}
 .story-textarea{width:100%;padding:12px 14px;background:var(--card);border:1px solid var(--faint);border-top:2px solid var(--copper);color:var(--ink);font-size:13px;font-family:'Crete Round',serif;outline:none;resize:vertical;min-height:50px;line-height:1.6;}
 .story-textarea::placeholder{color:var(--dim);}
 
-.search-input{width:100%;padding:12px 14px 12px 38px;background:var(--card);border:1px solid var(--faint);border-top:2px solid var(--copper);color:var(--ink);font-size:14px;font-family:'Crete Round',Georgia,serif;outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a09888' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:12px center;}
+.search-input{width:100%;padding:12px 14px 12px 38px;background:var(--card);border:1px solid var(--faint);border-top:2px solid var(--copper);color:var(--ink);font-size:16px;font-family:'Crete Round',Georgia,serif;outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a09888' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:12px center;}
 .search-input::placeholder{color:var(--dim);}
 .search-input:focus{border-color:var(--copper);}
+
+/* Prevent iOS zoom on input focus */
+input,select,textarea{font-size:16px !important;}
 
 /* Autocomplete dropdown */
 .ac-dropdown{background:var(--card);border:1px solid var(--faint);border-top:none;max-height:220px;overflow-y:auto;margin-top:-1px;}

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { formatDate, sportLabel, savePlaylist } from '@/lib/utils'
+import { formatDate, sportLabel, scoreWithWinner, savePlaylist } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import TopLogo from '@/components/TopLogo'
 
@@ -13,11 +13,11 @@ export default function TeamPage() {
   const [team, setTeam] = useState(null)
   const [notable, setNotable] = useState([])
   const [games, setGames] = useState([])
-  const [players, setPlayers] = useState([])
   const [venueId, setVenueId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [story, setStory] = useState('')
   const [archiveSort, setArchiveSort] = useState('desc')
+  const [isFavorite, setIsFavorite] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -41,32 +41,13 @@ export default function TeamPage() {
       const filtered = (gs||[]).filter(g => !notableGameIds.includes(g.id)).slice(0, 10)
       setGames(filtered)
 
-      if (sp==='basketball') {
-        const { data: bs } = await supabase.from('box_scores').select('player_name').eq('team_abbr',abbr).limit(500)
-        if (bs?.length) {
-          const names = [...new Set(bs.map(b=>b.player_name))]
-          const { data: pls } = await supabase.from('players').select('id,player_name,ppg,rpg,apg,position')
-            .in('player_name',names).not('ppg','is',null).order('career_points',{ascending:false}).limit(15)
-          setPlayers(pls||[])
-        }
-      } else if (sp==='football') {
-        const { data: bs } = await supabase.from('nfl_box_scores').select('player_name').eq('team_abbr',abbr).limit(500)
-        if (bs?.length) {
-          const names = [...new Set(bs.map(b=>b.player_name))]
-          const { data: pls } = await supabase.from('players').select('id,player_name,position,games_played')
-            .in('player_name',names).order('games_played',{ascending:false}).limit(15)
-          setPlayers(pls||[])
-        }
-      } else if (sp==='baseball') {
-        const { data: bs } = await supabase.from('mlb_box_scores').select('player_name').eq('team_abbr',abbr).limit(500)
-        if (bs?.length) {
-          const names = [...new Set(bs.map(b=>b.player_name))]
-          const { data: pls } = await supabase.from('players').select('id,player_name,position,games_played')
-            .in('player_name',names).order('games_played',{ascending:false}).limit(15)
-          setPlayers(pls||[])
-        }
-      }
       if (t.arena) { const { data: v } = await supabase.from('venues').select('id').eq('venue_name',t.arena).limit(1); if (v?.[0]) setVenueId(v[0].id) }
+      // Check if user has this team favorited
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: ug } = await supabase.from('user_profiles').select('favorite_teams').eq('user_id', user.id).single()
+        if (ug?.favorite_teams && Array.isArray(ug.favorite_teams) && ug.favorite_teams.includes(abbr)) setIsFavorite(true)
+      }
       setLoading(false)
     }
     load()
@@ -114,6 +95,27 @@ export default function TeamPage() {
 
       {team.description && <div style={{ fontSize:14, color:'var(--text)', lineHeight:1.8, borderLeft:`3px solid ${color}`, padding:'0 0 0 16px', margin:'16px 20px' }}>{team.description}</div>}
 
+      {/* Favorite team toggle */}
+      <div style={{ padding:'12px 20px', borderBottom:'1px solid var(--faint)' }}>
+        <button onClick={async () => {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user) { alert('Sign in to add favorite teams'); return }
+          const abbr = team.team_abbr||team.abbreviation
+          const { data: ug } = await supabase.from('user_profiles').select('favorite_teams').eq('user_id', user.id).single()
+          const current = ug?.favorite_teams || []
+          const updated = isFavorite ? current.filter(t => t !== abbr) : [...current, abbr]
+          await supabase.from('user_profiles').upsert({ user_id: user.id, favorite_teams: updated })
+          setIsFavorite(!isFavorite)
+        }} className="sans" style={{
+          display:'inline-flex', alignItems:'center', gap:6, padding:'8px 16px', fontSize:12, fontWeight:600,
+          border: isFavorite ? `1.5px solid ${color}` : '1.5px solid var(--faint)', borderRadius:4, cursor:'pointer',
+          background: isFavorite ? `${color}15` : 'transparent', color: isFavorite ? color : 'var(--dim)',
+          transition:'all 0.2s'
+        }}>
+          {isFavorite ? '\u2605' : '\u2606'} {isFavorite ? 'Favorited' : 'Add to My Teams'}
+        </button>
+      </div>
+
       {notable.length > 0 && (() => {
         const allTimerGames = notable.filter(g => g.tier === 1)
         const otherNotable = notable.filter(g => g.tier !== 1)
@@ -160,23 +162,17 @@ export default function TeamPage() {
           </div>
         </div>
         <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Playoff and championship games</div>
-        {[...games].sort((a,b) => archiveSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||'')).map((g, idx) => <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
+        {[...games].sort((a,b) => archiveSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||'')).map((g, idx) => { const sw = scoreWithWinner(g); return <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
           const playlist = games.map(gm => ({ href: `/game/${gm.id}`, title: gm.sport === 'golf' ? gm.title : `${gm.away_team_abbr} ${gm.away_score} / ${gm.home_score} ${gm.home_team_abbr}` }))
           savePlaylist(playlist, idx)
         }} className="game-row" style={{ padding:'10px 0' }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
-            <span style={{ fontSize:14, color:'var(--ink)' }}>{g.sport === 'golf' ? g.title : `${g.away_team_abbr} ${g.away_score} / ${g.home_score} ${g.home_team_abbr}`}</span>
+            {sw ? <span style={{ fontSize:14 }}><span style={{ color: sw.away.won ? 'var(--ink)' : 'var(--dim)', fontWeight: sw.away.won ? 700 : 400 }}>{sw.away.abbr} {sw.away.score}</span><span style={{ color:'var(--dim)' }}> / </span><span style={{ color: sw.home.won ? 'var(--ink)' : 'var(--dim)', fontWeight: sw.home.won ? 700 : 400 }}>{sw.home.score} {sw.home.abbr}</span></span>
+              : <span style={{ fontSize:14, color:'var(--ink)' }}>{g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</span>}
             <span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</span>
           </div>
           {g.series_info && <div className="sans" style={{ fontSize:10, color:'var(--copper)', marginTop:2 }}>{g.series_info}</div>}
-        </Link>)}
-      </div></>}
-
-      {players.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
-        <div className="sec-head">NOTABLE PLAYERS</div>
-        <div className="perf-scroll">{players.map(p => <Link key={p.id} href={`/player/${p.id}`} className="perf-card" style={{ width:130, borderTopColor:color }}>
-          <div className="perf-name">{p.player_name}</div><div className="perf-sub">{p.position}{p.ppg?` \u00B7 ${p.ppg} PPG`:''}{!p.ppg&&p.games_played?` \u00B7 ${p.games_played} GP`:''}</div>
-        </Link>)}</div>
+        </Link>})}
       </div></>}
       <div style={{ height:80 }}></div>
     </div>

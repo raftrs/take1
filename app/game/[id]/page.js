@@ -23,6 +23,7 @@ export default function GamePage() {
   const [showStory, setShowStory] = useState(false)
   const [playerMap, setPlayerMap] = useState({})
   const [showBox, setShowBox] = useState(false)
+  const [stories, setStories] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -75,6 +76,16 @@ export default function GamePage() {
           const { data: p } = await supabase.from('players').select('id,player_name').in('player_name', names)
           if (p) { const m = {}; p.forEach(x => m[x.player_name] = x.id); setPlayerMap(m) }
         }
+      }
+      // Load From the Stands stories
+      const { data: st } = await supabase.from('user_games').select('id,user_id,story,rating,attended,created_at')
+        .eq('game_id', g.id).not('story', 'is', null).neq('story', '').order('created_at', { ascending: false }).limit(20)
+      if (st?.length) {
+        const uids = [...new Set(st.map(s => s.user_id))]
+        const { data: profiles } = await supabase.from('user_profiles').select('user_id,username,display_name').in('user_id', uids)
+        const pMap = {}
+        if (profiles) profiles.forEach(p => { pMap[p.user_id] = p })
+        setStories(st.map(s => ({ ...s, profile: pMap[s.user_id] })))
       }
       setLoading(false)
     }
@@ -166,6 +177,30 @@ export default function GamePage() {
         if (user) await supabase.from('user_games').update({ story }).eq('user_id', user.id).eq('game_id', game.id)
         setShowStory(false)
       }} onSkip={() => setShowStory(false)} />}
+
+      {/* FROM THE STANDS */}
+      {stories.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
+        <div style={{ padding:20 }}>
+          <div className="sec-head">FROM THE STANDS ({stories.length})</div>
+          {stories.map(s => (
+            <div key={s.id} style={{ padding:'12px 0', borderBottom:'1px solid var(--faint)' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+                <div className="sans" style={{ fontSize:12, color:'var(--copper)', fontWeight:600 }}>
+                  {s.profile?.display_name || s.profile?.username || 'Anonymous'}
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                  {s.attended && <span className="sans" style={{ fontSize:9, color:'var(--copper)', fontWeight:600, letterSpacing:0.5, padding:'2px 6px', border:'1px solid var(--copper)', borderRadius:2 }}>WAS THERE</span>}
+                  {s.rating && <span style={{ fontSize:11, color:'var(--gold)' }}>{'★'.repeat(s.rating)}</span>}
+                </div>
+              </div>
+              <div style={{ fontSize:14, color:'var(--text)', lineHeight:1.7 }}>{s.story}</div>
+              <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:6 }}>
+                {new Date(s.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </>)}
 
       {perfs.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
         <div style={{ padding:'20px 0 0 20px' }}>

@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { formatDate, sportLabel, showScore, normalizeCity, savePlaylist } from '@/lib/utils'
+import { formatDate, sportLabel, showScore, scoreWithWinner, normalizeCity, savePlaylist } from '@/lib/utils'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import SportBadge from '@/components/SportBadge'
@@ -49,7 +49,7 @@ export default function BrowsePage() {
       if (sv) tq = tq.eq('sport', sv)
       const { data: tm } = await tq; setTeams(tm||[])
 
-      let vq = supabase.from('venues').select('id,venue_name,venue_city,sport').not('description','is',null).order('venue_name')
+      let vq = supabase.from('venues').select('id,venue_name,venue_city,sport,description').not('description','is',null).order('venue_name')
       if (sv) vq = vq.eq('sport', sv)
       const { data: vn } = await vq; setVenues(vn||[])
 
@@ -179,8 +179,8 @@ export default function BrowsePage() {
     const { data: cv } = await supabase.from('venues').select('venue_city').ilike('venue_city', `%${q}%`).limit(20)
     const { data: ct } = await supabase.from('teams').select('city').ilike('city', `%${q}%`).eq('active', true).limit(10)
     const s = new Set()
-    if (cv) cv.forEach(v => { if (v.venue_city) s.add(v.venue_city) })
-    if (ct) ct.forEach(t => { if (t.city) s.add(t.city) })
+    if (cv) cv.forEach(v => { if (v.venue_city) s.add(normalizeCity(v.venue_city)) })
+    if (ct) ct.forEach(t => { if (t.city) s.add(normalizeCity(t.city)) })
     setCityOptions([...s].slice(0, 10))
   }
 
@@ -214,7 +214,7 @@ export default function BrowsePage() {
           onKeyDown={handleSearchKeyDown}
           placeholder="Search players, teams, games, venues..."
           className="search-input"
-          style={{ width:'100%', padding:'14px 16px', fontSize:14, fontFamily:"'Crete Round', Georgia, serif", color:'var(--ink)', backgroundColor:'var(--card)', border:'2px solid var(--faint)', borderRadius:4, outline:'none', boxSizing:'border-box' }}
+          style={{ width:'100%', fontSize:16, fontFamily:"'Crete Round', Georgia, serif", color:'var(--ink)', backgroundColor:'var(--card)', border:'2px solid var(--faint)', borderRadius:4, outline:'none', boxSizing:'border-box' }}
         />
         {/* Autocomplete dropdown - stays on top */}
         {showSuggestions && suggestions.length > 0 && (
@@ -327,12 +327,15 @@ export default function BrowsePage() {
               {['Recent','Oldest'].map(s => <button key={s} onClick={() => { setBrowseSort(s==='Recent'?'desc':'asc'); setTimeout(() => applyFilters(filters), 0) }} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===browseSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===browseSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
             </div>
           </div>
-          {filteredGames.map((g, idx) => <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
+          {filteredGames.map((g, idx) => { const sw = scoreWithWinner(g); return <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
             savePlaylist(filteredGames.map(fg => ({ href: `/game/${fg.id}`, title: showScore(fg) || fg.title || `${fg.away_team_abbr} @ ${fg.home_team_abbr}` })), idx)
           }} className="game-row" style={{ padding:'10px 0' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}><SportBadge sport={g.sport}/><span style={{ fontSize:14, color:'var(--ink)' }}>{showScore(g) || g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</span></div>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}><SportBadge sport={g.sport}/>
+              {sw ? <span style={{ fontSize:14 }}><span style={{ color: sw.away.won ? 'var(--ink)' : 'var(--dim)', fontWeight: sw.away.won ? 700 : 400 }}>{sw.away.abbr} {sw.away.score}</span><span style={{ color:'var(--dim)' }}> / </span><span style={{ color: sw.home.won ? 'var(--ink)' : 'var(--dim)', fontWeight: sw.home.won ? 700 : 400 }}>{sw.home.score} {sw.home.abbr}</span></span>
+                : <span style={{ fontSize:14, color:'var(--ink)' }}>{g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</span>}
+            </div>
             <div style={{ display:'flex', justifyContent:'space-between', marginTop:3 }}><span className="sans" style={{ fontSize:10, color:'var(--copper)' }}>{g.series_info}</span><span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</span></div>
-          </Link>)}
+          </Link>})}
           {filteredGames.length===0 && <div style={{ fontSize:13, color:'var(--dim)', padding:'20px 0' }}>No games match these filters</div>}
         </>}
       </div>}
@@ -351,7 +354,13 @@ export default function BrowsePage() {
         })()}
         {ats.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>ALL-TIMERS</div>{ats.slice(0,6).map(g => <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'8px 0' }}><div style={{ display:'flex', alignItems:'center', gap:8 }}><SportBadge sport={g.sport}/><span style={{ fontSize:13, color:'var(--ink)' }}>{g.title}</span></div><div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2, marginLeft:44 }}>{formatDate(g.game_date)}</div></Link>)}</>}
         {browseCities.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>CITIES</div><div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>{browseCities.map(c => <Link key={c} href={`/city/${encodeURIComponent(c)}`} style={{ padding:'6px 12px', fontSize:11, fontFamily:'Arial,sans-serif', background:'var(--card)', border:'1px solid var(--faint)', color:'var(--ink)', textDecoration:'none', borderRadius:4 }}>{c}</Link>)}</div></>}
-        {venues.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>{isGolf?'COURSES':'VENUES'}</div><div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>{venues.slice(0,20).map(v => <Link key={v.id} href={`/venue/${v.id}`} style={{ padding:'6px 12px', fontSize:11, fontFamily:'Arial,sans-serif', background:'var(--card)', border:'1px solid var(--faint)', color:'var(--ink)', textDecoration:'none', borderRadius:4 }}>{v.venue_name}</Link>)}</div></>}
+        {venues.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>{isGolf?'COURSES':'VENUES'}</div><div style={{ display:'flex', flexDirection:'column', gap:8 }}>{venues.slice(0,20).map(v => <Link key={v.id} href={`/venue/${v.id}`} style={{ padding:'12px 14px', background:'var(--card)', border:'1px solid var(--faint)', textDecoration:'none', borderRadius:4, display:'block' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
+            <span style={{ fontSize:14, color:'var(--ink)', fontWeight:600 }}>{v.venue_name}</span>
+            <span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{v.venue_city}</span>
+          </div>
+          {v.description && <div className="sans" style={{ fontSize:11, color:'var(--muted)', marginTop:4, lineHeight:1.5, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>{v.description}</div>}
+        </Link>)}</div></>}
       </div>}
     </div>
   )

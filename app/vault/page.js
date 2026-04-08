@@ -8,13 +8,14 @@ import TopLogo from '@/components/TopLogo'
 
 export default function VaultPage() {
   const [featured, setFeatured] = useState(null)
-  const [allTimers, setAllTimers] = useState({ basketball: [], football: [], golf: [] })
+  const [allTimers, setAllTimers] = useState({ basketball: [], football: [], golf: [], baseball: [] })
   const [collections, setCollections] = useState([])
   const [notables, setNotables] = useState([])
   const [atSort, setAtSort] = useState('desc')
   const [atSport, setAtSport] = useState('all')
   const [showAllAT, setShowAllAT] = useState(false)
   const [showAllNotables, setShowAllNotables] = useState(false)
+  const [notableSort, setNotableSort] = useState('desc')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function VaultPage() {
           basketball: at.filter(g => g.sport === 'basketball'),
           football: at.filter(g => g.sport === 'football'),
           golf: at.filter(g => g.sport === 'golf'),
+          baseball: at.filter(g => g.sport === 'baseball'),
         })
       }
 
@@ -67,7 +69,7 @@ export default function VaultPage() {
       // Tier 2 notables
       const { data: t2 } = await supabase.from('notable_games')
         .select('id,title,game_date,sport,tier')
-        .eq('tier', 2).order('game_date', { ascending: false }).limit(50)
+        .eq('tier', 2).order('game_date', { ascending: false }).limit(500)
       setNotables(t2 || [])
 
       setLoading(false)
@@ -78,12 +80,19 @@ export default function VaultPage() {
   if (loading) return <div className="loading">Loading...</div>
 
   const allAT = atSport === 'all'
-    ? [...allTimers.basketball, ...allTimers.football, ...allTimers.golf]
+    ? [...allTimers.basketball, ...allTimers.football, ...allTimers.golf, ...allTimers.baseball]
     : allTimers[atSport] || []
   const sortedAT = [...allAT].sort((a, b) =>
     atSort === 'desc' ? (b.game_date || '').localeCompare(a.game_date || '') : (a.game_date || '').localeCompare(b.game_date || '')
   )
   const displayAT = showAllAT ? sortedAT : sortedAT.slice(0, 20)
+
+  const filteredNotables = atSport === 'all' ? notables : notables.filter(g => g.sport === atSport)
+  const sortedNotables = [...filteredNotables].sort((a, b) =>
+    notableSort === 'desc' ? (b.game_date || '').localeCompare(a.game_date || '') : (a.game_date || '').localeCompare(b.game_date || '')
+  )
+
+  const filteredCollections = collections // collections don't have sport, keep as-is
 
   const hero = featured?.game
 
@@ -93,6 +102,17 @@ export default function VaultPage() {
       <div style={{ padding: '16px 20px 0', borderBottom: '2px solid var(--rule)' }}>
         <div style={{ fontSize: 20, color: 'var(--ink)', marginBottom: 4 }}>The Vault</div>
         <div className="sans" style={{ fontSize: 11, color: 'var(--dim)', marginBottom: 12, fontStyle: 'italic' }}>The games, the collections, the ones that matter.</div>
+        {/* Global sport filter */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+          {[{ k: 'all', l: 'All' }, { k: 'basketball', l: 'NBA' }, { k: 'football', l: 'NFL' }, { k: 'golf', l: 'Golf' }, { k: 'baseball', l: 'MLB' }].map(s => (
+            <button key={s.k} onClick={() => setAtSport(s.k)} className="sans" style={{
+              padding: '5px 14px', fontSize: 11, fontWeight: 600, letterSpacing: 0.5,
+              border: atSport === s.k ? '1.5px solid var(--copper)' : '1.5px solid var(--faint)',
+              borderRadius: 4, backgroundColor: atSport === s.k ? 'var(--copper)' : 'transparent',
+              color: atSport === s.k ? '#fff' : 'var(--dim)', cursor: 'pointer',
+            }}>{s.l}</button>
+          ))}
+        </div>
       </div>
 
       {/* FEATURED */}
@@ -122,17 +142,7 @@ export default function VaultPage() {
           </div>
         </div>
 
-        {/* Sport filter */}
-        <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-          {[{ k: 'all', l: 'All' }, { k: 'basketball', l: 'NBA' }, { k: 'football', l: 'NFL' }, { k: 'golf', l: 'Golf' }].map(s => (
-            <button key={s.k} onClick={() => setAtSport(s.k)} className="sans" style={{
-              padding: '5px 14px', fontSize: 11, fontWeight: 600, letterSpacing: 0.5,
-              border: atSport === s.k ? '1.5px solid var(--copper)' : '1.5px solid var(--faint)',
-              borderRadius: 4, backgroundColor: atSport === s.k ? 'var(--copper)' : 'transparent',
-              color: atSport === s.k ? '#fff' : 'var(--dim)', cursor: 'pointer',
-            }}>{s.l}</button>
-          ))}
-        </div>
+        {/* Sport filter is now global at top of page */}
 
         <div style={{ maxHeight: showAllAT ? 'none' : 600, overflowY: showAllAT ? 'visible' : 'auto' }}>
           {displayAT.map((g, idx) => (
@@ -177,12 +187,20 @@ export default function VaultPage() {
       </>)}
 
       {/* NOTABLES (Tier 2) */}
-      {notables.length > 0 && (<>
+      {sortedNotables.length > 0 && (<>
         <hr className="sec-rule" /><hr className="sec-rule-thin" />
         <div style={{ padding: 20 }}>
-          <div className="sec-head">NOTABLE GAMES</div>
-          <div className="sans" style={{ fontSize: 10, color: 'var(--dim)', marginTop: -10, marginBottom: 14 }}>Great games that didn't quite reach All-Timer status.</div>
-          {(showAllNotables ? notables : notables.slice(0, 15)).map((g, idx) => (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+            <div className="sec-head" style={{ marginBottom: 0 }}>NOTABLE GAMES ({sortedNotables.length})</div>
+            <div style={{ display: 'flex' }}>
+              {['Recent', 'Oldest'].map(s => {
+                const v = s === 'Recent' ? 'desc' : 'asc'
+                return <button key={s} onClick={() => setNotableSort(v)} className="sans" style={{ padding: '3px 10px', fontSize: 10, fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', color: v === notableSort ? 'var(--copper)' : 'var(--dim)', borderBottom: v === notableSort ? '2px solid var(--copper)' : '2px solid transparent' }}>{s}</button>
+              })}
+            </div>
+          </div>
+          <div className="sans" style={{ fontSize: 10, color: 'var(--dim)', marginBottom: 14 }}>Great games that didn't quite reach All-Timer status.</div>
+          {(showAllNotables ? sortedNotables : sortedNotables.slice(0, 15)).map((g, idx) => (
             <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding: '8px 0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <SportBadge sport={g.sport} />
@@ -193,9 +211,9 @@ export default function VaultPage() {
               </div>
             </Link>
           ))}
-          {notables.length > 15 && (
+          {sortedNotables.length > 15 && (
             <div className="box-toggle" onClick={() => setShowAllNotables(!showAllNotables)} style={{ textAlign: 'center', marginTop: 8 }}>
-              {showAllNotables ? 'Show fewer \u2191' : `See all ${notables.length} \u2193`}
+              {showAllNotables ? 'Show fewer \u2191' : `See all ${sortedNotables.length} \u2193`}
             </div>
           )}
         </div>
