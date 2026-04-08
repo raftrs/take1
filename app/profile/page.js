@@ -1,30 +1,164 @@
+'use client'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { useAuth } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
 import TopLogo from '@/components/TopLogo'
 
 export default function ProfilePage() {
-  return (
+  const { user, profile, loading, signOut } = useAuth()
+  const [stats, setStats] = useState({ logged: 0, attended: 0, stories: 0, encounters: 0, venues: 0, avgRating: 0 })
+  const [favorites, setFavorites] = useState([])
+  const [recentLogs, setRecentLogs] = useState([])
+  const [showLogs, setShowLogs] = useState(false)
+
+  useEffect(() => {
+    if (!user) return
+    async function loadStats() {
+      // User games
+      const { data: ug } = await supabase.from('user_games').select('id,game_id,rating,attended,story,created_at').eq('user_id', user.id).order('created_at', { ascending: false })
+      const games = ug || []
+      const logged = games.length
+      const attended = games.filter(g => g.attended).length
+      const stories = games.filter(g => g.story && g.story.trim()).length
+      const ratings = games.filter(g => g.rating).map(g => g.rating)
+      const avgRating = ratings.length > 0 ? (ratings.reduce((a,b) => a+b, 0) / ratings.length).toFixed(1) : 0
+
+      // Venues attended
+      const attendedIds = games.filter(g => g.attended).map(g => g.game_id)
+      let venueCount = 0
+      if (attendedIds.length > 0) {
+        const { data: vg } = await supabase.from('games').select('venue').in('id', attendedIds.slice(0, 200))
+        if (vg) venueCount = new Set(vg.map(g => g.venue).filter(Boolean)).size
+      }
+
+      // Encounters
+      const { count: encCount } = await supabase.from('encounters').select('id', { count: 'exact', head: true }).eq('user_id', user.id)
+
+      // Favorites
+      const { data: favs } = await supabase.from('favorite_games').select('*').eq('user_id', user.id).order('position')
+      if (favs && favs.length > 0) {
+        const gIds = favs.filter(f => f.game_id).map(f => f.game_id)
+        const nIds = favs.filter(f => f.notable_game_id).map(f => f.notable_game_id)
+        const { data: gd } = gIds.length > 0 ? await supabase.from('games').select('id,title,home_team_abbr,away_team_abbr,home_score,away_score,game_date,sport').in('id', gIds) : { data: [] }
+        const { data: nd } = nIds.length > 0 ? await supabase.from('notable_games').select('id,title,game_date,sport').in('id', nIds) : { data: [] }
+        setFavorites(favs.map(f => {
+          const game = gd?.find(g => g.id === f.game_id) || nd?.find(n => n.id === f.notable_game_id)
+          return { ...f, game }
+        }))
+      }
+
+      // Recent logs with game data
+      if (games.length > 0) {
+        const ids = games.slice(0, 20).map(g => g.game_id)
+        const { data: gd } = await supabase.from('games').select('id,title,home_team_abbr,away_team_abbr,home_score,away_score,game_date,sport').in('id', ids)
+        setRecentLogs(games.slice(0, 20).map(ug => ({ ...ug, game: gd?.find(g => g.id === ug.game_id) })))
+      }
+
+      setStats({ logged, attended, stories, encounters: encCount || 0, venues: venueCount, avgRating })
+    }
+    loadStats()
+  }, [user])
+
+  if (loading) return <div className="loading">Loading...</div>
+
+  if (!user) return (
     <div>
       <TopLogo />
-      <div style={{ padding:'16px 20px', borderBottom:'2px solid var(--rule)' }}><div style={{ fontSize:20, color:'var(--ink)' }}>Profile</div></div>
       <div style={{ padding:'40px 20px', textAlign:'center', borderBottom:'1px solid var(--faint)' }}>
         <div style={{ fontSize:28, color:'var(--ink)', letterSpacing:4, marginBottom:8 }}>raftrs</div>
         <div style={{ fontSize:14, color:'var(--muted)', fontStyle:'italic', marginBottom:24 }}>Share the stories you&apos;ll never forget.</div>
-        <div style={{ display:'inline-block', padding:'14px 36px', background:'var(--copper)', color:'#fff', fontSize:13, fontFamily:'Arial,sans-serif', fontWeight:600, letterSpacing:1, cursor:'pointer' }}>CREATE AN ACCOUNT</div>
-        <div style={{ fontSize:12, color:'var(--dim)', marginTop:14 }}>Already have an account? <span style={{ color:'var(--copper)', cursor:'pointer' }}>Log in</span></div>
+        <Link href="/auth" style={{ display:'inline-block', padding:'14px 36px', background:'var(--copper)', color:'#fff', fontSize:13, fontFamily:'Arial,sans-serif', fontWeight:600, letterSpacing:1, textDecoration:'none' }}>SIGN IN / CREATE ACCOUNT</Link>
       </div>
-      <div style={{ padding:20 }}>
-        <div className="sec-head">WHAT YOU CAN DO</div>
+      <div style={{ height:80 }}></div>
+    </div>
+  )
+
+  return (
+    <div>
+      <TopLogo />
+      {/* TRADING CARD HEADER */}
+      <div style={{ padding:'24px 20px', borderBottom:'2px solid var(--rule)' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+          <div>
+            <div style={{ fontSize:22, color:'var(--ink)', lineHeight:1.2 }}>{profile?.display_name || profile?.username || 'Fan'}</div>
+            <div className="sans" style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>@{profile?.username}</div>
+            {profile?.member_number && profile.member_number <= 1000 && (
+              <div className="sans" style={{ display:'inline-block', fontSize:9, fontWeight:700, letterSpacing:1.5, padding:'3px 10px', marginTop:6, background:'var(--gold)', color:'#fff', borderRadius:2 }}>
+                FOUNDING MEMBER #{profile.member_number}
+              </div>
+            )}
+            {profile?.city && <div className="sans" style={{ fontSize:11, color:'var(--copper)', marginTop:4 }}>{profile.city}</div>}
+          </div>
+          <div onClick={signOut} className="sans" style={{ fontSize:10, color:'var(--dim)', cursor:'pointer', padding:'4px 10px', border:'1px solid var(--faint)' }}>Sign out</div>
+        </div>
+
+        {/* Favorite teams */}
+        {profile?.favorite_teams?.length > 0 && <div style={{ display:'flex', gap:6, marginTop:12, flexWrap:'wrap' }}>
+          {profile.favorite_teams.map(t => <span key={t} className="sans" style={{ fontSize:10, padding:'3px 8px', background:'rgba(181,86,58,0.08)', color:'var(--copper)', border:'1px solid var(--copper)', letterSpacing:0.5 }}>{t}</span>)}
+        </div>}
+
+        {/* THE FOUR BANNERS */}
+        {favorites.length > 0 && <div style={{ marginTop:16 }}>
+          <div className="sans" style={{ fontSize:8, color:'var(--dim)', letterSpacing:2, fontWeight:600, marginBottom:8 }}>MY ALL-TIMERS</div>
+          <div style={{ display:'flex', gap:8 }}>
+            {[1,2,3,4].map(pos => {
+              const fav = favorites.find(f => f.position === pos)
+              return <div key={pos} style={{ flex:1, padding:'8px 6px', background: fav ? 'rgba(181,86,58,0.06)' : 'var(--surface)', border:`1px solid ${fav ? 'var(--copper)' : 'var(--faint)'}`, textAlign:'center', minHeight:48, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                {fav?.game ? <div style={{ fontSize:11, color:'var(--ink)', lineHeight:1.3 }}>{fav.game.title || `${fav.game.away_team_abbr} @ ${fav.game.home_team_abbr}`}</div>
+                : <div className="sans" style={{ fontSize:18, color:'var(--faint)' }}>+</div>}
+              </div>
+            })}
+          </div>
+        </div>}
+      </div>
+
+      {/* STAT GRID */}
+      <div style={{ display:'flex', borderBottom:'1px solid var(--faint)' }}>
         {[
-          {t:'Rate and log games',d:'Build a personal catalog of every playoff game, championship, and classic you\'ve watched or attended.'},
-          {t:'Tell your stories',d:'From the Stands is where your memories live. The game you took your kid to. The bar where everything changed.'},
-          {t:'Follow your teams',d:'Add teams to your profile and see their full playoff history, All-Timers, and what other fans are saying.'},
-          {t:'Track your venues',d:'Mark arenas, stadiums, and courses you\'ve visited. Build a bucket list of the ones you haven\'t.'},
-          {t:'Share reflections',d:'Write about what a player meant to you. The stuff that doesn\'t fit in a box score.'},
-          {t:'Log your encounters',d:'Ever meet your hero in an airport? Bump into a legend at dinner? Those moments deserve a place too.'},
-        ].map((f,i) => <div key={i} style={{ borderBottom:'1px solid var(--faint)', padding:'14px 0' }}>
-          <div style={{ fontSize:14, color:'var(--ink)', marginBottom:4 }}>{f.t}</div>
-          <div className="sans" style={{ fontSize:11, color:'var(--dim)', lineHeight:1.5 }}>{f.d}</div>
-        </div>)}
+          { v: stats.logged, l: 'LOGGED' },
+          { v: stats.attended, l: 'ATTENDED' },
+          { v: stats.venues, l: 'VENUES' },
+          { v: stats.stories, l: 'STORIES' },
+          { v: stats.encounters, l: 'MET' },
+        ].map((s, i) => (
+          <div key={i} style={{ flex:1, textAlign:'center', padding:'14px 4px', borderRight: i < 4 ? '1px solid var(--faint)' : 'none' }}>
+            <div style={{ fontSize:20, color:'var(--ink)' }}>{s.v}</div>
+            <div className="sans" style={{ fontSize:7, color:'var(--dim)', letterSpacing:1, fontWeight:600, marginTop:2 }}>{s.l}</div>
+          </div>
+        ))}
       </div>
+
+      {/* AVG RATING */}
+      {stats.avgRating > 0 && <div style={{ padding:'12px 20px', borderBottom:'1px solid var(--faint)', display:'flex', alignItems:'center', gap:8 }}>
+        <div className="sans" style={{ fontSize:9, color:'var(--dim)', letterSpacing:2, fontWeight:600 }}>AVG RATING</div>
+        <div style={{ fontSize:16, color:'var(--gold)' }}>{'★'.repeat(Math.round(stats.avgRating))}</div>
+        <div className="sans" style={{ fontSize:12, color:'var(--ink)' }}>{stats.avgRating}</div>
+      </div>}
+
+      {/* RECENT ACTIVITY */}
+      {recentLogs.length > 0 && (<>
+        <div style={{ padding:'16px 20px 0' }}>
+          <div className="sec-head" onClick={() => setShowLogs(!showLogs)} style={{ cursor:'pointer' }}>
+            RECENT ACTIVITY
+            <span className="sans" style={{ fontSize:10, color:'var(--copper)', marginLeft:8 }}>{showLogs ? 'Hide' : `Show all ${stats.logged}`}</span>
+          </div>
+        </div>
+        {(showLogs ? recentLogs : recentLogs.slice(0, 5)).map(log => {
+          const g = log.game
+          if (!g) return null
+          return <Link key={log.id} href={`/game/${g.id}`} style={{ display:'block', padding:'10px 20px', borderBottom:'1px solid var(--faint)', textDecoration:'none' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
+              <span style={{ fontSize:13, color:'var(--ink)' }}>{g.title || `${g.away_team_abbr} ${g.away_score} / ${g.home_score} ${g.home_team_abbr}`}</span>
+              <span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{log.attended ? 'Attended' : 'Watched'}</span>
+            </div>
+            {log.rating && <div style={{ fontSize:12, color:'var(--gold)', marginTop:2 }}>{'★'.repeat(log.rating)}</div>}
+            {log.story && <div style={{ fontSize:12, color:'var(--muted)', marginTop:4, fontStyle:'italic' }}>{log.story.slice(0, 80)}{log.story.length > 80 ? '...' : ''}</div>}
+          </Link>
+        })}
+      </>)}
+
+      <div style={{ height:80 }}></div>
     </div>
   )
 }

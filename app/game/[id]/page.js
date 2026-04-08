@@ -12,6 +12,7 @@ import TopLogo from '@/components/TopLogo'
 import PromptDeck from '@/components/PromptDeck'
 import WeatherIntro from '@/components/WeatherIntro'
 import WeatherDisplay from '@/components/WeatherDisplay'
+import StoryOverlay from '@/components/StoryOverlay'
 
 export default function GamePage() {
   const { id } = useParams()
@@ -20,6 +21,7 @@ export default function GamePage() {
   const [golf, setGolf] = useState([])
   const [teamMap, setTeamMap] = useState({})
   const [venueId, setVenueId] = useState(null)
+  const [showStory, setShowStory] = useState(false)
   const [playerMap, setPlayerMap] = useState({})
   const [showBox, setShowBox] = useState(false)
   const [story, setStory] = useState('')
@@ -133,12 +135,13 @@ export default function GamePage() {
           <WeatherDisplay weather={typeof game.weather === 'string' ? JSON.parse(game.weather) : game.weather} sport={sp} />
         </div>
         {game.context_blurb && <div className="blurb" style={{ marginTop:14 }}>{game.context_blurb}</div>}
-        <YourCall />
+        <YourCall gameId={game.id} onLogged={() => setShowStory(true)} />
         <div style={{ marginTop:24 }}>
           <PromptDeck type="game" onSelect={(prompt) => setStory(prompt)} />
           <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Or write your own..." value={story} onChange={e => setStory(e.target.value)} />
         </div>
       </div>
+      {showStory && <StoryOverlay gameId={game.id} onClose={() => setShowStory(false)} />}
 
       {perfs.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
         <div style={{ padding:'20px 0 0 20px' }}>

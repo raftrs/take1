@@ -1,8 +1,50 @@
 'use client'
-import { useState } from 'react'
-export default function YourCall({ storyValue, onStoryChange }) {
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
+
+export default function YourCall({ gameId, notableGameId, onLogged }) {
+  const { user } = useAuth()
+  const router = useRouter()
   const [rating, setRating] = useState(0)
   const [att, setAtt] = useState(null)
+  const [logged, setLogged] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!user || !gameId) return
+    supabase.from('user_games').select('id,rating,attended').eq('user_id', user.id).eq('game_id', gameId).single()
+      .then(({ data }) => {
+        if (data) {
+          setLogged(true)
+          setRating(data.rating || 0)
+          setAtt(data.attended ? 'there' : 'watched')
+        }
+      })
+  }, [user, gameId])
+
+  async function handleLog() {
+    if (!user) { router.push('/auth'); return }
+    if (!rating && !att) return
+    setSaving(true)
+    const payload = {
+      user_id: user.id,
+      game_id: gameId,
+      notable_game_id: notableGameId || null,
+      rating: rating || null,
+      attended: att === 'there',
+    }
+    if (logged) {
+      await supabase.from('user_games').update(payload).eq('user_id', user.id).eq('game_id', gameId)
+    } else {
+      await supabase.from('user_games').upsert(payload)
+    }
+    setLogged(true)
+    setSaving(false)
+    if (onLogged) onLogged({ gameId, rating, attended: att === 'there' })
+  }
+
   return (
     <div style={{ padding:'16px 0' }}>
       <div className="sec-head">YOUR CALL</div>
@@ -17,7 +59,9 @@ export default function YourCall({ storyValue, onStoryChange }) {
         <button className={`att-opt${att==='there'?' on':''}`} onClick={() => setAtt(att==='there'?null:'there')}>I Was There</button>
         <button className={`att-opt${att==='watched'?' on':''}`} onClick={() => setAtt(att==='watched'?null:'watched')}>Watched It</button>
       </div>
-      <div className="log-btn" style={{ marginTop:12 }}>LOG THIS GAME</div>
+      <div className="log-btn" style={{ marginTop:12, opacity: saving ? 0.6 : 1 }} onClick={handleLog}>
+        {saving ? 'SAVING...' : logged ? '✓ LOGGED' : 'LOG THIS GAME'}
+      </div>
     </div>
   )
 }
