@@ -153,7 +153,7 @@ export default function CityPage() {
 
       {/* ALL-TIMERS */}
       {allTimers.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
-        <div className="sec-head">ALL-TIMERS IN {cityName.toUpperCase()}</div>
+        <div className="sec-head">{cityName.toUpperCase()} ALL-TIMERS</div>
         {allTimers.map((g, idx) => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => {
           const playlist = allTimers.map(a => ({ href: `/notable/${a.id}`, title: a.title }))
           savePlaylist(playlist, idx)

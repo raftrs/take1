@@ -9,7 +9,6 @@ import SportBadge from '@/components/SportBadge'
 import YourCall from '@/components/YourCall'
 import GameNav from '@/components/GameNav'
 import TopLogo from '@/components/TopLogo'
-import PromptDeck from '@/components/PromptDeck'
 import WeatherIntro from '@/components/WeatherIntro'
 import WeatherDisplay from '@/components/WeatherDisplay'
 import StoryOverlay from '@/components/StoryOverlay'
@@ -23,7 +22,6 @@ export default function NotablePage() {
   const [venueId, setVenueId] = useState(null)
   const [playerMap, setPlayerMap] = useState({})
   const [showBox, setShowBox] = useState(false)
-  const [story, setStory] = useState('')
   const [weather, setWeather] = useState(null)
   const [showStory, setShowStory] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -147,10 +145,6 @@ export default function NotablePage() {
         </div>
         {game.description && <div style={{ fontSize:15, color:'var(--text)', lineHeight:1.85, marginTop:16, borderLeft:'3px solid var(--gold)', paddingLeft:16 }}>{game.description}</div>}
         <YourCall gameId={game.game_id || game.id} notableGameId={game.id} onLogged={() => setShowStory(true)} />
-        <div style={{ marginTop:24 }}>
-          <PromptDeck type="game" onSelect={(prompt) => setStory(prompt)} />
-          <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Or write your own..." value={story} onChange={e => setStory(e.target.value)} />
-        </div>
       </div>
       {showStory && <StoryOverlay gameId={game.game_id || game.id} onClose={() => setShowStory(false)} />}
 

@@ -9,7 +9,6 @@ import SportBadge from '@/components/SportBadge'
 import YourCall from '@/components/YourCall'
 import GameNav from '@/components/GameNav'
 import TopLogo from '@/components/TopLogo'
-import PromptDeck from '@/components/PromptDeck'
 import WeatherIntro from '@/components/WeatherIntro'
 import WeatherDisplay from '@/components/WeatherDisplay'
 import StoryOverlay from '@/components/StoryOverlay'
@@ -24,7 +23,6 @@ export default function GamePage() {
   const [showStory, setShowStory] = useState(false)
   const [playerMap, setPlayerMap] = useState({})
   const [showBox, setShowBox] = useState(false)
-  const [story, setStory] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -136,10 +134,6 @@ export default function GamePage() {
         </div>
         {game.context_blurb && <div className="blurb" style={{ marginTop:14 }}>{game.context_blurb}</div>}
         <YourCall gameId={game.id} onLogged={() => setShowStory(true)} />
-        <div style={{ marginTop:24 }}>
-          <PromptDeck type="game" onSelect={(prompt) => setStory(prompt)} />
-          <textarea className="story-textarea" style={{ marginTop:12 }} placeholder="Or write your own..." value={story} onChange={e => setStory(e.target.value)} />
-        </div>
       </div>
       {showStory && <StoryOverlay gameId={game.id} onClose={() => setShowStory(false)} />}
 

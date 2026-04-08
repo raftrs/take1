@@ -88,11 +88,20 @@ export default function ProfilePage() {
           </div>
           {profile?.member_number && profile.member_number <= 1000 && (
             <div style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
-              <div style={{
-                width:48, height:64, background:'var(--gold)', clipPath:'polygon(0 0,100% 0,100% 85%,50% 100%,0 85%)',
-                display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', paddingBottom:10
-              }}>
-                <div className="sans" style={{ fontSize:18, fontWeight:800, color:'#fff', lineHeight:1 }}>{profile.member_number}</div>
+              <div style={{ position:'relative', width:52, height:68 }}>
+                {/* Gold border layer */}
+                <div style={{
+                  position:'absolute', top:0, left:0, width:52, height:68,
+                  background:'var(--gold)', clipPath:'polygon(0 0,100% 0,100% 85%,50% 100%,0 85%)',
+                }} />
+                {/* Copper inner */}
+                <div style={{
+                  position:'absolute', top:2, left:2, width:48, height:64,
+                  background:'var(--copper)', clipPath:'polygon(0 0,100% 0,100% 85%,50% 100%,0 85%)',
+                  display:'flex', alignItems:'center', justifyContent:'center', paddingBottom:10
+                }}>
+                  <div className="sans" style={{ fontSize:18, fontWeight:800, color:'#fff', lineHeight:1 }}>{profile.member_number}</div>
+                </div>
               </div>
               <div className="sans" style={{ fontSize:6, letterSpacing:1.5, fontWeight:700, color:'var(--gold)', marginTop:3, textAlign:'center', lineHeight:1.3 }}>FOUNDING<br/>MEMBER</div>
             </div>

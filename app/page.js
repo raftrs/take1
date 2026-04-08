@@ -23,7 +23,7 @@ export default function HomePage() {
       if (pool?.length > 0) setHero(pool[Math.floor(Math.random() * pool.length)])
 
       // All tier 1 for "Scroll the All-Timers"
-      const { data: atAll } = await supabase.from('notable_games').select('id,title').eq('tier', 1).not('description', 'is', null).order('game_date', { ascending: false })
+      const { data: atAll } = await supabase.from('notable_games').select('id,title,sport,game_date').eq('tier', 1).not('description', 'is', null).order('game_date', { ascending: false })
       setAllTimerList(atAll || [])
 
       const { data: cd } = await supabase.from('notable_games').select('id,title,game_date,away_team_abbr,home_team_abbr,away_score,home_score,sport,collections')
@@ -72,11 +72,21 @@ export default function HomePage() {
           {hero.venue && <div className="game-meta">{hero.venue}</div>}
           {hero.description && <div className="hero-blurb">{hero.description}</div>}
         </Link>
-        {allTimerList.length > 0 && <div style={{ padding:'0 20px 16px' }}><span className="sans" onClick={() => {
-          const playlist = allTimerList.map(g => ({ href: `/notable/${g.id}`, title: g.title }))
-          savePlaylist(playlist, 0)
-          window.location.href = playlist[0].href
-        }} style={{ fontSize:11, color:'var(--copper)', cursor:'pointer' }}>Scroll all {allTimerList.length} All-Timers &rarr;</span></div>}
+        {allTimerList.length > 0 && <div style={{ padding:'0 20px 16px' }}>
+          <div className="sec-head">ALL-TIMERS</div>
+          <div style={{ maxHeight:320, overflowY:'auto', paddingRight:4 }}>
+            {allTimerList.map((g, idx) => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => {
+              const playlist = allTimerList.map(gm => ({ href: `/notable/${gm.id}`, title: gm.title }))
+              savePlaylist(playlist, idx)
+            }} className="game-row" style={{ padding:'8px 0', display:'flex', alignItems:'center', gap:10 }}>
+              <SportBadge sport={g.sport}/>
+              <div>
+                <div style={{ fontSize:14, color:'var(--ink)' }}>{g.title}</div>
+                <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{formatDate(g.game_date)}</div>
+              </div>
+            </Link>)}
+          </div>
+        </div>}
       </>)}
 
       <hr className="sec-rule"/><hr className="sec-rule-thin"/>
