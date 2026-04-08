@@ -111,7 +111,7 @@ function TeamInput({ value, onChange, selected, onSelect, onClear, sport, placeh
         <button key={t.id} onClick={() => { onSelect(t); setOpts([]); }} style={dropRow}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: t.primary_color || copper, flexShrink: 0 }} />
           <span>{t.full_name}</span>
-          <span style={{ color: dim, fontSize: 11, marginLeft: 'auto' }}>{t.sport === 'basketball' ? 'NBA' : t.sport === 'football' ? 'NFL' : ''}</span>
+          <span style={{ color: dim, fontSize: 11, marginLeft: 'auto' }}>{t.sport === 'basketball' ? 'NBA' : t.sport === 'football' ? 'NFL' : t.sport === 'baseball' ? 'MLB' : ''}</span>
         </button>
       )}</div>}
     </div>
@@ -214,7 +214,7 @@ function GameFinder({ onSelect, selectable }) {
     <div>
       {/* Sport toggle */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-        {['basketball', 'football'].map(s => (
+        {['basketball', 'football', 'baseball'].map(s => (
           <button key={s} onClick={() => { setSport(s); clearAll(); }}
             style={{
               padding: '5px 14px', fontFamily: 'Manrope, Arial, sans-serif',
@@ -222,7 +222,7 @@ function GameFinder({ onSelect, selectable }) {
               border: sport === s ? `2px solid ${copper}` : `2px solid ${faint}`,
               borderRadius: 4, backgroundColor: sport === s ? copper : 'transparent',
               color: sport === s ? cream : dim, cursor: 'pointer',
-            }}>{s === 'basketball' ? 'NBA' : 'NFL'}</button>
+            }}>{s === 'basketball' ? 'NBA' : s === 'football' ? 'NFL' : 'MLB'}</button>
         ))}
       </div>
 

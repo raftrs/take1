@@ -18,8 +18,10 @@ export default function SearchPage() {
   const [searching, setSearching] = useState(false)
   const [searched, setSearched] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [activeIdx, setActiveIdx] = useState(-1)
   const timer = useRef(null)
   const sugTimer = useRef(null)
+  const wrapRef = useRef(null)
 
   // Autocomplete suggestions as you type
   const fetchSuggestions = useCallback(async (q) => {
@@ -74,10 +76,25 @@ export default function SearchPage() {
   function handleInput(val) {
     setTerm(val)
     setShowSuggestions(true)
+    setActiveIdx(-1)
     clearTimeout(sugTimer.current)
     sugTimer.current = setTimeout(() => fetchSuggestions(val), 200)
     clearTimeout(timer.current)
     timer.current = setTimeout(() => doSearch(val), 500)
+  }
+
+  function handleKeyDown(e) {
+    if (showSuggestions && suggestions.length > 0) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, suggestions.length - 1)) }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, -1)) }
+      else if (e.key === 'Enter') {
+        e.preventDefault()
+        if (activeIdx >= 0 && suggestions[activeIdx]) { handleSuggestionClick(suggestions[activeIdx]) }
+        else { setShowSuggestions(false); doSearch(term) }
+        return
+      } else if (e.key === 'Escape') { setShowSuggestions(false); setActiveIdx(-1); return }
+    }
+    if (e.key === 'Enter') { setShowSuggestions(false); doSearch(term) }
   }
 
   // Read ?q= from URL on mount
@@ -86,6 +103,17 @@ export default function SearchPage() {
     const q = params.get('q')
     if (q) { setTerm(q); doSearch(q) }
   }, [doSearch])
+
+  // Outside click to close suggestions
+  useEffect(() => {
+    function handleClick(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   function handleSuggestionClick(s) {
     if (s.href) { window.location.href = s.href; return }
@@ -98,18 +126,19 @@ export default function SearchPage() {
   return (
     <div>
       <TopLogo />
-      <div style={{ padding:'16px 20px', borderBottom:'2px solid var(--rule)' }}>
+      <div style={{ padding:'16px 20px', borderBottom:'2px solid var(--rule)' }} ref={wrapRef}>
         <div style={{ fontSize:20, color:'var(--ink)', marginBottom:12 }}>Search</div>
         <input className="search-input" type="text" placeholder="Teams, players, venues, cities, games..." value={term}
           onChange={e => handleInput(e.target.value)}
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-          onKeyDown={e => { if (e.key === 'Enter') { setShowSuggestions(false); doSearch(term) }}}
+          onKeyDown={handleKeyDown}
           autoFocus/>
         {/* Autocomplete dropdown */}
         {showSuggestions && suggestions.length > 0 && (
           <div className="ac-dropdown">
             {suggestions.map((s,i) => (
-              <div key={i} className="ac-item" onClick={() => handleSuggestionClick(s)}>
+              <div key={i} className="ac-item" onClick={() => handleSuggestionClick(s)} onMouseEnter={() => setActiveIdx(i)}
+                style={i === activeIdx ? { background:'var(--surface)' } : {}}>
                 {s.type === 'team' && <div style={{ width:10, height:10, borderRadius:'50%', background:s.color||'var(--dim)', flexShrink:0 }}></div>}
                 {s.type === 'venue' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--copper)" strokeWidth="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>}
                 {s.type === 'player' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--copper)" strokeWidth="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0112 0v1"/></svg>}

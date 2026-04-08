@@ -15,6 +15,8 @@ export default function VenuePage() {
   const [games, setGames] = useState([])
   const [showAllGames, setShowAllGames] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [beenHere, setBeenHere] = useState(false)
+  const [wantVisit, setWantVisit] = useState(false)
   const [story, setStory] = useState('')
   const [archiveSort, setArchiveSort] = useState('desc')
 
@@ -40,7 +42,7 @@ export default function VenuePage() {
 
   if (loading) return <div className="loading">Loading...</div>
   if (!venue) return <div className="empty">Venue not found</div>
-  const label = {basketball:'NBA ARENA',football:'NFL STADIUM',golf:'GOLF COURSE'}[venue.sport]||'VENUE'
+  const label = {basketball:'NBA ARENA',football:'NFL STADIUM',golf:'GOLF COURSE',baseball:'MLB BALLPARK'}[venue.sport]||'VENUE'
   const isGolf = venue.sport === 'golf'
   const displayGames = showAllGames ? games : games.slice(0, 10)
 
@@ -55,14 +57,14 @@ export default function VenuePage() {
       </div>
 
       <div style={{ display:'flex', borderBottom:'1px solid var(--faint)' }}>
-        <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'14px 12px', cursor:'pointer', color:'var(--dim)' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-          <span className="sans" style={{ fontSize:11, fontWeight:600 }}>I&apos;ve been here</span>
+        <div onClick={() => setBeenHere(!beenHere)} style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'14px 12px', cursor:'pointer', color: beenHere ? '#fff' : 'var(--dim)', background: beenHere ? 'var(--copper)' : 'transparent', transition:'all 0.2s' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill={beenHere ? '#fff' : 'none'} stroke={beenHere ? '#fff' : 'currentColor'} strokeWidth="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          <span className="sans" style={{ fontSize:11, fontWeight:600 }}>{beenHere ? '\u2713 Been here' : "I've been here"}</span>
         </div>
         <div style={{ width:1, background:'var(--faint)' }}></div>
-        <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'14px 12px', cursor:'pointer', color:'var(--dim)' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-          <span className="sans" style={{ fontSize:11, fontWeight:600 }}>Want to visit</span>
+        <div onClick={() => setWantVisit(!wantVisit)} style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'14px 12px', cursor:'pointer', color: wantVisit ? 'var(--gold)' : 'var(--dim)', background: wantVisit ? 'var(--gold-light)' : 'transparent', transition:'all 0.2s' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill={wantVisit ? 'var(--gold)' : 'none'} stroke={wantVisit ? 'var(--gold)' : 'currentColor'} strokeWidth="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          <span className="sans" style={{ fontSize:11, fontWeight:600 }}>{wantVisit ? 'On your list' : 'Want to visit'}</span>
         </div>
       </div>
 

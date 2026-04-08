@@ -10,6 +10,7 @@ import TopLogo from '@/components/TopLogo'
 const ROUNDS_NBA = ['First Round','Conference Semifinals','Conference Finals','NBA Finals']
 const ROUNDS_NFL = ['Wild Card','Divisional','Conference Championship','Super Bowl']
 const ROUNDS_GOLF = ['Masters','U.S. Open','The Open','PGA Championship']
+const ROUNDS_MLB = ['Wild Card','Division Series','Championship Series','World Series']
 
 export default function BrowsePage() {
   const router = useRouter()
@@ -21,6 +22,7 @@ export default function BrowsePage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [suggestions, setSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [activeIdx, setActiveIdx] = useState(-1)
   const sugRef = useRef(null)
 
   // Browse data
@@ -94,6 +96,25 @@ export default function BrowsePage() {
     return () => clearTimeout(t)
   }, [searchTerm, fetchSuggestions])
 
+  // Outside click to close browse suggestions
+  useEffect(() => {
+    function handleClick(e) {
+      if (sugRef.current && !sugRef.current.contains(e.target)) setShowSuggestions(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  function handleSearchKeyDown(e) {
+    if (showSuggestions && suggestions.length > 0) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, suggestions.length - 1)) }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, -1)) }
+      else if (e.key === 'Enter' && activeIdx >= 0 && suggestions[activeIdx]) { e.preventDefault(); router.push(suggestions[activeIdx].href); setShowSuggestions(false); setSearchTerm(''); return }
+      else if (e.key === 'Escape') { setShowSuggestions(false); setActiveIdx(-1); return }
+    }
+    if (e.key === 'Enter') { router.push(`/search?q=${encodeURIComponent(searchTerm)}`); setShowSuggestions(false) }
+  }
+
   // Apply filters
   const applyFilters = useCallback(async (f) => {
     if (!f.team&&!f.venue&&!f.year&&!f.round&&!f.player&&!f.city) { setFilteredGames([]); return }
@@ -118,6 +139,13 @@ export default function BrowsePage() {
       if (nbaBS?.length) espnIds.push(...nbaBS.map(b => b.nba_game_id))
       const { data: nflBS } = await supabase.from('nfl_box_scores').select('espn_game_id').eq('player_name', f.player).limit(500)
       if (nflBS?.length) espnIds.push(...nflBS.map(b => b.espn_game_id))
+      const { data: mlbBS } = await supabase.from('mlb_box_scores').select('game_id').eq('player_name', f.player).limit(500)
+      if (mlbBS?.length) {
+        const mlbGameIds = [...new Set(mlbBS.map(b => b.game_id))]
+        const { data: mlbGames } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title')
+          .in('id', mlbGameIds).order('game_date',{ascending:browseSort==='asc'})
+        if (espnIds.length === 0 && !golfLB?.length) { setFilteredGames(mlbGames||[]); setFiltering(false); return }
+      }
       const { data: golfLB } = await supabase.from('golf_leaderboard').select('game_id').eq('player_name', f.player).limit(500)
       if (golfLB?.length) {
         const golfGameIds = [...new Set(golfLB.map(g => g.game_id))]
@@ -138,7 +166,7 @@ export default function BrowsePage() {
   function clearF(k) { const n={...filters,[k]:null}; if(k==='team'){n.teamSport=null;n.teamLabel=null} setFilters(n); applyFilters(n) }
   function clearAll() { setFilters({team:null,teamSport:null,teamLabel:null,venue:null,year:null,round:null,player:null,city:null}); setFilteredGames([]) }
 
-  const roundOpts = sport==='football'?ROUNDS_NFL:sport==='golf'?ROUNDS_GOLF:sport==='basketball'?ROUNDS_NBA:[...ROUNDS_NBA,...ROUNDS_NFL,...ROUNDS_GOLF]
+  const roundOpts = sport==='football'?ROUNDS_NFL:sport==='golf'?ROUNDS_GOLF:sport==='basketball'?ROUNDS_NBA:sport==='baseball'?ROUNDS_MLB:[...ROUNDS_NBA,...ROUNDS_NFL,...ROUNDS_GOLF,...ROUNDS_MLB]
 
   async function searchPlayers(q) {
     if (q.length < 2) { setPlayerOptions([]); return }
@@ -181,8 +209,9 @@ export default function BrowsePage() {
       <div style={{ padding:'16px 20px 0', position:'relative' }} ref={sugRef}>
         <input
           value={searchTerm}
-          onChange={e => { setSearchTerm(e.target.value); if (e.target.value.length < 2) { setSuggestions([]); setShowSuggestions(false); } }}
+          onChange={e => { setSearchTerm(e.target.value); setActiveIdx(-1); if (e.target.value.length < 2) { setSuggestions([]); setShowSuggestions(false); } }}
           onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true) }}
+          onKeyDown={handleSearchKeyDown}
           placeholder="Search players, teams, games, venues..."
           className="search-input"
           style={{ width:'100%', padding:'14px 16px', fontSize:14, fontFamily:"'Crete Round', Georgia, serif", color:'var(--ink)', backgroundColor:'var(--card)', border:'2px solid var(--faint)', borderRadius:4, outline:'none', boxSizing:'border-box' }}
@@ -191,8 +220,8 @@ export default function BrowsePage() {
         {showSuggestions && suggestions.length > 0 && (
           <div style={{ position:'absolute', left:20, right:20, top:'100%', backgroundColor:'var(--card)', border:'1px solid var(--faint)', borderRadius:4, zIndex:100, maxHeight:320, overflowY:'auto', boxShadow:'0 4px 12px rgba(0,0,0,0.08)' }}>
             {suggestions.map((s, i) => (
-              <Link key={i} href={s.href} onClick={() => { setShowSuggestions(false); setSearchTerm(''); }}
-                style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', borderBottom:'1px solid var(--faint)', textDecoration:'none', color:'var(--ink)' }}>
+              <Link key={i} href={s.href} onClick={() => { setShowSuggestions(false); setSearchTerm(''); }} onMouseEnter={() => setActiveIdx(i)}
+                style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', borderBottom:'1px solid var(--faint)', textDecoration:'none', color:'var(--ink)', background: i === activeIdx ? 'var(--surface)' : 'transparent' }}>
                 {s.color && <div style={{ width:8, height:8, borderRadius:'50%', backgroundColor:s.color, flexShrink:0 }} />}
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:14 }}>{s.label}</div>
@@ -215,7 +244,7 @@ export default function BrowsePage() {
       {/* SPORT TABS */}
       <div style={{ padding:'10px 20px 0', borderBottom:'2px solid var(--rule)' }}>
         <div style={{ display:'flex' }}>
-          {['all','basketball','football','golf'].map(s => {
+          {['all','basketball','football','golf','baseball'].map(s => {
             const active = sport===s
             return <button key={s} onClick={() => switchSport(s)} style={{ flex:1, padding:'10px 0', fontSize:12, fontFamily:'Arial,sans-serif', fontWeight:600, background:'none', border:'none', cursor:'pointer', color:active?'var(--copper)':'var(--dim)', borderBottom:active?'2px solid var(--copper)':'2px solid var(--faint)' }}>{s==='all'?'All':sportLabel(s)}</button>
           })}
@@ -313,9 +342,11 @@ export default function BrowsePage() {
         {teams.length > 0 && !isGolf && (() => {
           const nbaTeams = teams.filter(t => t.sport === 'basketball').sort((a,b) => (a.team_abbr||'').localeCompare(b.team_abbr||''))
           const nflTeams = teams.filter(t => t.sport === 'football').sort((a,b) => (a.team_abbr||'').localeCompare(b.team_abbr||''))
+          const mlbTeams = teams.filter(t => t.sport === 'baseball').sort((a,b) => (a.team_abbr||'').localeCompare(b.team_abbr||''))
           return <>
             {(sport === 'all' || sport === 'basketball') && nbaTeams.length > 0 && <><div className="sec-head">NBA</div><div className="team-grid">{nbaTeams.map(t => <Link key={t.id} href={`/team/${t.id}`} className="team-chip" style={{ borderLeftColor:t.primary_color||'var(--faint)' }}>{t.team_abbr}</Link>)}</div></>}
             {(sport === 'all' || sport === 'football') && nflTeams.length > 0 && <><div className="sec-head" style={{ marginTop:nbaTeams.length > 0 ? 20 : 0 }}>NFL</div><div className="team-grid">{nflTeams.map(t => <Link key={t.id} href={`/team/${t.id}`} className="team-chip" style={{ borderLeftColor:t.primary_color||'var(--faint)' }}>{t.team_abbr}</Link>)}</div></>}
+            {(sport === 'all' || sport === 'baseball') && mlbTeams.length > 0 && <><div className="sec-head" style={{ marginTop:(nbaTeams.length||nflTeams.length) > 0 ? 20 : 0 }}>MLB</div><div className="team-grid">{mlbTeams.map(t => <Link key={t.id} href={`/team/${t.id}`} className="team-chip" style={{ borderLeftColor:t.primary_color||'var(--faint)' }}>{t.team_abbr}</Link>)}</div></>}
           </>
         })()}
         {ats.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>ALL-TIMERS</div>{ats.slice(0,6).map(g => <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'8px 0' }}><div style={{ display:'flex', alignItems:'center', gap:8 }}><SportBadge sport={g.sport}/><span style={{ fontSize:13, color:'var(--ink)' }}>{g.title}</span></div><div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2, marginLeft:44 }}>{formatDate(g.game_date)}</div></Link>)}</>}

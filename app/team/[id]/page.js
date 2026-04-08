@@ -49,6 +49,22 @@ export default function TeamPage() {
             .in('player_name',names).not('ppg','is',null).order('career_points',{ascending:false}).limit(15)
           setPlayers(pls||[])
         }
+      } else if (sp==='football') {
+        const { data: bs } = await supabase.from('nfl_box_scores').select('player_name').eq('team_abbr',abbr).limit(500)
+        if (bs?.length) {
+          const names = [...new Set(bs.map(b=>b.player_name))]
+          const { data: pls } = await supabase.from('players').select('id,player_name,position,games_played')
+            .in('player_name',names).order('games_played',{ascending:false}).limit(15)
+          setPlayers(pls||[])
+        }
+      } else if (sp==='baseball') {
+        const { data: bs } = await supabase.from('mlb_box_scores').select('player_name').eq('team_abbr',abbr).limit(500)
+        if (bs?.length) {
+          const names = [...new Set(bs.map(b=>b.player_name))]
+          const { data: pls } = await supabase.from('players').select('id,player_name,position,games_played')
+            .in('player_name',names).order('games_played',{ascending:false}).limit(15)
+          setPlayers(pls||[])
+        }
       }
       if (t.arena) { const { data: v } = await supabase.from('venues').select('id').eq('venue_name',t.arena).limit(1); if (v?.[0]) setVenueId(v[0].id) }
       setLoading(false)
@@ -159,7 +175,7 @@ export default function TeamPage() {
       {players.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div className="sec-head">NOTABLE PLAYERS</div>
         <div className="perf-scroll">{players.map(p => <Link key={p.id} href={`/player/${p.id}`} className="perf-card" style={{ width:130, borderTopColor:color }}>
-          <div className="perf-name">{p.player_name}</div><div className="perf-sub">{p.position}{p.ppg?` \u00B7 ${p.ppg} PPG`:''}</div>
+          <div className="perf-name">{p.player_name}</div><div className="perf-sub">{p.position}{p.ppg?` \u00B7 ${p.ppg} PPG`:''}{!p.ppg&&p.games_played?` \u00B7 ${p.games_played} GP`:''}</div>
         </Link>)}</div>
       </div></>}
       <div style={{ height:80 }}></div>
