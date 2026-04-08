@@ -135,7 +135,11 @@ export default function GamePage() {
         {game.context_blurb && <div className="blurb" style={{ marginTop:14 }}>{game.context_blurb}</div>}
         <YourCall gameId={game.id} onLogged={() => setShowStory(true)} />
       </div>
-      {showStory && <StoryOverlay gameId={game.id} onClose={() => setShowStory(false)} />}
+      {showStory && <StoryOverlay game={game} onSave={async (story) => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) await supabase.from('user_games').update({ story }).eq('user_id', user.id).eq('game_id', game.id)
+        setShowStory(false)
+      }} onSkip={() => setShowStory(false)} />}
 
       {perfs.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
         <div style={{ padding:'20px 0 0 20px' }}>

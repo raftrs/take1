@@ -146,7 +146,11 @@ export default function NotablePage() {
         {game.description && <div style={{ fontSize:15, color:'var(--text)', lineHeight:1.85, marginTop:16, borderLeft:'3px solid var(--gold)', paddingLeft:16 }}>{game.description}</div>}
         <YourCall gameId={game.game_id || game.id} notableGameId={game.id} onLogged={() => setShowStory(true)} />
       </div>
-      {showStory && <StoryOverlay gameId={game.game_id || game.id} onClose={() => setShowStory(false)} />}
+      {showStory && <StoryOverlay game={game} onSave={async (story) => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) await supabase.from('user_games').update({ story }).eq('user_id', user.id).eq('game_id', game.game_id || game.id)
+        setShowStory(false)
+      }} onSkip={() => setShowStory(false)} />}
 
       {perfs.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
         <div style={{ padding:'20px 0 0 20px' }}><div className="sec-head">{sp === 'football' ? 'STAT LEADERS' : 'KEY PERFORMERS'}</div>
