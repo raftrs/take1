@@ -177,6 +177,17 @@ function GameFinder({ onSelect, selectable }) {
           if (bs?.[0]) g._top = bs[0];
         }
       }));
+      // Flag All-Timers
+      const gameIds = games.map(g => g.id).filter(Boolean);
+      if (gameIds.length > 0) {
+        const { data: notables } = await supabase.from('notable_games')
+          .select('game_id,title,tier').in('game_id', gameIds).eq('tier', 1);
+        if (notables) {
+          const nMap = {};
+          notables.forEach(n => { nMap[n.game_id] = n; });
+          games.forEach(g => { if (nMap[g.id]) g._allTimer = nMap[g.id]; });
+        }
+      }
       setResults(games);
       setLoading(false);
       // Save playlist for nav
@@ -247,6 +258,8 @@ function GameFinder({ onSelect, selectable }) {
               borderRadius: 4, cursor: 'pointer', textAlign: 'left', width: '100%',
             }}>
               <div style={{ flex: 1 }}>
+                {g._allTimer && <div className="sans" style={{ fontSize: 9, color: '#c49a2a', fontWeight: 700, letterSpacing: 1, marginBottom: 3 }}>&#9733; ALL-TIMER</div>}
+                {g._allTimer && <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 13, color: ink, marginBottom: 3 }}>{g._allTimer.title}</div>}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <SportBadge sport={g.sport} />
                   <span style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 14, color: ink, fontWeight: 700 }}>{showScore(g)}</span>
@@ -277,10 +290,10 @@ function GameFinder({ onSelect, selectable }) {
 export default function LogPage() {
   return (
     <div style={{ paddingBottom: 100, minHeight: '100vh' }}>
-      <JustPlayed />
+      <FindMatchupSection />
       <SaySomethingSection />
       <LogEncounter />
-      <FindMatchupSection />
+      <RecentlyPlayed />
     </div>
   );
 }
@@ -288,7 +301,7 @@ export default function LogPage() {
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    1. JUST PLAYED
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function JustPlayed() {
+function RecentlyPlayed() {
   const router = useRouter();
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -300,8 +313,8 @@ function JustPlayed() {
   }, []);
   return (
     <div style={secStyle}>
-      <h3 style={secHead}>Just Played</h3>
-      <p className="sans" style={{ fontSize: 11, color: dim, marginBottom: 12, marginTop: -8, fontStyle: 'italic' }}>Recent playoff and championship games</p>
+      <h3 style={secHead}>Recently Played</h3>
+      <p className="sans" style={{ fontSize: 11, color: dim, marginBottom: 12, marginTop: -8, fontStyle: 'italic' }}>From the playoff and championship archives</p>
       {loading ? <p className="sans" style={{ color: dim, fontSize: 13 }}>Loading...</p> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {games.map(g => (
@@ -330,10 +343,10 @@ function JustPlayed() {
    2. SAY SOMETHING (Editorial Cards)
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 const CARDS = [
-  { key: 'Player', headline: 'A Player', sub: 'The ones who changed how you watch the game.' },
-  { key: 'Team', headline: 'A Team', sub: 'Dynasties, heartbreaks, and the colors you bled.' },
-  { key: 'Game', headline: 'A Game', sub: 'The one you still talk about.' },
-  { key: 'Arena', headline: 'An Arena', sub: 'The building that holds the memory.' },
+  { key: 'Player', headline: 'A Player', sub: 'Got a take? A memory? Let it fly.' },
+  { key: 'Team', headline: 'A Team', sub: 'Your team, your rivals, the ones that got away.' },
+  { key: 'Game', headline: 'A Game', sub: 'The one you were just arguing about.' },
+  { key: 'Arena', headline: 'An Arena', sub: 'The arena, the course, the parking lot.' },
 ];
 
 function SaySomethingSection() {
@@ -559,6 +572,7 @@ function LogEncounter() {
           backgroundColor: canSave ? copper : faint, color: canSave ? cream : dim,
           border: 'none', borderRadius: 4, cursor: canSave ? 'pointer' : 'default', opacity: saving ? 0.6 : 1,
         }}>{saving ? 'Saving...' : saved ? 'Logged' : 'Log Encounter'}</button>
+        {(selP || location || year || story) && !saved && <button onClick={() => { setSelP(null); setPSearch(''); setLocation(''); setYear(''); setStory(''); }} className="sans" style={{ fontSize: 12, color: dim, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Clear</button>}
         {!user && <span className="sans" style={{ fontSize: 11, color: dim, fontStyle: 'italic' }}>Sign in to log</span>}
       </div>
     </div>

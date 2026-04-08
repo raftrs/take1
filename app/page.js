@@ -11,23 +11,44 @@ function Banner({ w=22, h=32 }) {
 
 export default function HomePage() {
   const [hero, setHero] = useState(null)
+  const [heroType, setHeroType] = useState('random')
   const [colls, setColls] = useState([])
   const [recent, setRecent] = useState([])
-  const [allTimerList, setAllTimerList] = useState([])
+  const [allTimerSample, setAllTimerSample] = useState([])
+  const [allTimerTotal, setAllTimerTotal] = useState(0)
   const [loaded, setLoaded] = useState(false)
-  const [atSort, setAtSort] = useState('desc')
 
   useEffect(() => {
     async function load() {
-      // FIX #53: Only tier 1 for hero
-      const { data: pool } = await supabase.from('notable_games').select('*').eq('tier', 1).not('description', 'is', null).limit(50)
-      if (pool?.length > 0) setHero(pool[Math.floor(Math.random() * pool.length)])
+      // All tier 1 with descriptions
+      const { data: pool } = await supabase.from('notable_games').select('*')
+        .eq('tier', 1).not('description', 'is', null).limit(300)
 
-      // All tier 1 for "Scroll the All-Timers"
-      const { data: atAll } = await supabase.from('notable_games').select('id,title,sport,game_date').eq('tier', 1).not('description', 'is', null).order('game_date', { ascending: false })
-      setAllTimerList(atAll || [])
+      if (pool?.length) {
+        // On This Day: check if any game matches today's month-day
+        const now = new Date()
+        const mm = String(now.getMonth() + 1).padStart(2, '0')
+        const dd = String(now.getDate()).padStart(2, '0')
+        const todaySuffix = `-${mm}-${dd}`
+        const todayGames = pool.filter(g => g.game_date?.endsWith(todaySuffix))
 
-      const { data: cd } = await supabase.from('notable_games').select('id,title,game_date,away_team_abbr,home_team_abbr,away_score,home_score,sport,collections')
+        if (todayGames.length > 0) {
+          setHero(todayGames[Math.floor(Math.random() * todayGames.length)])
+          setHeroType('today')
+        } else {
+          setHero(pool[Math.floor(Math.random() * pool.length)])
+          setHeroType('random')
+        }
+
+        // Random sample of 10 for the list
+        const shuffled = [...pool].sort(() => Math.random() - 0.5)
+        setAllTimerSample(shuffled.slice(0, 10))
+        setAllTimerTotal(pool.length)
+      }
+
+      // Collections: only 4
+      const { data: cd } = await supabase.from('notable_games')
+        .select('id,title,game_date,away_team_abbr,home_team_abbr,away_score,home_score,sport,collections')
         .not('collections', 'is', null).eq('tier', 1).order('game_date', { ascending: false }).limit(500)
       if (cd) {
         const m = {}
@@ -35,12 +56,12 @@ export default function HomePage() {
           if (!m[c]) m[c] = { name: c, games: [] }
           if (m[c].games.length < 3) m[c].games.push(g)
         })})
-        Object.values(m).forEach(c => c.games.sort((a,b) => (a.sport==='golf'?1:0)-(b.sport==='golf'?1:0)))
         const skip = new Set(['Game 7s', 'Super Bowls', 'Greatest Playoff Games', 'Greatest Super Bowls', 'Greatest Majors'])
-        setColls(Object.values(m).filter(c => c.games.length >= 2 && !skip.has(c.name)).sort((a,b) => b.games.length - a.games.length).slice(0, 6))
+        setColls(Object.values(m).filter(c => c.games.length >= 2 && !skip.has(c.name)).sort((a,b) => b.games.length - a.games.length).slice(0, 4))
       }
 
-      const { data: rg } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,context_blurb,sport,series_info')
+      const { data: rg } = await supabase.from('games')
+        .select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,context_blurb,sport,series_info')
         .not('context_blurb', 'is', null).order('game_date', { ascending: false }).limit(6)
       setRecent(rg || [])
       setLoaded(true)
@@ -59,13 +80,13 @@ export default function HomePage() {
         <div className="masthead-sub">The games you carry with you</div>
       </div>
 
+      {/* HERO */}
       {hero && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
-        <Link href={`/notable/${hero.id}`} className="hero-link" onClick={() => {
-          const playlist = allTimerList.map(g => ({ href: `/notable/${g.id}`, title: g.title }))
-          const idx = allTimerList.findIndex(g => g.id === hero.id)
-          savePlaylist(playlist, idx >= 0 ? idx : 0)
-        }}>
-          <div className="hero-label"><SportBadge sport={hero.sport}/><span style={{ marginLeft:8 }}>FEATURED ALL-TIMER</span></div>
+        <Link href={`/notable/${hero.id}`} className="hero-link">
+          <div className="hero-label">
+            <SportBadge sport={hero.sport}/>
+            <span style={{ marginLeft:8 }}>{heroType === 'today' ? 'ON THIS DAY' : 'FEATURED ALL-TIMER'}</span>
+          </div>
           <div className="hero-title">{hero.title}</div>
           {showScore(hero) && <div className="hero-score">{showScore(hero)}</div>}
           {hero.sport === 'golf' && <div className="hero-score">{golfMajorDisplay(hero)}</div>}
@@ -73,35 +94,34 @@ export default function HomePage() {
           {hero.venue && <div className="game-meta">{hero.venue}</div>}
           {hero.description && <div className="hero-blurb">{hero.description}</div>}
         </Link>
-        {allTimerList.length > 0 && <div style={{ padding:'0 20px 16px' }}>
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-            <div className="sec-head" style={{ marginBottom:0 }}>ALL-TIMERS</div>
-            <div style={{ display:'flex', gap:0 }}>
-              {['Recent','Oldest'].map(s => <button key={s} onClick={() => setAtSort(s==='Recent'?'desc':'asc')} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===atSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===atSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
-            </div>
-          </div>
-          <div style={{ maxHeight:320, overflowY:'auto', paddingRight:4 }}>
-            {[...allTimerList].sort((a,b) => atSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||'')).map((g, idx) => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => {
-              const playlist = allTimerList.map(gm => ({ href: `/notable/${gm.id}`, title: gm.title }))
-              savePlaylist(playlist, idx)
-            }} className="game-row" style={{ padding:'8px 0', display:'flex', alignItems:'center', gap:10 }}>
-              <SportBadge sport={g.sport}/>
-              <div>
-                <div style={{ fontSize:14, color:'var(--ink)' }}>{g.title}</div>
-                <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{formatDate(g.game_date)}</div>
-              </div>
-            </Link>)}
-          </div>
-        </div>}
       </>)}
 
+      {/* FIND A GAME */}
       <hr className="sec-rule"/><hr className="sec-rule-thin"/>
       <div style={{ padding:'24px 20px', textAlign:'center' }}>
         <div style={{ fontSize:18, color:'var(--ink)', lineHeight:1.4, marginBottom:8 }}>Every game has a story. What are yours?</div>
         <div style={{ fontSize:13, color:'var(--muted)', lineHeight:1.6, maxWidth:300, margin:'0 auto 16px' }}>Rate the games that matter. Share the stories behind them. Build your personal collection.</div>
-        <Link href="/search" style={{ display:'inline-block', padding:'10px 28px', background:'var(--copper)', color:'#fff', fontSize:12, fontFamily:'Arial,sans-serif', fontWeight:600, letterSpacing:1, textDecoration:'none' }}>FIND A GAME</Link>
+        <Link href="/log" style={{ display:'inline-block', padding:'10px 28px', background:'var(--copper)', color:'#fff', fontSize:12, fontFamily:'Arial,sans-serif', fontWeight:600, letterSpacing:1, textDecoration:'none' }}>FIND A GAME</Link>
       </div>
 
+      {/* ALL-TIMERS SAMPLE */}
+      {allTimerSample.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
+        <div style={{ padding:20 }}>
+          <div className="sec-head">ALL-TIMERS</div>
+          {allTimerSample.map((g, idx) => <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'8px 0', display:'flex', alignItems:'center', gap:10 }}>
+            <SportBadge sport={g.sport}/>
+            <div>
+              <div style={{ fontSize:14, color:'var(--ink)' }}>{g.title}</div>
+              <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{formatDate(g.game_date)}</div>
+            </div>
+          </Link>)}
+          <div style={{ textAlign:'center', marginTop:12 }}>
+            <Link href="/vault" className="sans" style={{ fontSize:12, color:'var(--copper)', fontWeight:600, letterSpacing:0.5 }}>See all {allTimerTotal} in The Vault &rarr;</Link>
+          </div>
+        </div>
+      </>)}
+
+      {/* COLLECTIONS (3-4) */}
       {colls.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div className="sec-head">COLLECTIONS</div>
         {colls.map(c => <div key={c.name} style={{ marginBottom:20 }}>
@@ -115,10 +135,11 @@ export default function HomePage() {
           <Link href={`/collection/${encodeURIComponent(c.name)}`} className="sans" style={{ fontSize:11, color:'var(--copper)', marginTop:4, display:'inline-block' }}>View all &rarr;</Link>
         </div>)}
         <div style={{ textAlign:'center', marginTop:8 }}>
-          <Link href="/collections" className="sans" style={{ fontSize:12, color:'var(--copper)', fontWeight:600, letterSpacing:0.5 }}>See all Collections &rarr;</Link>
+          <Link href="/vault" className="sans" style={{ fontSize:12, color:'var(--copper)', fontWeight:600, letterSpacing:0.5 }}>All Collections in The Vault &rarr;</Link>
         </div>
       </div></>)}
 
+      {/* LATEST IN THE ARCHIVE */}
       {recent.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div className="sec-head">LATEST IN THE ARCHIVE<Link href="/browse" className="sec-link">Browse all &rarr;</Link></div>
         <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Recently added playoff and championship games</div>

@@ -113,19 +113,24 @@ export default function ProfilePage() {
           {profile.favorite_teams.map(t => <span key={t} className="sans" style={{ fontSize:10, padding:'3px 8px', background:'rgba(181,86,58,0.08)', color:'var(--copper)', border:'1px solid var(--copper)', letterSpacing:0.5 }}>{t}</span>)}
         </div>}
 
-        {/* THE FOUR BANNERS */}
-        {favorites.length > 0 && <div style={{ marginTop:16 }}>
+        {/* THE FIVE BANNERS */}
+        <div style={{ marginTop:16 }}>
           <div className="sans" style={{ fontSize:8, color:'var(--dim)', letterSpacing:2, fontWeight:600, marginBottom:8 }}>MY ALL-TIMERS</div>
-          <div style={{ display:'flex', gap:8 }}>
-            {[1,2,3,4].map(pos => {
+          <div style={{ display:'flex', gap:6 }}>
+            {[1,2,3,4,5].map(pos => {
               const fav = favorites.find(f => f.position === pos)
-              return <div key={pos} style={{ flex:1, padding:'8px 6px', background: fav ? 'rgba(181,86,58,0.06)' : 'var(--surface)', border:`1px solid ${fav ? 'var(--copper)' : 'var(--faint)'}`, textAlign:'center', minHeight:48, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                {fav?.game ? <div style={{ fontSize:11, color:'var(--ink)', lineHeight:1.3 }}>{fav.game.title || `${fav.game.away_team_abbr} @ ${fav.game.home_team_abbr}`}</div>
-                : <div className="sans" style={{ fontSize:18, color:'var(--faint)' }}>+</div>}
-              </div>
+              return <Link key={pos} href={fav?.game ? (fav.notable_game_id ? `/notable/${fav.notable_game_id}` : `/game/${fav.game_id}`) : '/log'} style={{
+                flex:1, padding:'8px 4px', background: fav ? 'rgba(181,86,58,0.06)' : 'var(--surface)',
+                border:`1px solid ${fav ? 'var(--copper)' : 'var(--faint)'}`, textAlign:'center',
+                minHeight:52, display:'flex', alignItems:'center', justifyContent:'center',
+                textDecoration:'none', borderRadius:4,
+              }}>
+                {fav?.game ? <div style={{ fontSize:10, color:'var(--ink)', lineHeight:1.3 }}>{fav.game.title || `${fav.game.away_team_abbr} @ ${fav.game.home_team_abbr}`}</div>
+                : <div className="sans" style={{ fontSize:22, color:'var(--faint)' }}>+</div>}
+              </Link>
             })}
           </div>
-        </div>}
+        </div>
       </div>
 
       {/* STAT GRID */}
