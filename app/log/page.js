@@ -1,42 +1,62 @@
 'use client'
-import { useState, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth'
-import { formatDate, sportLabel } from '@/lib/utils'
+import { formatDate, sportLabel, showScore } from '@/lib/utils'
 import TopLogo from '@/components/TopLogo'
+import SportBadge from '@/components/SportBadge'
 
 export default function LogPage() {
   const { user } = useAuth()
   const router = useRouter()
-  const [search, setSearch] = useState('')
-  const [results, setResults] = useState([])
-  const [searching, setSearching] = useState(false)
+  const [sport, setSport] = useState('basketball')
+  const [teams, setTeams] = useState([])
+  const [team1, setTeam1] = useState('')
+  const [team2, setTeam2] = useState('')
+  const [team1Search, setTeam1Search] = useState('')
+  const [team2Search, setTeam2Search] = useState('')
+  const [team1Suggestions, setTeam1Suggestions] = useState([])
+  const [team2Suggestions, setTeam2Suggestions] = useState([])
+  const [games, setGames] = useState([])
+  const [loading, setLoading] = useState(false)
 
-  const doSearch = useCallback(async (q) => {
-    if (q.length < 2) { setResults([]); return }
-    setSearching(true)
-    const items = []
+  // Load teams for sport
+  useEffect(() => {
+    async function loadTeams() {
+      const { data } = await supabase.from('teams').select('team_abbr,full_name,sport').eq('sport', sport).eq('active', true).order('full_name')
+      setTeams(data || [])
+      setTeam1(''); setTeam2(''); setTeam1Search(''); setTeam2Search(''); setGames([])
+    }
+    loadTeams()
+  }, [sport])
 
-    // Notable games first
-    const { data: ng } = await supabase.from('notable_games').select('id,title,sport,game_date')
-      .ilike('title', `%${q}%`).order('game_date', { ascending: false }).limit(5)
-    if (ng) ng.forEach(g => items.push({ type: 'notable', id: g.id, label: g.title, sub: `${sportLabel(g.sport)} \u00B7 ${formatDate(g.game_date)}`, href: `/notable/${g.id}` }))
+  function filterTeams(q, exclude) {
+    if (q.length < 1) return []
+    return teams.filter(t => t.team_abbr !== exclude && (t.full_name.toLowerCase().includes(q.toLowerCase()) || t.team_abbr.toLowerCase().includes(q.toLowerCase()))).slice(0, 6)
+  }
 
-    // Regular games
-    const { data: gm } = await supabase.from('games').select('id,title,home_team_abbr,away_team_abbr,home_score,away_score,game_date,sport,series_info')
-      .or(`home_team_abbr.ilike.%${q}%,away_team_abbr.ilike.%${q}%,title.ilike.%${q}%,venue.ilike.%${q}%`)
-      .order('game_date', { ascending: false }).limit(10)
-    if (gm) gm.forEach(g => {
-      const label = g.title || `${g.away_team_abbr} ${g.away_score} / ${g.home_score} ${g.home_team_abbr}`
-      if (!items.find(i => i.label === label)) {
-        items.push({ type: 'game', id: g.id, label, sub: `${g.series_info || sportLabel(g.sport)} \u00B7 ${formatDate(g.game_date)}`, href: `/game/${g.id}` })
-      }
-    })
+  function selectTeam1(t) {
+    setTeam1(t.team_abbr); setTeam1Search(t.full_name); setTeam1Suggestions([])
+  }
+  function selectTeam2(t) {
+    setTeam2(t.team_abbr); setTeam2Search(t.full_name); setTeam2Suggestions([])
+  }
 
-    setResults(items)
-    setSearching(false)
-  }, [])
+  // Fetch matchups when both teams selected
+  useEffect(() => {
+    if (!team1 || !team2) { setGames([]); return }
+    async function loadGames() {
+      setLoading(true)
+      const { data } = await supabase.from('games').select('id,title,game_date,home_team_abbr,away_team_abbr,home_score,away_score,sport,series_info,venue')
+        .or(`and(home_team_abbr.eq.${team1},away_team_abbr.eq.${team2}),and(home_team_abbr.eq.${team2},away_team_abbr.eq.${team1})`)
+        .order('game_date', { ascending: false })
+        .limit(100)
+      setGames(data || [])
+      setLoading(false)
+    }
+    loadGames()
+  }, [team1, team2])
 
   if (!user) {
     return (
@@ -52,44 +72,101 @@ export default function LogPage() {
     )
   }
 
+  const inputStyle = { width:'100%', padding:'12px 14px', fontSize:14, border:'1px solid var(--faint)', background:'var(--card)', color:'var(--ink)', fontFamily:'inherit', boxSizing:'border-box' }
+
   return (
     <div>
       <TopLogo />
       <div style={{ padding:'20px' }}>
         <div style={{ fontSize:20, color:'var(--ink)', marginBottom:4 }}>Log a Game</div>
-        <div className="sans" style={{ fontSize:11, color:'var(--dim)', marginBottom:16 }}>Find the game you watched or attended</div>
+        <div className="sans" style={{ fontSize:11, color:'var(--dim)', marginBottom:16 }}>Pick two teams to find their matchups</div>
 
-        <input
-          type="text"
-          placeholder="Search by team, player, game title..."
-          value={search}
-          onChange={e => { setSearch(e.target.value); doSearch(e.target.value) }}
-          style={{
-            width:'100%', padding:'12px 14px', fontSize:14,
-            border:'1px solid var(--faint)', background:'var(--card)', color:'var(--ink)',
-            fontFamily:'inherit', boxSizing:'border-box',
-          }}
-        />
-
-        {results.length > 0 && <div style={{ marginTop:8, border:'1px solid var(--faint)', background:'var(--card)' }}>
-          {results.map(r => (
-            <div key={`${r.type}-${r.id}`} onClick={() => router.push(r.href)} style={{
-              padding:'12px 14px', borderBottom:'1px solid var(--faint)', cursor:'pointer'
-            }}>
-              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                {r.type === 'notable' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>}
-                <span style={{ fontSize:14, color:'var(--ink)' }}>{r.label}</span>
-              </div>
-              <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:3 }}>{r.sub}</div>
-            </div>
+        {/* Sport picker */}
+        <div className="att-toggle" style={{ marginBottom:16 }}>
+          {['basketball', 'football', 'golf'].map(s => (
+            <button key={s} className={`att-opt${sport===s?' on':''}`} onClick={() => setSport(s)}>
+              {s === 'basketball' ? 'NBA' : s === 'football' ? 'NFL' : 'Golf'}
+            </button>
           ))}
-        </div>}
+        </div>
 
-        {search.length >= 2 && results.length === 0 && !searching && (
-          <div className="sans" style={{ fontSize:12, color:'var(--dim)', marginTop:16, textAlign:'center' }}>No games found. Try a team name or abbreviation.</div>
+        {sport !== 'golf' ? (<>
+          {/* Team 1 */}
+          <div style={{ marginBottom:12, position:'relative' }}>
+            <div className="sans" style={{ fontSize:9, color:'var(--dim)', letterSpacing:1.5, fontWeight:600, marginBottom:4 }}>TEAM 1</div>
+            <input style={inputStyle} placeholder="Search teams..." value={team1Search}
+              onChange={e => { setTeam1Search(e.target.value); setTeam1(''); setTeam1Suggestions(filterTeams(e.target.value, team2)) }}
+              onFocus={() => { if (team1Search) setTeam1Suggestions(filterTeams(team1Search, team2)) }}
+            />
+            {team1Suggestions.length > 0 && <div style={{ position:'absolute', left:0, right:0, zIndex:10, border:'1px solid var(--faint)', background:'var(--card)', borderTop:'none' }}>
+              {team1Suggestions.map(t => <div key={t.team_abbr} onClick={() => selectTeam1(t)} style={{ padding:'10px 14px', fontSize:13, color:'var(--ink)', cursor:'pointer', borderBottom:'1px solid var(--faint)' }}>
+                {t.full_name} <span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{t.team_abbr}</span>
+              </div>)}
+            </div>}
+          </div>
+
+          {/* Team 2 */}
+          <div style={{ marginBottom:16, position:'relative' }}>
+            <div className="sans" style={{ fontSize:9, color:'var(--dim)', letterSpacing:1.5, fontWeight:600, marginBottom:4 }}>TEAM 2</div>
+            <input style={inputStyle} placeholder="Search teams..." value={team2Search}
+              onChange={e => { setTeam2Search(e.target.value); setTeam2(''); setTeam2Suggestions(filterTeams(e.target.value, team1)) }}
+              onFocus={() => { if (team2Search) setTeam2Suggestions(filterTeams(team2Search, team1)) }}
+            />
+            {team2Suggestions.length > 0 && <div style={{ position:'absolute', left:0, right:0, zIndex:10, border:'1px solid var(--faint)', background:'var(--card)', borderTop:'none' }}>
+              {team2Suggestions.map(t => <div key={t.team_abbr} onClick={() => selectTeam2(t)} style={{ padding:'10px 14px', fontSize:13, color:'var(--ink)', cursor:'pointer', borderBottom:'1px solid var(--faint)' }}>
+                {t.full_name} <span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{t.team_abbr}</span>
+              </div>)}
+            </div>}
+          </div>
+
+          {/* Results */}
+          {loading && <div className="loading" style={{ padding:20 }}>Finding matchups...</div>}
+
+          {team1 && team2 && !loading && games.length === 0 && (
+            <div className="sans" style={{ fontSize:12, color:'var(--dim)', textAlign:'center', padding:20 }}>No playoff matchups found between these teams.</div>
+          )}
+
+          {games.length > 0 && (
+            <div>
+              <div className="sans" style={{ fontSize:9, color:'var(--dim)', letterSpacing:1.5, fontWeight:600, marginBottom:10 }}>{games.length} MATCHUP{games.length !== 1 ? 'S' : ''}</div>
+              <div style={{ maxHeight:400, overflowY:'auto' }}>
+                {games.map(g => (
+                  <div key={g.id} onClick={() => router.push(`/game/${g.id}`)} className="game-row" style={{ padding:'12px 0', cursor:'pointer' }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
+                      <span style={{ fontSize:14, color:'var(--ink)' }}>{showScore(g) || g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</span>
+                      <span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</span>
+                    </div>
+                    {g.series_info && <div className="sans" style={{ fontSize:10, color:'var(--copper)', marginTop:2 }}>{g.series_info}</div>}
+                    {g.venue && <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:1 }}>{g.venue}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>) : (
+          /* Golf: just search by tournament name */
+          <div>
+            <div className="sans" style={{ fontSize:9, color:'var(--dim)', letterSpacing:1.5, fontWeight:600, marginBottom:4 }}>TOURNAMENT</div>
+            <input style={inputStyle} placeholder="Search tournaments (e.g. 2019 Masters)..." value={team1Search}
+              onChange={e => {
+                setTeam1Search(e.target.value)
+                if (e.target.value.length >= 3) {
+                  supabase.from('games').select('id,title,game_date,venue,sport').eq('sport','golf').ilike('title', `%${e.target.value}%`).order('game_date', { ascending: false }).limit(15)
+                    .then(({ data }) => setGames(data || []))
+                } else setGames([])
+              }}
+            />
+            {games.length > 0 && <div style={{ marginTop:12, maxHeight:400, overflowY:'auto' }}>
+              {games.map(g => (
+                <div key={g.id} onClick={() => router.push(`/game/${g.id}`)} className="game-row" style={{ padding:'12px 0', cursor:'pointer' }}>
+                  <div style={{ fontSize:14, color:'var(--ink)' }}>{g.title}</div>
+                  <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{formatDate(g.game_date)}{g.venue ? ` \u00B7 ${g.venue}` : ''}</div>
+                </div>
+              ))}
+            </div>}
+          </div>
         )}
       </div>
-
       <div style={{ height:80 }}></div>
     </div>
   )
