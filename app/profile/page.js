@@ -83,14 +83,20 @@ export default function ProfilePage() {
           <div>
             <div style={{ fontSize:22, color:'var(--ink)', lineHeight:1.2 }}>{profile?.display_name || profile?.username || 'Fan'}</div>
             <div className="sans" style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>@{profile?.username}</div>
-            {profile?.member_number && profile.member_number <= 1000 && (
-              <div className="sans" style={{ display:'inline-block', fontSize:9, fontWeight:700, letterSpacing:1.5, padding:'3px 10px', marginTop:6, background:'var(--gold)', color:'#fff', borderRadius:2 }}>
-                FOUNDING MEMBER #{profile.member_number}
-              </div>
-            )}
             {profile?.city && <div className="sans" style={{ fontSize:11, color:'var(--copper)', marginTop:4 }}>{profile.city}</div>}
+            <div onClick={signOut} className="sans" style={{ fontSize:10, color:'var(--dim)', cursor:'pointer', marginTop:8 }}>Sign out</div>
           </div>
-          <div onClick={signOut} className="sans" style={{ fontSize:10, color:'var(--dim)', cursor:'pointer', padding:'4px 10px', border:'1px solid var(--faint)' }}>Sign out</div>
+          {profile?.member_number && profile.member_number <= 1000 && (
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
+              <div style={{
+                width:48, height:64, background:'var(--gold)', clipPath:'polygon(0 0,100% 0,100% 85%,50% 100%,0 85%)',
+                display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', paddingBottom:10
+              }}>
+                <div className="sans" style={{ fontSize:18, fontWeight:800, color:'#fff', lineHeight:1 }}>{profile.member_number}</div>
+              </div>
+              <div className="sans" style={{ fontSize:6, letterSpacing:1.5, fontWeight:700, color:'var(--gold)', marginTop:3, textAlign:'center', lineHeight:1.3 }}>FOUNDING<br/>MEMBER</div>
+            </div>
+          )}
         </div>
 
         {/* Favorite teams */}
