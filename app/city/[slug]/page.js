@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { formatDate, sportLabel, showScore, CITY_MAP, savePlaylist } from '@/lib/utils'
+import { formatDate, sportLabel, showScore, CITY_MAP, savePlaylist, isPlayoff } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import SportBadge from '@/components/SportBadge'
 import TopLogo from '@/components/TopLogo'
@@ -91,6 +91,7 @@ export default function CityPage() {
           if (gs3) gs3.forEach(g => { if (!allGames.find(m => m.id === g.id)) allGames.push(g) })
         }
       }
+      allGames = allGames.filter(g => isPlayoff(g.series_info))
       allGames.sort((a, b) => (b.game_date || '').localeCompare(a.game_date || ''))
       setGames(allGames)
 

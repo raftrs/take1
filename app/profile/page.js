@@ -49,8 +49,8 @@ export default function ProfilePage() {
           const { data: td } = await supabase.from('teams').select('id,team_abbr,team_name,sport,primary_color').in('team_abbr', abbrs).eq('active', true)
           if (td) allTeams.push(...td)
         }
-        setTeamData(allTeams)
       }
+      setTeamData(allTeams)
 
       // Favorites
       const { data: favs } = await supabase.from('favorite_games').select('*').eq('user_id', user.id).order('position')

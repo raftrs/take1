@@ -119,7 +119,7 @@ export default function BrowsePage() {
   const applyFilters = useCallback(async (f) => {
     if (!f.team&&!f.venue&&!f.year&&!f.round&&!f.player&&!f.city) { setFilteredGames([]); return }
     setFiltering(true)
-    let q = supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title').order('game_date',{ascending:browseSort==='asc'}).limit(50)
+    let q = supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,venue_city,series_info,sport,title').order('game_date',{ascending:browseSort==='asc'}).limit(50)
     if (sv) q = q.eq('sport', sv)
     if (f.team) {
       q = q.or(`home_team_abbr.eq.${f.team},away_team_abbr.eq.${f.team}`)
@@ -143,7 +143,7 @@ export default function BrowsePage() {
       if (nflBS?.length) espnIds.push(...nflBS.map(b => b.espn_game_id))
       // Fetch NBA/NFL games by nba_game_id
       if (espnIds.length > 0) {
-        const { data: espnGames } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title')
+        const { data: espnGames } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,venue_city,series_info,sport,title')
           .in('nba_game_id', [...new Set(espnIds)]).order('game_date',{ascending:browseSort==='asc'})
         if (espnGames?.length) allGameResults.push(...espnGames)
       }
@@ -151,7 +151,7 @@ export default function BrowsePage() {
       const { data: mlbBS } = await supabase.from('mlb_box_scores').select('game_id').eq('player_name', f.player).limit(500)
       if (mlbBS?.length) {
         const mlbGameIds = [...new Set(mlbBS.map(b => b.game_id))]
-        const { data: mlbGames } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title')
+        const { data: mlbGames } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,venue_city,series_info,sport,title')
           .in('id', mlbGameIds).order('game_date',{ascending:browseSort==='asc'})
         if (mlbGames?.length) allGameResults.push(...mlbGames)
       }
@@ -159,15 +159,21 @@ export default function BrowsePage() {
       const { data: golfLB } = await supabase.from('golf_leaderboard').select('game_id').eq('player_name', f.player).limit(500)
       if (golfLB?.length) {
         const golfGameIds = [...new Set(golfLB.map(g => g.game_id))]
-        const { data: golfGames } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title')
+        const { data: golfGames } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,venue_city,series_info,sport,title')
           .in('id', golfGameIds).order('game_date',{ascending:browseSort==='asc'})
         if (golfGames?.length) allGameResults.push(...golfGames)
       }
       // Dedupe and sort
       const seen = new Set()
       allGameResults = allGameResults.filter(g => { if (seen.has(g.id)) return false; seen.add(g.id); return true })
-      allGameResults.sort((a,b) => browseSort==='asc' ? (a.game_date||'').localeCompare(b.game_date||'') : (b.game_date||'').localeCompare(a.game_date||''))
+      // Apply other active filters to player results
       if (sv) allGameResults = allGameResults.filter(g => g.sport === sv)
+      if (f.venue) allGameResults = allGameResults.filter(g => g.venue === f.venue)
+      if (f.team) allGameResults = allGameResults.filter(g => g.home_team_abbr === f.team || g.away_team_abbr === f.team)
+      if (f.year) allGameResults = allGameResults.filter(g => g.game_date?.startsWith(f.year))
+      if (f.round) allGameResults = allGameResults.filter(g => g.series_info?.toLowerCase().includes(f.round.toLowerCase()))
+      if (f.city) allGameResults = allGameResults.filter(g => g.venue_city?.toLowerCase().includes(f.city.toLowerCase()))
+      allGameResults.sort((a,b) => browseSort==='asc' ? (a.game_date||'').localeCompare(b.game_date||'') : (b.game_date||'').localeCompare(a.game_date||''))
       setFilteredGames(allGameResults); setFiltering(false); return
     }
     const { data } = await q; setFilteredGames(data||[]); setFiltering(false)

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { formatDate, sportLabel, scoreWithWinner, savePlaylist } from '@/lib/utils'
+import { formatDate, sportLabel, scoreWithWinner, savePlaylist, isPlayoff } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import TopLogo from '@/components/TopLogo'
 
@@ -34,11 +34,12 @@ export default function TeamPage() {
       const notableGameIds = (ng||[]).map(n => n.game_id).filter(Boolean)
 
       let gq = supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,series_info,sport')
-        .eq('sport',sp).or(`home_team_abbr.eq.${abbr},away_team_abbr.eq.${abbr}`).order('game_date',{ascending:false}).limit(30)
+        .eq('sport',sp).or(`home_team_abbr.eq.${abbr},away_team_abbr.eq.${abbr}`)
+        .not('series_info', 'is', null).order('game_date',{ascending:false}).limit(50)
       if (sp !== 'golf') gq = gq.gt('home_score', 0)
       const { data: gs } = await gq
-      // Filter out games that already appear in the notable section
-      const filtered = (gs||[]).filter(g => !notableGameIds.includes(g.id)).slice(0, 10)
+      // Filter out regular season + games that appear in notable section
+      const filtered = (gs||[]).filter(g => isPlayoff(g.series_info) && !notableGameIds.includes(g.id)).slice(0, 10)
       setGames(filtered)
 
       if (t.arena) { const { data: v } = await supabase.from('venues').select('id').eq('venue_name',t.arena).limit(1); if (v?.[0]) setVenueId(v[0].id) }
@@ -46,7 +47,9 @@ export default function TeamPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data: prof } = await supabase.from('profiles').select('favorite_teams').eq('id', user.id).single()
-        if (prof?.favorite_teams && Array.isArray(prof.favorite_teams) && prof.favorite_teams.includes(t.id)) setIsFavorite(true)
+        const favs = prof?.favorite_teams || []
+        const abbr = t.team_abbr||t.abbreviation
+        if (favs.includes(t.id) || favs.includes(abbr)) setIsFavorite(true)
       }
       setLoading(false)
     }
@@ -103,7 +106,14 @@ export default function TeamPage() {
           const { data: prof } = await supabase.from('profiles').select('favorite_teams').eq('id', user.id).single()
           const current = prof?.favorite_teams || []
           const teamId = team.id
-          const updated = isFavorite ? current.filter(t => t !== teamId) : [...current, teamId]
+          const abbr = team.team_abbr||team.abbreviation
+          let updated
+          if (isFavorite) {
+            // Remove both ID and abbr formats
+            updated = current.filter(x => x !== teamId && x !== abbr)
+          } else {
+            updated = [...current, teamId]
+          }
           await supabase.from('profiles').update({ favorite_teams: updated }).eq('id', user.id)
           setIsFavorite(!isFavorite)
         }} className="sans" style={{

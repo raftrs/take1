@@ -87,10 +87,15 @@ export default function NotablePage() {
           }
         }
       }
-      // Load From the Stands stories
-      const storyGameId = g.game_id || g.id
-      const { data: st } = await supabase.from('user_games').select('id,user_id,story,rating,attended,created_at')
-        .eq('game_id', storyGameId).not('story', 'is', null).neq('story', '').order('created_at', { ascending: false }).limit(20)
+      // Load From the Stands stories - query by game_id if linked, otherwise by notable_game_id
+      let storyQuery = supabase.from('user_games').select('id,user_id,story,rating,attended,created_at')
+        .not('story', 'is', null).neq('story', '').order('created_at', { ascending: false }).limit(20)
+      if (g.game_id) {
+        storyQuery = storyQuery.or(`game_id.eq.${g.game_id},notable_game_id.eq.${g.id}`)
+      } else {
+        storyQuery = storyQuery.eq('notable_game_id', g.id)
+      }
+      const { data: st } = await storyQuery
       if (st?.length) {
         const uids = [...new Set(st.map(s => s.user_id))]
         const { data: profiles } = await supabase.from('profiles').select('id,username,display_name').in('id', uids)
@@ -185,12 +190,15 @@ export default function NotablePage() {
           <WeatherDisplay weather={weather} sport={sp} />
         </div>
         {game.description && <div style={{ fontSize:15, color:'var(--text)', lineHeight:1.85, marginTop:16, borderLeft:'3px solid var(--gold)', paddingLeft:16 }}>{game.description}</div>}
-        <YourCall gameId={game.game_id || game.id} notableGameId={game.id} onLogged={() => setShowStory(true)} />
+        <YourCall gameId={game.game_id} notableGameId={game.id} onLogged={() => setShowStory(true)} />
         <RaftersButton notableGameId={game.id} />
       </div>
       {showStory && <StoryOverlay game={game} onSave={async (story) => {
         const { data: { user } } = await supabase.auth.getUser()
-        if (user) await supabase.from('user_games').update({ story }).eq('user_id', user.id).eq('game_id', game.game_id || game.id)
+        if (user) {
+          if (game.game_id) await supabase.from('user_games').update({ story }).eq('user_id', user.id).eq('game_id', game.game_id)
+          else await supabase.from('user_games').update({ story }).eq('user_id', user.id).eq('notable_game_id', game.id)
+        }
         setShowStory(false)
       }} onSkip={() => setShowStory(false)} />}
 

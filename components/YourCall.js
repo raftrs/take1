@@ -15,14 +15,12 @@ export default function YourCall({ gameId, notableGameId, onLogged }) {
   const [existingLog, setExistingLog] = useState(null);
 
   useEffect(() => {
-    if (!user || !gameId) return;
-    supabase
-      .from('user_games')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('game_id', gameId)
-      .maybeSingle()
-      .then(({ data }) => {
+    if (!user) return;
+    if (!gameId && !notableGameId) return;
+    let query = supabase.from('user_games').select('*').eq('user_id', user.id)
+    if (gameId) query = query.eq('game_id', gameId)
+    else query = query.eq('notable_game_id', notableGameId)
+    query.maybeSingle().then(({ data }) => {
         if (data) {
           setExistingLog(data);
           setRating(data.rating || 0);
@@ -30,7 +28,7 @@ export default function YourCall({ gameId, notableGameId, onLogged }) {
           setLogged(true);
         }
       });
-  }, [user, gameId]);
+  }, [user, gameId, notableGameId]);
 
   const handleLog = async () => {
     if (!user) {
@@ -43,7 +41,7 @@ export default function YourCall({ gameId, notableGameId, onLogged }) {
     try {
       const payload = {
         user_id: user.id,
-        game_id: gameId,
+        game_id: gameId || null,
         notable_game_id: notableGameId || null,
         rating: rating || null,
         attended: attended === true,

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { formatDate, savePlaylist } from '@/lib/utils'
+import { formatDate, savePlaylist, isPlayoff } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import SportBadge from '@/components/SportBadge'
 import TopLogo from '@/components/TopLogo'
@@ -86,6 +86,7 @@ export default function PlayerPage() {
   const [story, setStory] = useState('')
   const [loading, setLoading] = useState(true)
   const [gameSort, setGameSort] = useState('desc')
+  const [gameLogFilter, setGameLogFilter] = useState('playoff')
 
   useEffect(() => {
     async function load() {
@@ -98,13 +99,19 @@ export default function PlayerPage() {
         const { data: bs } = await supabase.from('box_scores').select('nba_game_id,points,rebounds,assists,minutes,steals,blocks')
           .eq('player_name', p.player_name).order('nba_game_id', { ascending: false })
         if (bs?.length) {
-          const tot = bs.reduce((a, b) => ({ pts:a.pts+(b.points||0), reb:a.reb+(b.rebounds||0), ast:a.ast+(b.assists||0), gp:a.gp+1 }), { pts:0, reb:0, ast:0, gp:0 })
-          setPlayoffAvg({ ppg:(tot.pts/tot.gp).toFixed(1), rpg:(tot.reb/tot.gp).toFixed(1), apg:(tot.ast/tot.gp).toFixed(1), gp:tot.gp })
           const espnIds = [...new Set(bs.map(b => b.nba_game_id))]
           const { data: games } = await supabase.from('games').select('id,nba_game_id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,series_info')
             .in('nba_game_id', espnIds).order('game_date', { ascending: false })
           if (games) {
-            setGameLog(games.map(g => ({ ...g, stats: bs.find(b => b.nba_game_id === g.nba_game_id) })))
+            const fullLog = games.map(g => ({ ...g, stats: bs.find(b => b.nba_game_id === g.nba_game_id) }))
+            setGameLog(fullLog)
+            // Compute playoff stats only from playoff games
+            const playoffGames = fullLog.filter(g => isPlayoff(g.series_info))
+            const playoffBS = playoffGames.map(g => g.stats).filter(Boolean)
+            if (playoffBS.length > 0) {
+              const tot = playoffBS.reduce((a, b) => ({ pts:a.pts+(b.points||0), reb:a.reb+(b.rebounds||0), ast:a.ast+(b.assists||0), gp:a.gp+1 }), { pts:0, reb:0, ast:0, gp:0 })
+              setPlayoffAvg({ ppg:(tot.pts/tot.gp).toFixed(1), rpg:(tot.reb/tot.gp).toFixed(1), apg:(tot.ast/tot.gp).toFixed(1), gp:tot.gp })
+            }
             const gameIds = games.map(g => g.id).filter(Boolean)
             if (gameIds.length > 0) {
               // FIX: Only show tier 1 All-Timers
@@ -117,12 +124,15 @@ export default function PlayerPage() {
       } else if (sport === 'football') {
         const { data: bs } = await supabase.from('nfl_box_scores').select('*').eq('player_name', p.player_name)
         if (bs?.length) {
-          setNflPlayoffStats(getNFLPlayoffStats(bs, p.position))
           const espnIds = [...new Set(bs.map(b => b.espn_game_id))]
           const { data: games } = await supabase.from('games').select('id,nba_game_id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,series_info')
             .in('nba_game_id', espnIds).order('game_date', { ascending: false })
           if (games) {
-            setNflGameLog(games.map(g => ({ ...g, stats: bs.find(b => b.espn_game_id === g.nba_game_id) })))
+            const fullLog = games.map(g => ({ ...g, stats: bs.find(b => b.espn_game_id === g.nba_game_id) }))
+            setNflGameLog(fullLog)
+            // Compute NFL playoff stats only from playoff games
+            const playoffBS = fullLog.filter(g => isPlayoff(g.series_info)).map(g => g.stats).filter(Boolean)
+            if (playoffBS.length > 0) setNflPlayoffStats(getNFLPlayoffStats(playoffBS, p.position))
             const gameIds = games.map(g => g.id).filter(Boolean)
             if (gameIds.length > 0) {
               const { data: at } = await supabase.from('notable_games').select('id,title,game_date,sport,tier')
@@ -197,7 +207,9 @@ export default function PlayerPage() {
   const isNFL = sport === 'football'
   const isGolf = sport === 'golf'
   const isMLB = sport === 'baseball'
-  const activeGameLog = isNBA ? gameLog : isNFL ? nflGameLog : isMLB ? gameLog : []
+  const rawGameLog = isNBA ? gameLog : isNFL ? nflGameLog : isMLB ? gameLog : []
+  const activeGameLog = gameLogFilter === 'playoff' ? rawGameLog.filter(g => isPlayoff(g.series_info)) : rawGameLog
+  const playoffCount = rawGameLog.filter(g => isPlayoff(g.series_info)).length
   const nflCareer = isNFL ? getNFLCareerStats(player) : []
   const firstName = player.first_name || player.player_name.split(' ')[0]
 
@@ -321,12 +333,22 @@ export default function PlayerPage() {
       </div>
 
       {/* NBA/NFL GAME LOG - scrollable */}
-      {activeGameLog.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-          <div className="sec-head" style={{ marginBottom:0 }}>PLAYOFF GAMES ({activeGameLog.length})</div>
+      {rawGameLog.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+          <div className="sec-head" style={{ marginBottom:0 }}>{gameLogFilter === 'playoff' ? 'PLAYOFF' : 'ALL'} GAMES ({activeGameLog.length})</div>
           <div style={{ display:'flex', gap:0 }}>
             {['Recent','Oldest'].map(s => <button key={s} onClick={() => setGameSort(s==='Recent'?'desc':'asc')} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===gameSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===gameSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
           </div>
+        </div>
+        <div style={{ display:'flex', gap:6, marginBottom:12 }}>
+          {[{ k:'playoff', l:`Playoff (${playoffCount})` },{ k:'all', l:`All (${rawGameLog.length})` }].map(f => (
+            <button key={f.k} onClick={() => setGameLogFilter(f.k)} className="sans" style={{
+              padding:'4px 12px', fontSize:10, fontWeight:600, letterSpacing:0.5,
+              border: gameLogFilter === f.k ? '1.5px solid var(--copper)' : '1.5px solid var(--faint)',
+              borderRadius:4, backgroundColor: gameLogFilter === f.k ? 'var(--copper)' : 'transparent',
+              color: gameLogFilter === f.k ? '#fff' : 'var(--dim)', cursor:'pointer',
+            }}>{f.l}</button>
+          ))}
         </div>
         <ScrollList maxH={340}>
           {[...activeGameLog].sort((a,b) => gameSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||'')).map(g => <Link key={g.id} href={`/game/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
