@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-const HIDE = ['/game/','/notable/','/collection/','/venue/','/team/','/player/','/city/','/auth','/user/']
+const HIDE = ['/game/','/notable/','/collection/','/venue/','/team/','/player/','/city/','/auth','/user/','/story/']
 export default function BottomNav() {
   const path = usePathname()
   if (HIDE.some(p => path.startsWith(p))) return null

@@ -6,7 +6,6 @@ import Link from 'next/link'
 import SportBadge from '@/components/SportBadge'
 import HighFive from '@/components/HighFive'
 import FounderBadge from '@/components/FounderBadge'
-import StoryComments from '@/components/StoryComments'
 
 function Banner({ w=22, h=32 }) {
   return <svg width={w} height={h} viewBox="0 0 34 50"><path d="M0,0 L34,0 L34,50 L17,43 L0,50 Z" fill="#b5563a"/><path d="M3.5,3.5 L30.5,3.5 L30.5,44 L17,38.5 L3.5,44 Z" fill="#d4a843" opacity="0.85"/><path d="M7,7 L27,7 L27,39.5 L17,34.5 L7,39.5 Z" fill="#b5563a"/></svg>
@@ -127,33 +126,25 @@ export default function HomePage() {
           const gameDate = n?.game_date || g?.game_date
           const gameSport = n?.sport || g?.sport
           return (
-            <div key={s.id} style={{ padding:'16px 20px', borderBottom:'1px solid var(--faint)' }}>
+            <Link key={s.id} href={`/story/${s.id}`} style={{ display:'block', padding:'16px 20px', borderBottom:'1px solid var(--faint)', textDecoration:'none' }}>
               <div style={{ display:'flex', alignItems:'center', marginBottom:6 }}>
-                <Link href={p?.username ? `/user/${p.username}` : '#'} style={{ textDecoration:'none', fontSize:14, color:'var(--copper)', fontWeight:600 }}>
-                  {p?.display_name || p?.username || 'A fan'}
-                </Link>
+                <span style={{ fontSize:13, color:'var(--copper)', fontWeight:600 }}>{p?.display_name || p?.username || 'A fan'}</span>
                 <FounderBadge number={p?.member_number}/>
+                {s.rating && <span style={{ fontSize:12, color:'var(--gold)', marginLeft:8 }}>{'★'.repeat(s.rating)}</span>}
+                {s.attended && <span className="sans" style={{ fontSize:8, color:'var(--copper)', fontWeight:700, letterSpacing:0.5, marginLeft:8 }}>WAS THERE</span>}
               </div>
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:4, marginBottom:8 }}>
-                {s.rating && <span style={{ fontSize:13, color:'var(--gold)' }}>{'★'.repeat(s.rating)}</span>}
-                {s.attended && <span className="sans" style={{ fontSize:9, color:'var(--copper)', fontWeight:600, letterSpacing:0.5, padding:'2px 6px', border:'1px solid var(--copper)', borderRadius:2 }}>WAS THERE</span>}
+              <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:6 }}>
+                {gameSport && <SportBadge sport={gameSport}/>}
+                <span style={{ fontSize:15, color:'var(--ink)', fontWeight:600 }}>{gameTitle}</span>
               </div>
-              <Link href={gameHref} style={{ textDecoration:'none', display:'block', marginBottom:8 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                  {gameSport && <SportBadge sport={gameSport}/>}
-                  <div style={{ fontSize:14, color:'var(--ink)', fontWeight:600 }}>{gameTitle}</div>
-                </div>
-                {gameDate && <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2, marginLeft: gameSport ? 22 : 0 }}>{formatDate(gameDate)}</div>}
-              </Link>
-              <div style={{ fontSize:14, color:'var(--text)', lineHeight:1.7, fontStyle:'italic' }}>
-                &ldquo;{s.story.length > 200 ? s.story.slice(0, 200) + '...' : s.story}&rdquo;
+              <div style={{ fontSize:14, color:'var(--muted)', lineHeight:1.7, fontStyle:'italic' }}>
+                {s.story.length > 140 ? s.story.slice(0, 140) + '...' : s.story}
               </div>
-              <div style={{ display:'flex', alignItems:'center', gap:12, marginTop:8 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginTop:8 }} onClick={e => e.preventDefault()}>
                 <HighFive userGameId={s.id}/>
-                <StoryComments userGameId={s.id}/>
-                <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginLeft:'auto' }}>{new Date(s.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric' })}</div>
+                <span className="sans" style={{ fontSize:10, color:'var(--dim)', marginLeft:'auto' }}>{new Date(s.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric' })}</span>
               </div>
-            </div>
+            </Link>
           )
         }) : (
           <div style={{ padding:'40px 20px', textAlign:'center' }}>

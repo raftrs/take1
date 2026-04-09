@@ -15,7 +15,6 @@ import StoryOverlay from '@/components/StoryOverlay'
 import RaftersButton from '@/components/RaftersButton'
 import HighFive from '@/components/HighFive'
 import FounderBadge from '@/components/FounderBadge'
-import StoryComments from '@/components/StoryComments'
 
 export default function NotablePage() {
   const { id } = useParams()
@@ -225,7 +224,10 @@ export default function NotablePage() {
               <div style={{ fontSize:14, color:'var(--text)', lineHeight:1.7 }}>{s.story}</div>
               <div style={{ display:'flex', alignItems:'center', gap:12, marginTop:6 }}>
                 <HighFive userGameId={s.id} />
-                <StoryComments userGameId={s.id} />
+                <Link href={`/story/${s.id}`} className="sans" style={{ fontSize:10, color:'var(--dim)', textDecoration:'none', display:'flex', alignItems:'center', gap:3 }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  Reply
+                </Link>
                 <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginLeft:'auto' }}>
                   {new Date(s.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}
                 </div>
