@@ -103,17 +103,21 @@ export default function VaultPage() {
   return (
     <div>
       <TopLogo />
-      <div style={{ padding: '16px 20px 0', borderBottom: '2px solid var(--rule)' }}>
-        <div style={{ fontSize: 20, color: 'var(--ink)', marginBottom: 4 }}>The Vault</div>
-        <div className="sans" style={{ fontSize: 11, color: 'var(--dim)', marginBottom: 12, fontStyle: 'italic' }}>The games, the collections, the ones that matter.</div>
-        {/* Global sport filter */}
-        <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+      {/* Museum entrance */}
+      <div style={{ background:'linear-gradient(180deg, #3d1f0e 0%, #2a1508 100%)', padding:'32px 20px 20px', borderBottom:'3px solid var(--gold)' }}>
+        <div style={{ textAlign:'center', marginBottom:16 }}>
+          <div style={{ fontSize:11, letterSpacing:6, color:'var(--gold)', fontWeight:700, fontFamily:'Arial,sans-serif', marginBottom:8, opacity:0.8 }}>WELCOME TO</div>
+          <div style={{ fontSize:28, color:'#f5f0e8', letterSpacing:2 }}>The Vault</div>
+          <div style={{ fontSize:12, color:'#a08b70', marginTop:8, fontStyle:'italic', lineHeight:1.6 }}>The games, the collections, the ones that matter.</div>
+        </div>
+        {/* Sport filter */}
+        <div style={{ display: 'flex', gap: 6, justifyContent:'center' }}>
           {[{ k: 'all', l: 'All' }, { k: 'basketball', l: 'NBA' }, { k: 'football', l: 'NFL' }, { k: 'golf', l: 'Golf' }, { k: 'baseball', l: 'MLB' }].map(s => (
             <button key={s.k} onClick={() => setAtSport(s.k)} className="sans" style={{
-              padding: '5px 14px', fontSize: 11, fontWeight: 600, letterSpacing: 0.5,
-              border: atSport === s.k ? '1.5px solid var(--copper)' : '1.5px solid var(--faint)',
-              borderRadius: 4, backgroundColor: atSport === s.k ? 'var(--copper)' : 'transparent',
-              color: atSport === s.k ? '#fff' : 'var(--dim)', cursor: 'pointer',
+              padding: '5px 14px', fontSize: 10, fontWeight: 600, letterSpacing: 0.5,
+              border: atSport === s.k ? '1.5px solid var(--gold)' : '1.5px solid #5a4a3a',
+              borderRadius: 4, backgroundColor: atSport === s.k ? 'var(--gold)' : 'transparent',
+              color: atSport === s.k ? '#1a1508' : '#a08b70', cursor: 'pointer',
             }}>{s.l}</button>
           ))}
         </div>

@@ -380,23 +380,17 @@ export default function BrowsePage() {
         </Link>)}</div></>}
       </div>}
 
-      {/* THE VAULT - easter egg */}
+      {/* THE VAULT - hidden entrance */}
       <div onClick={() => router.push('/vault')} style={{
-        margin:'20px 20px 0', padding:'28px 20px', cursor:'pointer',
-        background:'radial-gradient(ellipse at center, #2a2520 0%, #1a1714 100%)',
-        borderRadius:8, textAlign:'center', position:'relative', overflow:'hidden',
-        border:'2px solid #3d3530',
+        margin:'20px 20px 0', padding:'24px 20px', cursor:'pointer',
+        background:'linear-gradient(180deg, #3d1f0e 0%, #2a1508 100%)',
+        borderRadius:6, textAlign:'center', position:'relative',
+        border:'1px solid #5a4a3a',
       }}>
-        {/* Rivets */}
-        {[{t:8,l:8},{t:8,r:8},{b:8,l:8},{b:8,r:8}].map((p,i) => (
-          <div key={i} style={{ position:'absolute', ...p, width:8, height:8, borderRadius:'50%', background:'#4a4035', border:'1px solid #5a5045' }}/>
-        ))}
-        {/* Handle */}
-        <div style={{ width:48, height:48, borderRadius:'50%', border:'3px solid var(--gold)', margin:'0 auto 12px', display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <div style={{ width:24, height:24, borderRadius:'50%', border:'2px solid var(--gold)', opacity:0.6 }}/>
-        </div>
-        <div style={{ fontSize:11, letterSpacing:4, color:'var(--gold)', fontWeight:700, fontFamily:'Arial,sans-serif' }}>THE VAULT</div>
-        <div style={{ fontSize:10, color:'#8a7d70', marginTop:6, fontStyle:'italic' }}>All-Timers. Collections. The ones that matter.</div>
+        <div style={{ fontSize:9, letterSpacing:4, color:'#a08b70', fontWeight:700, fontFamily:'Arial,sans-serif', marginBottom:8 }}>ENTER</div>
+        <div style={{ fontSize:18, color:'var(--gold)', letterSpacing:2 }}>The Vault</div>
+        <div style={{ fontSize:11, color:'#8a7d70', marginTop:8, fontStyle:'italic' }}>All-Timers. Collections. The ones that matter.</div>
+        <div style={{ width:40, height:1, background:'var(--gold)', margin:'14px auto 0', opacity:0.4 }}/>
       </div>
     </div>
   )

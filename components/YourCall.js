@@ -42,7 +42,6 @@ export default function YourCall({ gameId, notableGameId, onLogged }) {
       const payload = {
         user_id: user.id,
         game_id: gameId || null,
-        notable_game_id: notableGameId || null,
         rating: rating || null,
         attended: attended === true,
       };

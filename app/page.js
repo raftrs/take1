@@ -5,6 +5,8 @@ import { formatDate, showScore, savePlaylist, golfMajorDisplay } from '@/lib/uti
 import Link from 'next/link'
 import SportBadge from '@/components/SportBadge'
 import HighFive from '@/components/HighFive'
+import FounderBadge from '@/components/FounderBadge'
+import StoryComments from '@/components/StoryComments'
 
 function Banner({ w=22, h=32 }) {
   return <svg width={w} height={h} viewBox="0 0 34 50"><path d="M0,0 L34,0 L34,50 L17,43 L0,50 Z" fill="#b5563a"/><path d="M3.5,3.5 L30.5,3.5 L30.5,44 L17,38.5 L3.5,44 Z" fill="#d4a843" opacity="0.85"/><path d="M7,7 L27,7 L27,39.5 L17,34.5 L7,39.5 Z" fill="#b5563a"/></svg>
@@ -75,7 +77,7 @@ export default function HomePage() {
         .order('created_at', { ascending: false }).limit(20)
       if (st?.length) {
         const uids = [...new Set(st.map(s => s.user_id))]
-        const { data: profiles } = await supabase.from('profiles').select('id,username,display_name').in('id', uids)
+        const { data: profiles } = await supabase.from('profiles').select('id,username,display_name,member_number').in('id', uids)
         const pMap = {}; if (profiles) profiles.forEach(p => { pMap[p.id] = p })
         const gids = [...new Set(st.map(s => s.game_id).filter(Boolean))]
         const { data: games } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,sport,title').in('id', gids)
@@ -126,9 +128,12 @@ export default function HomePage() {
           const gameSport = n?.sport || g?.sport
           return (
             <div key={s.id} style={{ padding:'16px 20px', borderBottom:'1px solid var(--faint)' }}>
-              <Link href={p?.username ? `/user/${p.username}` : '#'} style={{ textDecoration:'none' }}>
-                <div style={{ fontSize:14, color:'var(--copper)', fontWeight:600 }}>{p?.display_name || p?.username || 'A fan'}</div>
-              </Link>
+              <div style={{ display:'flex', alignItems:'center', marginBottom:6 }}>
+                <Link href={p?.username ? `/user/${p.username}` : '#'} style={{ textDecoration:'none', fontSize:14, color:'var(--copper)', fontWeight:600 }}>
+                  {p?.display_name || p?.username || 'A fan'}
+                </Link>
+                <FounderBadge number={p?.member_number}/>
+              </div>
               <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:4, marginBottom:8 }}>
                 {s.rating && <span style={{ fontSize:13, color:'var(--gold)' }}>{'★'.repeat(s.rating)}</span>}
                 {s.attended && <span className="sans" style={{ fontSize:9, color:'var(--copper)', fontWeight:600, letterSpacing:0.5, padding:'2px 6px', border:'1px solid var(--copper)', borderRadius:2 }}>WAS THERE</span>}
@@ -143,9 +148,10 @@ export default function HomePage() {
               <div style={{ fontSize:14, color:'var(--text)', lineHeight:1.7, fontStyle:'italic' }}>
                 &ldquo;{s.story.length > 200 ? s.story.slice(0, 200) + '...' : s.story}&rdquo;
               </div>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:8 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginTop:8 }}>
                 <HighFive userGameId={s.id}/>
-                <div className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{new Date(s.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric' })}</div>
+                <StoryComments userGameId={s.id}/>
+                <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginLeft:'auto' }}>{new Date(s.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric' })}</div>
               </div>
             </div>
           )

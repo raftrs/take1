@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/lib/utils'
 import TopLogo from '@/components/TopLogo'
 import SportBadge from '@/components/SportBadge'
+import FounderBadge from '@/components/FounderBadge'
 
 export default function ProfilePage() {
   const { user, profile, loading, signOut } = useAuth()
@@ -113,7 +114,10 @@ export default function ProfilePage() {
       <div style={{ padding:'24px 20px', borderBottom:'2px solid var(--rule)' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
           <div>
-            <div style={{ fontSize:22, color:'var(--ink)', lineHeight:1.2 }}>{profile?.display_name || profile?.username || 'Fan'}</div>
+            <div style={{ fontSize:22, color:'var(--ink)', lineHeight:1.2 }}>
+              {profile?.display_name || profile?.username || 'Fan'}
+              <FounderBadge number={profile?.member_number}/>
+            </div>
             <div className="sans" style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>@{profile?.username}</div>
             {profile?.city && <div className="sans" style={{ fontSize:11, color:'var(--copper)', marginTop:4 }}>{profile.city}</div>}
             <div onClick={signOut} className="sans" style={{ fontSize:10, color:'var(--dim)', cursor:'pointer', marginTop:8 }}>Sign out</div>

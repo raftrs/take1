@@ -8,6 +8,7 @@ import BackButton from '@/components/BackButton'
 import TopLogo from '@/components/TopLogo'
 import SportBadge from '@/components/SportBadge'
 import FollowButton from '@/components/FollowButton'
+import FounderBadge from '@/components/FounderBadge'
 import HighFive from '@/components/HighFive'
 
 export default function UserProfilePage() {
@@ -104,7 +105,10 @@ export default function UserProfilePage() {
       <div style={{ padding: '20px 20px 16px', borderBottom: '2px solid var(--rule)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <div style={{ fontSize: 22, color: 'var(--ink)', lineHeight: 1.2 }}>{prof.display_name || prof.username}</div>
+            <div style={{ fontSize: 22, color: 'var(--ink)', lineHeight: 1.2 }}>
+              {prof.display_name || prof.username}
+              <FounderBadge number={prof.member_number}/>
+            </div>
             <div className="sans" style={{ fontSize: 11, color: 'var(--dim)', marginTop: 4 }}>@{prof.username}</div>
             {prof.city && <div className="sans" style={{ fontSize: 11, color: 'var(--copper)', marginTop: 4 }}>{prof.city}</div>}
             <div className="sans" style={{ fontSize: 10, color: 'var(--dim)', marginTop: 6 }}>

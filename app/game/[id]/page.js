@@ -14,6 +14,8 @@ import WeatherDisplay from '@/components/WeatherDisplay'
 import StoryOverlay from '@/components/StoryOverlay'
 import RaftersButton from '@/components/RaftersButton'
 import HighFive from '@/components/HighFive'
+import FounderBadge from '@/components/FounderBadge'
+import StoryComments from '@/components/StoryComments'
 
 export default function GamePage() {
   const { id } = useParams()
@@ -84,7 +86,7 @@ export default function GamePage() {
         .eq('game_id', g.id).not('story', 'is', null).neq('story', '').order('created_at', { ascending: false }).limit(20)
       if (st?.length) {
         const uids = [...new Set(st.map(s => s.user_id))]
-        const { data: profiles } = await supabase.from('profiles').select('id,username,display_name').in('id', uids)
+        const { data: profiles } = await supabase.from('profiles').select('id,username,display_name,member_number').in('id', uids)
         const pMap = {}
         if (profiles) profiles.forEach(p => { pMap[p.id] = p })
         setStories(st.map(s => ({ ...s, profile: pMap[s.user_id] })))
@@ -188,8 +190,11 @@ export default function GamePage() {
           {stories.map(s => (
             <div key={s.id} style={{ padding:'12px 0', borderBottom:'1px solid var(--faint)' }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
-                <div className="sans" style={{ fontSize:12, color:'var(--copper)', fontWeight:600 }}>
-                  {s.profile?.display_name || s.profile?.username || 'Anonymous'}
+                <div style={{ display:'flex', alignItems:'center' }}>
+                  <Link href={s.profile?.username ? `/user/${s.profile.username}` : '#'} className="sans" style={{ fontSize:12, color:'var(--copper)', fontWeight:600, textDecoration:'none' }}>
+                    {s.profile?.display_name || s.profile?.username || 'Anonymous'}
+                  </Link>
+                  <FounderBadge number={s.profile?.member_number}/>
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                   {s.attended && <span className="sans" style={{ fontSize:9, color:'var(--copper)', fontWeight:600, letterSpacing:0.5, padding:'2px 6px', border:'1px solid var(--copper)', borderRadius:2 }}>WAS THERE</span>}
@@ -197,11 +202,12 @@ export default function GamePage() {
                 </div>
               </div>
               <div style={{ fontSize:14, color:'var(--text)', lineHeight:1.7 }}>{s.story}</div>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:6 }}>
-                <div className="sans" style={{ fontSize:10, color:'var(--dim)' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginTop:6 }}>
+                <HighFive userGameId={s.id} />
+                <StoryComments userGameId={s.id} />
+                <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginLeft:'auto' }}>
                   {new Date(s.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}
                 </div>
-                <HighFive userGameId={s.id} />
               </div>
             </div>
           ))}
