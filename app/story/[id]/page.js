@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { formatDate } from '@/lib/utils'
+import { formatDate, scoreWithWinner } from '@/lib/utils'
 import { useAuth } from '@/lib/auth'
 import BackButton from '@/components/BackButton'
 import TopLogo from '@/components/TopLogo'
@@ -30,11 +30,9 @@ export default function StoryPage() {
         .eq('id', id).single()
       if (!s || !s.story) { setLoading(false); return }
       setStory(s)
-
       const { data: p } = await supabase.from('profiles')
         .select('id,username,display_name,city,member_number').eq('id', s.user_id).single()
       setAuthor(p)
-
       if (s.game_id) {
         const { data: g } = await supabase.from('games')
           .select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,sport,title,venue,series_info')
@@ -44,7 +42,6 @@ export default function StoryPage() {
           .select('id,title,sport,game_date,tier').eq('game_id', s.game_id).limit(1)
         if (n?.[0]) setNotable(n[0])
       }
-
       await loadReplies(s.id)
       setLoading(false)
     }
@@ -61,18 +58,14 @@ export default function StoryPage() {
         .select('id,username,display_name,member_number').in('id', uids)
       const pm = {}; if (profs) profs.forEach(p => { pm[p.id] = p })
       setReplies(data.map(c => ({ ...c, profile: pm[c.user_id] })))
-    } else {
-      setReplies([])
-    }
+    } else { setReplies([]) }
   }
 
   async function submitReply() {
     if (!user) { alert('Sign in to reply'); return }
     if (!replyText.trim()) return
     setSending(true)
-    await supabase.from('story_comments').insert({
-      user_game_id: parseInt(id), user_id: user.id, comment: replyText.trim()
-    })
+    await supabase.from('story_comments').insert({ user_game_id: parseInt(id), user_id: user.id, comment: replyText.trim() })
     setReplyText('')
     setSending(false)
     await loadReplies(parseInt(id))
@@ -84,104 +77,127 @@ export default function StoryPage() {
   const gameTitle = notable?.title || game?.title || (game ? `${game.away_team_abbr} ${game.away_score} / ${game.home_score} ${game.home_team_abbr}` : '')
   const gameHref = notable ? `/notable/${notable.id}` : `/game/${story.game_id}`
   const gameSport = notable?.sport || game?.sport
+  const sc = game ? scoreWithWinner(game) : null
+  const authorInitial = (author?.display_name || author?.username || '?')[0].toUpperCase()
 
   return (
     <div>
       <TopLogo />
       <BackButton />
 
-      {/* Game context */}
-      <div style={{ padding: '0 20px', marginTop: 12 }}>
-        {gameSport && <div style={{ marginBottom: 8 }}><SportBadge sport={gameSport} /></div>}
-        <Link href={gameHref} style={{ textDecoration: 'none' }}>
-          <div style={{ fontSize: 22, color: 'var(--ink)', lineHeight: 1.3 }}>{gameTitle}</div>
-        </Link>
-        <div className="sans" style={{ fontSize: 11, color: 'var(--dim)', marginTop: 6, lineHeight: 1.6 }}>
+      {/* Dark scoreboard header */}
+      {sc ? (<>
+        <div className="scoreboard">
+          <div className="sb-team">
+            <div className="sb-abbr">{sc.away.abbr}</div>
+            <div className={`sb-score${!sc.away.won ? ' lose' : ''}`}>{sc.away.score}</div>
+          </div>
+          <div style={{ textAlign: 'center' }}><div className="sb-final">FINAL</div></div>
+          <div className="sb-team">
+            <div className="sb-abbr">{sc.home.abbr}</div>
+            <div className={`sb-score${!sc.home.won ? ' lose' : ''}`}>{sc.home.score}</div>
+          </div>
+        </div>
+        <div className="sb-sub">
           {formatDate(game?.game_date || notable?.game_date)}
           {game?.series_info ? ` \u00B7 ${game.series_info}` : ''}
           {game?.venue ? ` \u00B7 ${game.venue}` : ''}
         </div>
-      </div>
+      </>) : (
+        <div style={{ padding: '16px 20px' }}>
+          {gameSport && <div style={{ marginBottom: 8 }}><SportBadge sport={gameSport} /></div>}
+          <Link href={gameHref} style={{ textDecoration: 'none' }}>
+            <div style={{ fontSize: 22, color: 'var(--ink)', lineHeight: 1.3, fontFamily: 'var(--display)' }}>{gameTitle}</div>
+          </Link>
+          <div className="mono" style={{ fontSize: 11, color: 'var(--dim)', marginTop: 6 }}>
+            {formatDate(game?.game_date || notable?.game_date)}
+            {game?.venue ? ` \u00B7 ${game.venue}` : ''}
+          </div>
+        </div>
+      )}
 
-      <hr className="sec-rule" style={{ marginTop: 20 }} /><hr className="sec-rule-thin" />
+      {/* If scoreboard shown, add link to game */}
+      {sc && (
+        <div style={{ padding: '8px 20px 0', textAlign: 'center' }}>
+          <Link href={gameHref} className="mono" style={{ fontSize: 11, color: 'var(--copper)', fontWeight: 600 }}>
+            {notable?.title || gameTitle} &rarr;
+          </Link>
+        </div>
+      )}
 
-      {/* Author + story */}
-      <div style={{ padding: '24px 20px 28px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Link href={author?.username ? `/user/${author.username}` : '#'} style={{ textDecoration: 'none', fontSize: 15, color: 'var(--copper)', fontWeight: 600 }}>
-              {author?.display_name || author?.username || 'A fan'}
+      <hr className="sec-rule" style={{ marginTop: 16 }} /><hr className="sec-rule-thin" />
+
+      {/* Author byline + story */}
+      <div style={{ padding: '24px 20px 28px', background: 'var(--surface)' }}>
+        <div className="story-page-byline">
+          <div className="avatar avatar-lg" style={{ width: 36, height: 36, fontSize: 14 }}>{authorInitial}</div>
+          <div>
+            <Link href={author?.username ? `/user/${author.username}` : '#'} style={{ textDecoration: 'none' }}>
+              <span className="author-name" style={{ fontSize: 14 }}>{author?.display_name || author?.username || 'A fan'}</span>
             </Link>
             <FounderBadge number={author?.member_number} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {story.attended && <span className="sans" style={{ fontSize: 9, color: 'var(--copper)', fontWeight: 600, letterSpacing: 0.5, padding: '2px 6px', border: '1px solid var(--copper)', borderRadius: 2 }}>WAS THERE</span>}
-            {story.rating && <span style={{ fontSize: 14, color: 'var(--gold)' }}>{'★'.repeat(story.rating)}</span>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+              {story.rating && <span className="stars">{[1,2,3,4,5].map(i => <span key={i} className={`s${i <= story.rating ? ' on' : ''}`}>&#9733;</span>)}</span>}
+              {story.attended && <span className="mono" style={{ fontSize: 9, color: 'var(--copper)', fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', border: '1px solid var(--copper)', borderRadius: 2 }}>WAS THERE</span>}
+            </div>
           </div>
         </div>
 
-        <div style={{ fontSize: 17, color: 'var(--text)', lineHeight: 2 }}>
-          {story.story}
+        <div className="story-text-full">
+          <p>{story.story}</p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--faint)' }}>
+        <div className="story-page-foot">
           <HighFive userGameId={story.id} />
-          <div className="sans" style={{ fontSize: 10, color: 'var(--dim)' }}>
+          <span className="timestamp">
             {new Date(story.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-          </div>
+          </span>
         </div>
       </div>
 
-      {/* Replies */}
+      {/* Conversation */}
       <hr className="sec-rule" /><hr className="sec-rule-thin" />
       <div style={{ padding: 20 }}>
         <div className="sec-head">{replies.length > 0 ? `CONVERSATION (${replies.length})` : 'START THE CONVERSATION'}</div>
 
-        {replies.map(r => (
-          <div key={r.id} style={{ padding: '16px 0', borderBottom: '1px solid var(--faint)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Link href={`/user/${r.profile?.username || ''}`} style={{ textDecoration: 'none', fontSize: 13, fontWeight: 600, color: 'var(--copper)' }}>
-                  {r.profile?.display_name || r.profile?.username || 'Fan'}
-                </Link>
-                <FounderBadge number={r.profile?.member_number} />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className="sans" style={{ fontSize: 10, color: 'var(--dim)' }}>
-                  {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </span>
-                {user && r.user_id === user.id && (
-                  <button onClick={async () => { await supabase.from('story_comments').delete().eq('id', r.id); setReplies(replies.filter(x => x.id !== r.id)) }}
-                    className="sans" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 9, color: 'var(--dim)' }}>Delete</button>
-                )}
+        {replies.map(r => {
+          const ri = (r.profile?.display_name || r.profile?.username || '?')[0].toUpperCase()
+          return (
+            <div key={r.id} className="convo-item">
+              <div className="avatar" style={{ width: 24, height: 24, fontSize: 10 }}>{ri}</div>
+              <div style={{ flex: 1 }}>
+                <div>
+                  <Link href={`/user/${r.profile?.username || ''}`} style={{ textDecoration: 'none' }}>
+                    <span className="convo-name">{r.profile?.display_name || r.profile?.username || 'Fan'}</span>
+                  </Link>
+                  <FounderBadge number={r.profile?.member_number} />
+                  <span className="timestamp" style={{ marginLeft: 8 }}>
+                    {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                  {user && r.user_id === user.id && (
+                    <button onClick={async () => { await supabase.from('story_comments').delete().eq('id', r.id); setReplies(replies.filter(x => x.id !== r.id)) }}
+                      className="action-btn" style={{ marginLeft: 8, fontSize: 9 }}>Delete</button>
+                  )}
+                </div>
+                <div className="convo-body">{r.comment}</div>
               </div>
             </div>
-            <div style={{ fontSize: 15, color: 'var(--text)', lineHeight: 1.8 }}>{r.comment}</div>
-          </div>
-        ))}
+          )
+        })}
 
         {/* Reply input */}
-        <div style={{ marginTop: 20 }}>
-          <textarea value={replyText} onChange={e => setReplyText(e.target.value)}
-            placeholder="Add to the conversation..." rows={3}
-            style={{
-              width: '100%', padding: '14px', fontSize: 15,
-              border: '1px solid var(--faint)', borderRadius: 0,
-              borderLeft: '3px solid var(--copper)',
-              background: 'var(--surface)', color: 'var(--ink)',
-              fontFamily: "'Crete Round', Georgia, serif", lineHeight: 1.8, resize: 'vertical',
-            }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-            <button onClick={submitReply} disabled={sending || !replyText.trim()} className="sans" style={{
-              padding: '10px 24px', fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
-              background: replyText.trim() ? 'var(--copper)' : 'var(--faint)',
-              color: replyText.trim() ? '#fff' : 'var(--dim)',
-              border: 'none', cursor: replyText.trim() ? 'pointer' : 'default',
-            }}>
-              {sending ? 'Posting...' : 'Reply'}
-            </button>
+        <div className="convo-write">
+          <div style={{ flex: 1 }}>
+            <textarea value={replyText} onChange={e => setReplyText(e.target.value)}
+              placeholder="Add to the conversation..." rows={3}
+              className="story-textarea" style={{ background: 'var(--surface)', width: '100%' }}
+            />
           </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+          <button onClick={submitReply} disabled={sending || !replyText.trim()} className={`post-btn${replyText.trim() ? '' : ' off'}`}>
+            {sending ? 'Posting...' : 'Reply'}
+          </button>
         </div>
       </div>
 

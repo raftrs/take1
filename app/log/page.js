@@ -3,41 +3,10 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { formatDate, showScore, savePlaylist, isPlayoff } from '@/lib/utils';
+import { formatDate, showScore, isPlayoff, scoreWithWinner } from '@/lib/utils';
 import SportBadge from '@/components/SportBadge';
 
-/* ── Design tokens ── */
-const copper = '#b5563a', cream = '#f5f0e8', ink = '#2c2a25',
-      dim = '#a09888', faint = '#e5ddd1', card = '#faf7f2';
-
-/* ── Shared styles ── */
-const secStyle = { padding: '28px 20px', borderBottom: `1px solid ${faint}` };
-const secHead = {
-  fontFamily: "'Crete Round', Georgia, serif", fontSize: 13, color: dim,
-  textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16, marginTop: 0,
-};
-const inputStyle = {
-  width: '100%', padding: '12px 14px', fontFamily: "'Crete Round', Georgia, serif",
-  fontSize: 14, color: ink, backgroundColor: 'transparent',
-  border: 'none', borderBottom: `1px solid ${faint}`, borderRadius: 0, outline: 'none', boxSizing: 'border-box',
-};
-const inputActiveStyle = { ...inputStyle, borderBottom: `2px solid ${copper}` };
-const dropWrap = {
-  position: 'absolute', top: '100%', left: 0, right: 0,
-  backgroundColor: cream, border: `1px solid ${faint}`,
-  borderRadius: 0, zIndex: 50, maxHeight: 220, overflowY: 'auto',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-};
-const dropRow = {
-  display: 'flex', alignItems: 'center', gap: 8,
-  width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent',
-  cursor: 'pointer', textAlign: 'left', borderBottom: `1px solid ${faint}`,
-  fontFamily: "'Crete Round', Georgia, serif", fontSize: 13, color: ink,
-};
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   REUSABLE: Year Scroller
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ── Year Scroller ── */
 function YearScroller({ value, onChange }) {
   const ref = useRef(null);
   const years = [];
@@ -49,20 +18,16 @@ function YearScroller({ value, onChange }) {
     }
   }, [value]);
   return (
-    <div ref={ref} className="year-scroll" style={{
-      display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 6,
-      WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
-    }}>
+    <div ref={ref} className="year-scroll" style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 6, WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
       <style>{`.year-scroll::-webkit-scrollbar{display:none}`}</style>
       {years.map(y => {
         const active = value === String(y);
         return <button key={y} data-y={y} onClick={() => onChange(active ? '' : String(y))}
-          style={{
-            padding: '5px 12px', flexShrink: 0, fontFamily: "'Libre Franklin', sans-serif",
-            fontSize: 12, fontWeight: active ? 700 : 500,
-            backgroundColor: active ? copper : 'transparent',
-            color: active ? cream : dim,
-            border: active ? `1.5px solid ${copper}` : `1.5px solid ${faint}`,
+          className="mono" style={{
+            padding: '5px 12px', flexShrink: 0, fontSize: 11, fontWeight: active ? 700 : 400,
+            backgroundColor: active ? 'var(--copper)' : 'transparent',
+            color: active ? 'var(--surface)' : 'var(--dim)',
+            border: active ? '1.5px solid var(--copper)' : '1.5px solid var(--faint)',
             borderRadius: 20, cursor: 'pointer', whiteSpace: 'nowrap',
           }}>{y}</button>;
       })}
@@ -70,31 +35,22 @@ function YearScroller({ value, onChange }) {
   );
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   REUSABLE: Sort Toggle
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ── Sort Toggle ── */
 function SortToggle({ value, onChange, count }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, marginTop: 8 }}>
       <div style={{ display: 'flex' }}>
         {['Recent', 'Oldest'].map(s => {
           const v = s === 'Recent' ? 'desc' : 'asc';
-          return <button key={s} onClick={() => onChange(v)} className="sans"
-            style={{
-              padding: '3px 10px', fontSize: 10, fontWeight: 600, background: 'none',
-              border: 'none', cursor: 'pointer', color: v === value ? copper : dim,
-              borderBottom: v === value ? `2px solid ${copper}` : '2px solid transparent',
-            }}>{s}</button>;
+          return <button key={s} onClick={() => onChange(v)} className="rp-tab" style={{ borderBottomColor: v === value ? 'var(--copper)' : 'transparent', color: v === value ? 'var(--brown)' : 'var(--dim)' }}>{s}</button>;
         })}
       </div>
-      {count > 0 && <span style={{ fontFamily: "'Libre Franklin', sans-serif", fontSize: 11, color: dim }}>{count} game{count !== 1 ? 's' : ''}</span>}
+      {count > 0 && <span className="mono" style={{ fontSize: 10, color: 'var(--dim)' }}>{count} game{count !== 1 ? 's' : ''}</span>}
     </div>
   );
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   REUSABLE: Team Autocomplete
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ── Team Input ── */
 function TeamInput({ value, onChange, selected, onSelect, onClear, sport, placeholder = 'Team' }) {
   const [opts, setOpts] = useState([]);
   useEffect(() => {
@@ -107,22 +63,19 @@ function TeamInput({ value, onChange, selected, onSelect, onClear, sport, placeh
   return (
     <div style={{ flex: 1, position: 'relative' }}>
       <input value={value} onChange={e => { onChange(e.target.value); if (selected) onClear(); }}
-        placeholder={placeholder} style={selected ? inputActiveStyle : inputStyle} />
-      {opts.length > 0 && <div style={dropWrap}>{opts.map(t =>
-        <button key={t.id} onClick={() => { onSelect(t); setOpts([]); }} style={dropRow}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: t.primary_color || copper, flexShrink: 0 }} />
+        placeholder={placeholder} className="sc-input" style={{ width: '100%', padding: '10px 12px', borderBottom: selected ? '2px solid var(--copper)' : '1px solid var(--faint)' }} />
+      {opts.length > 0 && <div className="ac-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50 }}>
+        {opts.map(t => <button key={t.id} onClick={() => { onSelect(t); setOpts([]); }} className="ac-item" style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', borderBottom: '1px solid var(--faint)', cursor: 'pointer' }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: t.primary_color || 'var(--copper)', flexShrink: 0 }} />
           <span>{t.full_name}</span>
-          <span style={{ color: dim, fontSize: 11, marginLeft: 'auto' }}>{t.sport === 'basketball' ? 'NBA' : t.sport === 'football' ? 'NFL' : t.sport === 'baseball' ? 'MLB' : ''}</span>
-        </button>
-      )}</div>}
+          <span className="ac-sub" style={{ marginLeft: 'auto' }}>{t.sport === 'basketball' ? 'NBA' : t.sport === 'football' ? 'NFL' : t.sport === 'baseball' ? 'MLB' : ''}</span>
+        </button>)}
+      </div>}
     </div>
   );
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   REUSABLE: Game Finder (two teams + year)
-   Used in both Say Something > Game and Find a Matchup
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ── Game Finder ── */
 function GameFinder({ onSelect, selectable }) {
   const router = useRouter();
   const [sport, setSport] = useState('basketball');
@@ -134,7 +87,6 @@ function GameFinder({ onSelect, selectable }) {
   const [sort, setSort] = useState('desc');
   const [selected, setSelected] = useState(null);
 
-  // Restore state for standalone usage
   useEffect(() => {
     if (!onSelect) {
       const s = sessionStorage.getItem('log_matchup');
@@ -146,151 +98,120 @@ function GameFinder({ onSelect, selectable }) {
     if (!onSelect) sessionStorage.setItem('log_matchup', JSON.stringify({ sport, t1, t2, year }));
   }, [sport, t1, t2, year, onSelect]);
 
-  // Search logic: two teams, OR one team + year, OR two teams + year
   useEffect(() => {
     const hasYear = year.length === 4;
     const hasBoth = t1 && t2;
     const hasOne = t1 || t2;
     if (!hasBoth && !(hasOne && hasYear)) { setResults([]); return; }
-
     setLoading(true);
     let q = supabase.from('games')
       .select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,sport,series_info,nba_game_id')
       .order('game_date', { ascending: sort === 'asc' }).limit(100);
-
-    if (hasBoth) {
-      q = q.or(`and(home_team_abbr.eq.${t1.team_abbr},away_team_abbr.eq.${t2.team_abbr}),and(home_team_abbr.eq.${t2.team_abbr},away_team_abbr.eq.${t1.team_abbr})`);
-    } else if (t1) {
-      q = q.or(`home_team_abbr.eq.${t1.team_abbr},away_team_abbr.eq.${t1.team_abbr}`);
-    } else if (t2) {
-      q = q.or(`home_team_abbr.eq.${t2.team_abbr},away_team_abbr.eq.${t2.team_abbr}`);
-    }
+    if (hasBoth) q = q.or(`and(home_team_abbr.eq.${t1.team_abbr},away_team_abbr.eq.${t2.team_abbr}),and(home_team_abbr.eq.${t2.team_abbr},away_team_abbr.eq.${t1.team_abbr})`);
+    else if (t1) q = q.or(`home_team_abbr.eq.${t1.team_abbr},away_team_abbr.eq.${t1.team_abbr}`);
+    else if (t2) q = q.or(`home_team_abbr.eq.${t2.team_abbr},away_team_abbr.eq.${t2.team_abbr}`);
     if (hasYear) q = q.gte('game_date', `${year}-01-01`).lte('game_date', `${year}-12-31`);
-
     q.then(async ({ data }) => {
       const games = data || [];
-      // Top scorer for first 20 NBA games
       await Promise.all(games.slice(0, 20).map(async g => {
         if (g.sport === 'basketball' && g.nba_game_id) {
-          const { data: bs } = await supabase.from('box_scores')
-            .select('player_name,points').eq('nba_game_id', g.nba_game_id)
-            .order('points', { ascending: false }).limit(1);
+          const { data: bs } = await supabase.from('box_scores').select('player_name,points').eq('nba_game_id', g.nba_game_id).order('points', { ascending: false }).limit(1);
           if (bs?.[0]) g._top = bs[0];
         }
       }));
-      // Flag All-Timers
       const gameIds = games.map(g => g.id).filter(Boolean);
       if (gameIds.length > 0) {
-        const { data: notables } = await supabase.from('notable_games')
-          .select('game_id,title,tier').in('game_id', gameIds).eq('tier', 1);
-        if (notables) {
-          const nMap = {};
-          notables.forEach(n => { nMap[n.game_id] = n; });
-          games.forEach(g => { if (nMap[g.id]) g._allTimer = nMap[g.id]; });
-        }
+        const { data: notables } = await supabase.from('notable_games').select('game_id,title,tier').in('game_id', gameIds).eq('tier', 1);
+        if (notables) { const nMap = {}; notables.forEach(n => { nMap[n.game_id] = n; }); games.forEach(g => { if (nMap[g.id]) g._allTimer = nMap[g.id]; }); }
       }
       setResults(games);
       setLoading(false);
-      // Save playlist for nav
-      if (!onSelect) {
-        const pl = games.map(g => ({ href: `/game/${g.id}`, title: showScore(g) || `${g.away_team_abbr} @ ${g.home_team_abbr}` }));
-        sessionStorage.setItem('raftrs_playlist', JSON.stringify(pl.map((p, i) => ({ ...p, id: games[i].id, type: 'game' }))));
-        sessionStorage.setItem('raftrs_playlist_source', 'log');
-      }
     });
   }, [t1, t2, year, sort, onSelect]);
 
-  const clearAll = () => {
-    setT1(null); setT2(null); setT1s(''); setT2s('');
-    setYear(''); setResults([]); setSelected(null);
-    sessionStorage.removeItem('log_matchup');
-  };
-
-  const handleGameClick = (g) => {
-    if (onSelect) { setSelected(g); onSelect(g); }
-    else router.push(`/game/${g.id}`);
-  };
+  const clearAll = () => { setT1(null); setT2(null); setT1s(''); setT2s(''); setYear(''); setResults([]); setSelected(null); sessionStorage.removeItem('log_matchup'); };
+  const handleGameClick = (g) => { if (onSelect) { setSelected(g); onSelect(g); } else router.push(`/game/${g.id}`); };
 
   return (
     <div>
       {/* Sport toggle */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+      <div className="prompt-row" style={{ marginBottom: 12 }}>
         {['basketball', 'football', 'baseball'].map(s => (
-          <button key={s} onClick={() => { setSport(s); clearAll(); }}
-            style={{
-              padding: '5px 14px', fontFamily: "'Libre Franklin', sans-serif",
-              fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
-              border: sport === s ? `2px solid ${copper}` : `2px solid ${faint}`,
-              borderRadius: 4, backgroundColor: sport === s ? copper : 'transparent',
-              color: sport === s ? cream : dim, cursor: 'pointer',
-            }}>{s === 'basketball' ? 'NBA' : s === 'football' ? 'NFL' : 'MLB'}</button>
+          <button key={s} onClick={() => { setSport(s); clearAll(); }} className={`prompt-btn${sport === s ? ' active' : ''}`}>
+            {s === 'basketball' ? 'NBA' : s === 'football' ? 'NFL' : 'MLB'}
+          </button>
         ))}
       </div>
 
-      {/* Team inputs */}
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
-        <TeamInput value={t1s} onChange={setT1s} selected={t1}
-          onSelect={t => { setT1(t); setT1s(t.team_name); }} onClear={() => { setT1(null); setSelected(null); }}
-          sport={sport} />
-        <span style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 14, color: dim }}>vs</span>
-        <TeamInput value={t2s} onChange={setT2s} selected={t2}
-          onSelect={t => { setT2(t); setT2s(t.team_name); }} onClear={() => { setT2(null); setSelected(null); }}
-          sport={sport} />
+        <TeamInput value={t1s} onChange={setT1s} selected={t1} onSelect={t => { setT1(t); setT1s(t.team_name); }} onClear={() => { setT1(null); setSelected(null); }} sport={sport} />
+        <span style={{ fontFamily: 'var(--body)', fontSize: 14, color: 'var(--dim)' }}>vs</span>
+        <TeamInput value={t2s} onChange={setT2s} selected={t2} onSelect={t => { setT2(t); setT2s(t.team_name); }} onClear={() => { setT2(null); setSelected(null); }} sport={sport} />
       </div>
 
-      {/* Year scroller */}
       <YearScroller value={year} onChange={setYear} />
 
-      {/* Clear */}
       {(t1 || t2 || year) && <div style={{ marginTop: 6 }}>
-        <button onClick={clearAll} className="sans" style={{ fontSize: 12, color: dim, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>Clear all</button>
+        <button onClick={clearAll} className="mono" style={{ fontSize: 10, color: 'var(--dim)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>Clear all</button>
       </div>}
 
-      {/* Results */}
-      {loading && <p className="sans" style={{ color: dim, fontSize: 12, marginTop: 8 }}>Finding games...</p>}
+      {loading && <p className="mono" style={{ color: 'var(--dim)', fontSize: 11, marginTop: 8 }}>Finding games...</p>}
       {results.length > 0 && <>
         <SortToggle value={sort} onChange={setSort} count={results.length} />
         <div style={{ maxHeight: onSelect ? 240 : 'none', overflowY: onSelect ? 'auto' : 'visible', display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {results.map(g => (
-            <button key={g.id} onClick={() => handleGameClick(g)} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '10px 12px', backgroundColor: selected?.id === g.id ? '#f0e8dc' : card,
-              border: selected?.id === g.id ? `1px solid ${copper}` : `1px solid ${faint}`,
-              borderRadius: 4, cursor: 'pointer', textAlign: 'left', width: '100%',
-            }}>
-              <div style={{ flex: 1 }}>
-                {g._allTimer && <div className="sans" style={{ fontSize: 9, color: '#c49a2a', fontWeight: 700, letterSpacing: 1, marginBottom: 3 }}>&#9733; ALL-TIMER</div>}
-                {g._allTimer && <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 13, color: ink, marginBottom: 3 }}>{g._allTimer.title}</div>}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <SportBadge sport={g.sport} />
-                  <span style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 14, color: ink, fontWeight: 700 }}>{showScore(g)}</span>
+          {results.map(g => {
+            const sc = scoreWithWinner(g);
+            const playoff = isPlayoff(g.series_info);
+            return (
+              <button key={g.id} onClick={() => handleGameClick(g)} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 12px', backgroundColor: selected?.id === g.id ? 'var(--warm)' : 'var(--card)',
+                border: selected?.id === g.id ? '1px solid var(--copper)' : '1px solid var(--faint)',
+                borderLeft: playoff ? '3px solid var(--copper)' : undefined,
+                borderRadius: 0, cursor: 'pointer', textAlign: 'left', width: '100%',
+              }}>
+                <div style={{ flex: 1 }}>
+                  {g._allTimer && <div className="mono" style={{ fontSize: 9, color: 'var(--gold)', fontWeight: 700, letterSpacing: 1, marginBottom: 3 }}>&#9733; ALL-TIMER</div>}
+                  {g._allTimer && <div style={{ fontFamily: 'var(--body)', fontSize: 13, color: 'var(--ink)', marginBottom: 3 }}>{g._allTimer.title}</div>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <SportBadge sport={g.sport} />
+                    {sc ? (
+                      <span className="game-ref-score">
+                        <span className={sc.away.won ? '' : 'dim'}>{sc.away.abbr} {sc.away.score}</span>{' / '}<span className={sc.home.won ? '' : 'dim'}>{sc.home.abbr} {sc.home.score}</span>
+                      </span>
+                    ) : <span style={{ fontFamily: 'var(--body)', fontSize: 14, color: 'var(--ink)' }}>{showScore(g)}</span>}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 2 }}>
+                    {g.series_info && <span className="mono" style={{ fontSize: 10, color: 'var(--dim)' }}>{g.series_info}</span>}
+                    {g._top && <span className="mono" style={{ fontSize: 10, color: 'var(--copper)' }}>{g._top.player_name} {g._top.points}pts</span>}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 2 }}>
-                  {g.series_info && <span className="sans" style={{ fontSize: 11, color: dim }}>{g.series_info}</span>}
-                  {g._top && <span className="sans" style={{ fontSize: 11, color: copper }}>{g._top.player_name} {g._top.points}pts</span>}
+                <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 8 }}>
+                  <div style={{ fontFamily: 'var(--display)', fontSize: 15, color: 'var(--ink)', fontWeight: 700, lineHeight: 1 }}>{new Date(g.game_date + 'T00:00:00').getFullYear()}</div>
+                  <div className="mono" style={{ fontSize: 10, color: 'var(--dim)' }}>{formatDate(g.game_date)}</div>
                 </div>
-              </div>
-              <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 8 }}>
-                <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 15, color: ink, fontWeight: 700, lineHeight: 1 }}>{new Date(g.game_date + 'T00:00:00').getFullYear()}</div>
-                <div className="sans" style={{ fontSize: 10, color: dim }}>{formatDate(g.game_date)}</div>
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       </>}
       {(t1 || t2) && year.length === 4 && !loading && results.length === 0 && (
-        <p className="sans" style={{ color: dim, fontSize: 12, fontStyle: 'italic', marginTop: 8 }}>No games found for that search.</p>
+        <p className="mono" style={{ color: 'var(--dim)', fontSize: 11, fontStyle: 'italic', marginTop: 8 }}>No games found for that search.</p>
       )}
     </div>
   );
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   PAGE
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ── PAGE ── */
 export default function LogPage() {
   return (
     <div style={{ paddingBottom: 100, minHeight: '100vh' }}>
+      {/* Page header */}
+      <div style={{ padding: '20px 20px 0' }}>
+        <div style={{ fontFamily: 'var(--display)', fontSize: 22, color: 'var(--ink)', letterSpacing: 1 }}>Your Scorebook</div>
+        <div style={{ fontFamily: 'var(--body)', fontSize: 13, color: 'var(--dim)', fontStyle: 'italic', marginTop: 4 }}>Find games. Tell stories. Log encounters.</div>
+      </div>
+      <hr className="heavy-rule" style={{ margin: '14px 20px 0' }} />
       <FindMatchupSection />
       <SaySomethingSection />
       <LogEncounter />
@@ -299,9 +220,7 @@ export default function LogPage() {
   );
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   1. JUST PLAYED
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ── RECENTLY PLAYED ── */
 function RecentlyPlayed() {
   const router = useRouter();
   const [games, setGames] = useState([]);
@@ -314,78 +233,59 @@ function RecentlyPlayed() {
       .order('game_date', { ascending: false }).limit(30);
     if (rpSport !== 'all') q = q.eq('sport', rpSport);
     q.then(({ data }) => {
-      let filtered = data || [];
-      // Filter out Korn Ferry, Champions Tour, Q-School, Senior events
-      filtered = filtered.filter(g => {
+      let filtered = (data || []).filter(g => {
         if (g.sport !== 'golf') return true;
         const t = (g.title || '').toLowerCase();
-        if (t.includes('korn ferry') || t.includes('champions tour') || t.includes('senior') || t.includes('q-school') || t.includes('legends')) return false;
-        return true;
+        return !(t.includes('korn ferry') || t.includes('champions tour') || t.includes('senior') || t.includes('q-school') || t.includes('legends'));
       });
       setGames(filtered.slice(0, 10));
       setLoading(false);
     });
   }, [rpSport]);
   return (
-    <div style={secStyle}>
-      <h3 style={secHead}>Recently Played</h3>
-      <div style={{ display: 'flex', gap: 6, marginBottom: 12, marginTop: -4 }}>
+    <div style={{ padding: '24px 20px', borderBottom: '1px solid var(--faint)' }}>
+      <div className="sec-head">RECENTLY PLAYED</div>
+      <div style={{ display: 'flex', gap: 0, marginBottom: 12, marginTop: -6 }}>
         {[{k:'all',l:'All'},{k:'basketball',l:'NBA'},{k:'football',l:'NFL'},{k:'golf',l:'PGA'},{k:'baseball',l:'MLB'}].map(s => (
-          <button key={s.k} onClick={() => setRpSport(s.k)} className="sans" style={{
-            padding:'4px 10px', fontSize:10, fontWeight:600, letterSpacing:0.5,
-            border: rpSport===s.k ? `1.5px solid ${copper}` : `1.5px solid ${faint}`,
-            borderRadius:4, backgroundColor: rpSport===s.k ? copper : 'transparent',
-            color: rpSport===s.k ? '#fff' : dim, cursor:'pointer',
-          }}>{s.l}</button>
+          <button key={s.k} onClick={() => setRpSport(s.k)} className={`rp-tab${rpSport === s.k ? ' active' : ''}`}>{s.l}</button>
         ))}
       </div>
-      {loading ? <p className="sans" style={{ color: dim, fontSize: 13 }}>Loading...</p> : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {loading ? <p className="mono" style={{ color: 'var(--dim)', fontSize: 11 }}>Loading...</p> : (
+        <div>
           {games.map(g => {
-            const aw = Number(g.away_score), hw = Number(g.home_score)
-            const awayWon = aw > hw, homeWon = hw > aw
-            const playoff = isPlayoff(g.series_info)
+            const sc = scoreWithWinner(g);
+            const playoff = isPlayoff(g.series_info);
             return (
-            <button key={g.id} onClick={() => router.push(`/game/${g.id}`)} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '10px 12px', backgroundColor: card, border: `1px solid ${faint}`,
-              borderLeft: playoff ? `3px solid ${copper}` : `1px solid ${faint}`,
-              borderRadius: 4, cursor: 'pointer', textAlign: 'left', width: '100%',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+              <div key={g.id} className="rp-row" onClick={() => router.push(`/game/${g.id}`)}>
                 <SportBadge sport={g.sport} />
-                <div>
-                  {g.sport === 'golf' ? (
-                    <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 14, color: ink }}>{g.title || 'Tournament'}</div>
-                  ) : g.home_score != null ? (
-                    <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 14 }}>
-                      <span style={{ color: awayWon ? ink : dim, fontWeight: awayWon ? 700 : 400 }}>{g.away_team_abbr} {g.away_score}</span>
-                      <span style={{ color: dim }}> / </span>
-                      <span style={{ color: homeWon ? ink : dim, fontWeight: homeWon ? 700 : 400 }}>{g.home_score} {g.home_team_abbr}</span>
-                    </div>
-                  ) : (
-                    <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 14, color: ink }}>{g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</div>
-                  )}
-                  {g.series_info && playoff && <div className="sans" style={{ fontSize: 10, color: copper }}>{g.series_info}</div>}
-                </div>
+                {g.sport === 'golf' ? (
+                  <div className="rp-score" style={{ fontFamily: 'var(--body)' }}>{g.title || 'Tournament'}</div>
+                ) : sc ? (
+                  <div className="rp-score">
+                    <span className={sc.away.won ? '' : 'dim'}>{sc.away.abbr} {sc.away.score}</span>
+                    {' / '}
+                    <span className={sc.home.won ? '' : 'dim'}>{sc.home.abbr} {sc.home.score}</span>
+                  </div>
+                ) : (
+                  <div className="rp-score">{g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</div>
+                )}
+                {playoff && g.series_info && <span className="rp-tag">{g.series_info}</span>}
+                <span className="rp-date">{formatDate(g.game_date)}</span>
               </div>
-              <span className="sans" style={{ fontSize: 11, color: dim, whiteSpace: 'nowrap' }}>{formatDate(g.game_date)}</span>
-            </button>
-          )})}
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   2. SAY SOMETHING (Editorial Cards)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ── SAY SOMETHING ── */
 const CARDS = [
-  { key: 'Player', headline: 'A Player', sub: 'Got a take? A memory? Let it fly.' },
-  { key: 'Team', headline: 'A Team', sub: 'Your team, your rivals, the ones that got away.' },
-  { key: 'Game', headline: 'A Game', sub: 'The one you were just arguing about.' },
-  { key: 'Arena', headline: 'An Arena', sub: 'The arena, the course, the parking lot.' },
+  { key: 'Player', label: 'PLAYER' },
+  { key: 'Team', label: 'TEAM' },
+  { key: 'Game', label: 'GAME' },
+  { key: 'Arena', label: 'ARENA' },
 ];
 
 function SaySomethingSection() {
@@ -395,13 +295,9 @@ function SaySomethingSection() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Player
   const [pSearch, setPSearch] = useState(''); const [pOpts, setPOpts] = useState([]); const [selP, setSelP] = useState(null);
-  // Team
   const [tSearch, setTSearch] = useState(''); const [tOpts, setTOpts] = useState([]); const [selT, setSelT] = useState(null);
-  // Arena
   const [vSearch, setVSearch] = useState(''); const [vOpts, setVOpts] = useState([]); const [selV, setSelV] = useState(null);
-  // Game
   const [selGame, setSelGame] = useState(null);
 
   const pickMode = (m) => {
@@ -413,29 +309,9 @@ function SaySomethingSection() {
     setSelGame(null);
   };
 
-  // Player autocomplete
-  useEffect(() => {
-    if (pSearch.length < 2 || selP) { setPOpts([]); return; }
-    supabase.from('players').select('id,player_name,sport,position')
-      .ilike('player_name', `%${pSearch}%`).limit(8)
-      .then(({ data }) => setPOpts(data || []));
-  }, [pSearch, selP]);
-
-  // Team autocomplete
-  useEffect(() => {
-    if (tSearch.length < 2 || selT) { setTOpts([]); return; }
-    supabase.from('teams').select('id,team_abbr,team_name,full_name,sport,primary_color')
-      .or(`full_name.ilike.%${tSearch}%,team_name.ilike.%${tSearch}%,city.ilike.%${tSearch}%`)
-      .limit(8).then(({ data }) => setTOpts(data || []));
-  }, [tSearch, selT]);
-
-  // Venue autocomplete
-  useEffect(() => {
-    if (vSearch.length < 2 || selV) { setVOpts([]); return; }
-    supabase.from('venues').select('id,venue_name,venue_city,sport')
-      .ilike('venue_name', `%${vSearch}%`).limit(8)
-      .then(({ data }) => setVOpts(data || []));
-  }, [vSearch, selV]);
+  useEffect(() => { if (pSearch.length < 2 || selP) { setPOpts([]); return; } supabase.from('players').select('id,player_name,sport,position').ilike('player_name', `%${pSearch}%`).limit(8).then(({ data }) => setPOpts(data || [])); }, [pSearch, selP]);
+  useEffect(() => { if (tSearch.length < 2 || selT) { setTOpts([]); return; } supabase.from('teams').select('id,team_abbr,team_name,full_name,sport,primary_color').or(`full_name.ilike.%${tSearch}%,team_name.ilike.%${tSearch}%,city.ilike.%${tSearch}%`).limit(8).then(({ data }) => setTOpts(data || [])); }, [tSearch, selT]);
+  useEffect(() => { if (vSearch.length < 2 || selV) { setVOpts([]); return; } supabase.from('venues').select('id,venue_name,venue_city,sport').ilike('venue_name', `%${vSearch}%`).limit(8).then(({ data }) => setVOpts(data || [])); }, [vSearch, selV]);
 
   const placeholder = mode === 'Player' && selP ? `Say something about ${selP.player_name}...`
     : mode === 'Team' && selT ? `Say something about the ${selT.team_name}...`
@@ -449,109 +325,80 @@ function SaySomethingSection() {
     if (!canSave) return;
     setSaving(true);
     if (mode === 'Game' && selGame) {
-      await supabase.from('user_games').upsert({
-        user_id: user.id, game_id: selGame.id, story: story.trim(),
-      }, { onConflict: 'user_id,game_id' });
+      await supabase.from('user_games').upsert({ user_id: user.id, game_id: selGame.id, story: story.trim() }, { onConflict: 'user_id,game_id' });
     }
     setSaving(false); setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
   return (
-    <div style={secStyle}>
-      <h3 style={secHead}>Say Something About...</h3>
+    <div style={{ padding: '24px 20px', borderBottom: '1px solid var(--faint)' }}>
+      <div className="sec-head">SAY SOMETHING ABOUT...</div>
 
-      {/* Editorial prompts */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: mode ? 20 : 0 }}>
-        {CARDS.map(c => {
-          const active = mode === c.key;
-          return (
-            <button key={c.key} onClick={() => pickMode(c.key)} style={{
-              padding: '16px 14px', backgroundColor: 'transparent',
-              borderLeft: active ? `3px solid ${copper}` : `3px solid ${faint}`,
-              border: 'none', borderLeftStyle: 'solid', borderLeftWidth: 3,
-              borderLeftColor: active ? copper : faint,
-              cursor: 'pointer', textAlign: 'left',
-              transition: 'all 0.15s ease',
-            }}>
-              <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 15, fontWeight: 700, color: active ? copper : ink, marginBottom: 4 }}>{c.headline}</div>
-              <div style={{ fontFamily: "'Libre Franklin', sans-serif", fontSize: 11, lineHeight: 1.4, color: dim, fontStyle: 'italic' }}>{c.sub}</div>
-            </button>
-          );
-        })}
+      {/* Prompt buttons */}
+      <div className="prompt-row">
+        {CARDS.map(c => (
+          <button key={c.key} onClick={() => pickMode(c.key)} className={`prompt-btn${mode === c.key ? ' active' : ''}`}>{c.label}</button>
+        ))}
       </div>
 
-      {/* Search area per mode */}
+      {/* Autocomplete per mode */}
       {mode === 'Player' && (
         <div style={{ position: 'relative', marginBottom: 12 }}>
-          <input value={pSearch} onChange={e => { setPSearch(e.target.value); setSelP(null); }}
-            placeholder="Search for a player..." autoFocus style={selP ? inputActiveStyle : inputStyle} />
-          {pOpts.length > 0 && <div style={dropWrap}>{pOpts.map(p =>
-            <button key={p.id} onClick={() => { setSelP(p); setPSearch(p.player_name); setPOpts([]); }} style={dropRow}>
+          <input value={pSearch} onChange={e => { setPSearch(e.target.value); setSelP(null); }} placeholder="Search for a player..." autoFocus className="sc-input" style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--rule)', borderBottom: selP ? '2px solid var(--copper)' : '1px solid var(--rule)' }} />
+          {pOpts.length > 0 && <div className="ac-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50 }}>{pOpts.map(p =>
+            <div key={p.id} className="ac-item" onClick={() => { setSelP(p); setPSearch(p.player_name); setPOpts([]); }}>
               <SportBadge sport={p.sport} /><span>{p.player_name}</span>
-              {p.position && <span style={{ color: dim, fontSize: 11, marginLeft: 'auto' }}>{p.position}</span>}
-            </button>
+              {p.position && <span className="ac-sub" style={{ marginLeft: 'auto' }}>{p.position}</span>}
+            </div>
           )}</div>}
         </div>
       )}
 
       {mode === 'Team' && (
         <div style={{ position: 'relative', marginBottom: 12 }}>
-          <input value={tSearch} onChange={e => { setTSearch(e.target.value); setSelT(null); }}
-            placeholder="Search for a team..." autoFocus style={selT ? inputActiveStyle : inputStyle} />
-          {tOpts.length > 0 && <div style={dropWrap}>{tOpts.map(t =>
-            <button key={t.id} onClick={() => { setSelT(t); setTSearch(t.full_name); setTOpts([]); }} style={dropRow}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: t.primary_color || copper, flexShrink: 0 }} />
+          <input value={tSearch} onChange={e => { setTSearch(e.target.value); setSelT(null); }} placeholder="Search for a team..." autoFocus className="sc-input" style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--rule)', borderBottom: selT ? '2px solid var(--copper)' : '1px solid var(--rule)' }} />
+          {tOpts.length > 0 && <div className="ac-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50 }}>{tOpts.map(t =>
+            <div key={t.id} className="ac-item" onClick={() => { setSelT(t); setTSearch(t.full_name); setTOpts([]); }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: t.primary_color || 'var(--copper)', flexShrink: 0 }} />
               <span>{t.full_name}</span>
-            </button>
+            </div>
           )}</div>}
         </div>
       )}
 
       {mode === 'Arena' && (
         <div style={{ position: 'relative', marginBottom: 12 }}>
-          <input value={vSearch} onChange={e => { setVSearch(e.target.value); setSelV(null); }}
-            placeholder="Search for an arena or course..." autoFocus style={selV ? inputActiveStyle : inputStyle} />
-          {vOpts.length > 0 && <div style={dropWrap}>{vOpts.map(v =>
-            <button key={v.id} onClick={() => { setSelV(v); setVSearch(v.venue_name); setVOpts([]); }} style={dropRow}>
-              <span>{v.venue_name}</span>
-              <span style={{ color: dim, fontSize: 11, marginLeft: 'auto' }}>{v.venue_city}</span>
-            </button>
+          <input value={vSearch} onChange={e => { setVSearch(e.target.value); setSelV(null); }} placeholder="Search for an arena or course..." autoFocus className="sc-input" style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--rule)', borderBottom: selV ? '2px solid var(--copper)' : '1px solid var(--rule)' }} />
+          {vOpts.length > 0 && <div className="ac-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50 }}>{vOpts.map(v =>
+            <div key={v.id} className="ac-item" onClick={() => { setSelV(v); setVSearch(v.venue_name); setVOpts([]); }}>
+              <span>{v.venue_name}</span><span className="ac-sub" style={{ marginLeft: 'auto' }}>{v.venue_city}</span>
+            </div>
           )}</div>}
         </div>
       )}
 
-      {mode === 'Game' && (
-        <div style={{ marginBottom: 12 }}>
-          <GameFinder onSelect={setSelGame} selectable />
+      {mode === 'Game' && <div style={{ marginBottom: 12 }}><GameFinder onSelect={setSelGame} selectable /></div>}
+
+      {/* Notepad form */}
+      {mode && (
+        <div className="notepad" style={{ marginTop: 8 }}>
+          <textarea value={story} onChange={e => setStory(e.target.value)} placeholder={placeholder} rows={4} />
+          <div className="notepad-bar">
+            {!user && <span className="mono" style={{ fontSize: 10, color: 'var(--dim)' }}>Sign in to post</span>}
+            <div style={{ marginLeft: 'auto' }}>
+              <button onClick={handleSave} disabled={!canSave || saving} className={`post-btn${canSave ? '' : ' off'}`}>
+                {saving ? 'Saving...' : saved ? 'Saved' : 'Post'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
-
-      {/* Textarea + Post */}
-      {mode && <>
-        <textarea value={story} onChange={e => setStory(e.target.value)} placeholder={placeholder} rows={4}
-          style={{
-            width: '100%', padding: '14px 16px', fontFamily: "'Crete Round', Georgia, serif",
-            fontSize: 15, lineHeight: 1.8, color: ink, backgroundColor: 'transparent',
-            border: 'none', borderLeft: `3px solid ${copper}`, borderRadius: 0, outline: 'none',
-            resize: 'vertical', boxSizing: 'border-box', marginTop: 8,
-          }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
-          <button onClick={handleSave} disabled={!canSave || saving} className="sans" style={{
-            padding: '10px 28px', fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
-            backgroundColor: canSave ? copper : faint, color: canSave ? cream : dim,
-            border: 'none', cursor: canSave ? 'pointer' : 'default', opacity: saving ? 0.6 : 1,
-          }}>{saving ? 'Saving...' : saved ? 'Saved' : 'Post'}</button>
-          {!user && <span className="sans" style={{ fontSize: 11, color: dim, fontStyle: 'italic' }}>Sign in to post</span>}
-        </div>
-      </>}
     </div>
   );
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   3. LOG AN ENCOUNTER
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ── LOG AN ENCOUNTER ── */
 function LogEncounter() {
   const { user } = useAuth();
   const [pSearch, setPSearch] = useState(''); const [pOpts, setPOpts] = useState([]); const [selP, setSelP] = useState(null);
@@ -561,71 +408,65 @@ function LogEncounter() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
-    if (pSearch.length < 2 || selP) { setPOpts([]); return; }
-    supabase.from('players').select('id,player_name,sport,position')
-      .ilike('player_name', `%${pSearch}%`).limit(8)
-      .then(({ data }) => setPOpts(data || []));
-  }, [pSearch, selP]);
+  useEffect(() => { if (pSearch.length < 2 || selP) { setPOpts([]); return; } supabase.from('players').select('id,player_name,sport,position').ilike('player_name', `%${pSearch}%`).limit(8).then(({ data }) => setPOpts(data || [])); }, [pSearch, selP]);
 
   const canSave = selP && user;
   const handleSave = async () => {
     if (!canSave) return;
     setSaving(true);
-    await supabase.from('encounters').insert({
-      user_id: user.id, player_id: selP.id,
-      location: location.trim() || null,
-      year: year ? parseInt(year) : null,
-      story: story.trim() || null,
-    });
+    await supabase.from('encounters').insert({ user_id: user.id, player_id: selP.id, location: location.trim() || null, year: year ? parseInt(year) : null, story: story.trim() || null });
     setSaving(false); setSaved(true);
     setTimeout(() => { setSelP(null); setPSearch(''); setLocation(''); setYear(''); setStory(''); setSaved(false); }, 2000);
   };
 
   return (
-    <div style={secStyle}>
-      <h3 style={secHead}>Log an Encounter</h3>
-      <p className="sans" style={{ fontSize: 11, color: dim, marginBottom: 16, marginTop: -8, fontStyle: 'italic' }}>Met a player? Saw them at the airport? Got an autograph?</p>
+    <div style={{ padding: '24px 20px', borderBottom: '1px solid var(--faint)' }}>
+      <div className="sec-head">LOG AN ENCOUNTER</div>
+      <div className="mono" style={{ fontSize: 10, color: 'var(--dim)', marginBottom: 14, marginTop: -8 }}>Met a player? Saw them at the airport? Got an autograph?</div>
 
-      <div style={{ position: 'relative', marginBottom: 14 }}>
-        <input value={pSearch} onChange={e => { setPSearch(e.target.value); setSelP(null); setSaved(false); }}
-          placeholder="Who did you meet?" style={selP ? inputActiveStyle : inputStyle} />
-        {pOpts.length > 0 && <div style={dropWrap}>{pOpts.map(p =>
-          <button key={p.id} onClick={() => { setSelP(p); setPSearch(p.player_name); setPOpts([]); }} style={dropRow}>
-            <SportBadge sport={p.sport} /><span>{p.player_name}</span>
-            {p.position && <span style={{ color: dim, fontSize: 11, marginLeft: 'auto' }}>{p.position}</span>}
-          </button>
-        )}</div>}
+      <div className="scorecard">
+        <div className="sc-row">
+          <div className="sc-label">Player</div>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <input value={pSearch} onChange={e => { setPSearch(e.target.value); setSelP(null); setSaved(false); }} placeholder="Who did you meet?" className="sc-input" />
+            {pOpts.length > 0 && <div className="ac-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50 }}>{pOpts.map(p =>
+              <div key={p.id} className="ac-item" onClick={() => { setSelP(p); setPSearch(p.player_name); setPOpts([]); }}>
+                <SportBadge sport={p.sport} /><span>{p.player_name}</span>
+                {p.position && <span className="ac-sub" style={{ marginLeft: 'auto' }}>{p.position}</span>}
+              </div>
+            )}</div>}
+          </div>
+        </div>
+        <div className="sc-row">
+          <div className="sc-label">Where</div>
+          <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Location" className="sc-input" />
+        </div>
+        <div className="sc-row">
+          <div className="sc-label">Year</div>
+          <input value={year} onChange={e => setYear(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Year" inputMode="numeric" className="sc-input" />
+        </div>
+        <div className="sc-row">
+          <div className="sc-label">Story</div>
+          <textarea value={story} onChange={e => setStory(e.target.value)} placeholder="Tell the story..." rows={3} className="sc-input" style={{ resize: 'vertical', fontFamily: 'var(--body)', lineHeight: 1.7 }} />
+        </div>
       </div>
-
-      <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
-        <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Where?" style={{ ...inputStyle, flex: 2 }} />
-        <input value={year} onChange={e => setYear(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Year" inputMode="numeric" style={{ ...inputStyle, flex: 1 }} />
-      </div>
-
-      <textarea value={story} onChange={e => setStory(e.target.value)} placeholder="Tell the story..." rows={3}
-        style={{ width: '100%', padding: '14px 16px', fontFamily: "'Crete Round', Georgia, serif", fontSize: 15, lineHeight: 1.8, color: ink, backgroundColor: 'transparent', border: 'none', borderLeft: `3px solid ${copper}`, borderRadius: 0, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
-        <button onClick={handleSave} disabled={!canSave || saving} className="sans" style={{
-          padding: '10px 28px', fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
-          backgroundColor: canSave ? copper : faint, color: canSave ? cream : dim,
-          border: 'none', cursor: canSave ? 'pointer' : 'default', opacity: saving ? 0.6 : 1,
-        }}>{saving ? 'Saving...' : saved ? 'Logged' : 'Log Encounter'}</button>
-        {(selP || location || year || story) && !saved && <button onClick={() => { setSelP(null); setPSearch(''); setLocation(''); setYear(''); setStory(''); }} className="sans" style={{ fontSize: 11, color: dim, background: 'none', border: 'none', cursor: 'pointer' }}>Clear</button>}
-        {!user && <span className="sans" style={{ fontSize: 11, color: dim, fontStyle: 'italic' }}>Sign in to log</span>}
+        <button onClick={handleSave} disabled={!canSave || saving} className={`post-btn${canSave ? '' : ' off'}`}>
+          {saving ? 'Saving...' : saved ? 'Logged' : 'Log Encounter'}
+        </button>
+        {(selP || location || year || story) && !saved && <button onClick={() => { setSelP(null); setPSearch(''); setLocation(''); setYear(''); setStory(''); }} className="action-btn">Clear</button>}
+        {!user && <span className="mono" style={{ fontSize: 10, color: 'var(--dim)' }}>Sign in to log</span>}
       </div>
     </div>
   );
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   4. FIND A MATCHUP
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ── FIND A MATCHUP ── */
 function FindMatchupSection() {
   return (
-    <div style={{ ...secStyle, borderBottom: 'none' }}>
-      <h3 style={secHead}>Find a Matchup</h3>
+    <div style={{ padding: '24px 20px' }}>
+      <div className="sec-head">FIND A MATCHUP</div>
       <GameFinder />
     </div>
   );

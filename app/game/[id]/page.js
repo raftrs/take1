@@ -33,7 +33,6 @@ export default function GamePage() {
     async function load() {
       const { data: g } = await supabase.from('games').select('*').eq('id', id).single()
       if (!g) { setLoading(false); return }
-      // Redirect to notable page if this game has one
       const { data: ntbl } = await supabase.from('notable_games').select('id').eq('game_id', g.id).limit(1)
       if (ntbl?.[0]) { window.location.replace(`/notable/${ntbl[0].id}`); return }
       setGame(g)
@@ -50,44 +49,26 @@ export default function GamePage() {
       if (sp === 'basketball' && g.nba_game_id) {
         const { data: bs } = await supabase.from('box_scores').select('*').eq('nba_game_id', g.nba_game_id).order('points', { ascending: false })
         setBox(bs || [])
-        if (bs?.length) {
-          const names = [...new Set(bs.map(b => b.player_name))]
-          const { data: p } = await supabase.from('players').select('id,player_name').in('player_name', names)
-          if (p) { const m = {}; p.forEach(x => m[x.player_name] = x.id); setPlayerMap(m) }
-        }
+        if (bs?.length) { const names = [...new Set(bs.map(b => b.player_name))]; const { data: p } = await supabase.from('players').select('id,player_name').in('player_name', names); if (p) { const m = {}; p.forEach(x => m[x.player_name] = x.id); setPlayerMap(m) } }
       } else if (sp === 'football' && g.nba_game_id) {
         const { data: bs } = await supabase.from('nfl_box_scores').select('*').eq('espn_game_id', g.nba_game_id)
         setBox(bs || [])
-        if (bs?.length) {
-          const names = [...new Set(bs.map(b => b.player_name))]
-          const { data: p } = await supabase.from('players').select('id,player_name').in('player_name', names)
-          if (p) { const m = {}; p.forEach(x => m[x.player_name] = x.id); setPlayerMap(m) }
-        }
+        if (bs?.length) { const names = [...new Set(bs.map(b => b.player_name))]; const { data: p } = await supabase.from('players').select('id,player_name').in('player_name', names); if (p) { const m = {}; p.forEach(x => m[x.player_name] = x.id); setPlayerMap(m) } }
       } else if (sp === 'golf') {
         const { data: lb } = await supabase.from('golf_leaderboard').select('*').eq('game_id', g.id).order('position')
         setGolf(lb || [])
-        if (lb?.length) {
-          const names = [...new Set(lb.map(b => b.player_name))]
-          const { data: p } = await supabase.from('players').select('id,player_name').in('player_name', names)
-          if (p) { const m = {}; p.forEach(x => m[x.player_name] = x.id); setPlayerMap(m) }
-        }
+        if (lb?.length) { const names = [...new Set(lb.map(b => b.player_name))]; const { data: p } = await supabase.from('players').select('id,player_name').in('player_name', names); if (p) { const m = {}; p.forEach(x => m[x.player_name] = x.id); setPlayerMap(m) } }
       } else if (sp === 'baseball' && g.nba_game_id) {
         const { data: bs } = await supabase.from('mlb_box_scores').select('*').eq('espn_game_id', g.nba_game_id)
         setBox(bs || [])
-        if (bs?.length) {
-          const names = [...new Set(bs.map(b => b.player_name))]
-          const { data: p } = await supabase.from('players').select('id,player_name').in('player_name', names)
-          if (p) { const m = {}; p.forEach(x => m[x.player_name] = x.id); setPlayerMap(m) }
-        }
+        if (bs?.length) { const names = [...new Set(bs.map(b => b.player_name))]; const { data: p } = await supabase.from('players').select('id,player_name').in('player_name', names); if (p) { const m = {}; p.forEach(x => m[x.player_name] = x.id); setPlayerMap(m) } }
       }
-      // Load From the Stands stories
       const { data: st } = await supabase.from('user_games').select('id,user_id,story,rating,attended,created_at')
         .eq('game_id', g.id).not('story', 'is', null).neq('story', '').order('created_at', { ascending: false }).limit(20)
       if (st?.length) {
         const uids = [...new Set(st.map(s => s.user_id))]
         const { data: profiles } = await supabase.from('profiles').select('id,username,display_name,member_number').in('id', uids)
-        const pMap = {}
-        if (profiles) profiles.forEach(p => { pMap[p.id] = p })
+        const pMap = {}; if (profiles) profiles.forEach(p => { pMap[p.id] = p })
         setStories(st.map(s => ({ ...s, profile: pMap[s.user_id] })))
       }
       setLoading(false)
@@ -101,7 +82,9 @@ export default function GamePage() {
   const sp = game.sport || 'basketball'
   const isGolf = sp === 'golf'
   const winner = getWinner(game.home_team_abbr, game.away_team_abbr, game.home_score, game.away_score)
-  const TL = ({ a }) => teamMap[a] ? <Link href={`/team/${teamMap[a]}`} className="team-link">{a}</Link> : <span>{a}</span>
+  const awayWon = game.away_team_abbr === winner
+  const homeWon = game.home_team_abbr === winner
+  const TL = ({ a }) => teamMap[a] ? <Link href={`/team/${teamMap[a]}`} style={{ color: 'inherit', textDecoration: 'none', borderBottom: '1px solid var(--leather)' }}>{a}</Link> : <span>{a}</span>
   const VL = () => venueId ? <Link href={`/venue/${venueId}`} className="copper-link">{game.venue}</Link> : <span>{game.venue}</span>
   const CL = () => game.venue_city ? <Link href={`/city/${encodeURIComponent(normalizeCity(game.venue_city))}`} className="copper-link">{game.venue_city}</Link> : null
   const PL = ({ n }) => playerMap[n] ? <Link href={`/player/${playerMap[n]}`} className="copper-link">{n}</Link> : <span className="copper-link" onClick={() => window.location.href=`/search?q=${encodeURIComponent(n)}`} style={{cursor:'pointer'}}>{n}</span>
@@ -109,7 +92,6 @@ export default function GamePage() {
   let rawPerf = []
   if (sp === 'basketball') rawPerf = box.filter(p => p.points >= 15).slice(0, 8)
   else if (sp === 'football') {
-    // Get stat leaders per team by category
     const teams = [game.away_team_abbr, game.home_team_abbr].filter(Boolean)
     const leaders = []
     teams.forEach(team => {
@@ -158,24 +140,56 @@ export default function GamePage() {
       <BackButton />
       <GameNav />
       <WeatherIntro weather={typeof game.weather === 'string' ? JSON.parse(game.weather) : game.weather} sport={sp} venue={game.venue} />
-      <div style={{ padding:'0 20px', marginTop:12 }}>
-        <div style={{ marginBottom:8 }}><SportBadge sport={sp}/></div>
-        {!isGolf && showScore(game) ? (
-          <div className="scoreboard">
-            <div className="sb-team"><div className="sb-abbr"><TL a={game.away_team_abbr}/></div><div className="sb-score">{game.away_score}</div></div>
-            <div className="sb-divider"><div className="sb-dash"></div><div className="sb-final">FINAL</div></div>
-            <div className="sb-team"><div className="sb-abbr"><TL a={game.home_team_abbr}/></div><div className="sb-score">{game.home_score}</div></div>
+
+      {/* DARK SCOREBOARD */}
+      {!isGolf && showScore(game) ? (<>
+        <div className="scoreboard">
+          <div className="sb-team">
+            <div className="sb-abbr"><TL a={game.away_team_abbr}/></div>
+            <div className={`sb-score${!awayWon ? ' lose' : ''}`}>{game.away_score}</div>
           </div>
-        ) : isGolf ? <div style={{ fontSize:22, color:'var(--ink)', marginBottom:8 }}>{game.title}</div> : null}
-        <div className="game-meta">
-          <div>{formatDate(game.game_date)}{game.series_info ? ` \u00B7 ${capType(game.series_info)}` : ''}</div>
-          {game.venue && <div><VL/>{game.venue_city && <> <span style={{color:'var(--dim)'}}>&middot;</span> <CL/></>}</div>}
-          <WeatherDisplay weather={typeof game.weather === 'string' ? JSON.parse(game.weather) : game.weather} sport={sp} />
+          <div style={{ textAlign: 'center' }}>
+            <div className="sb-final">FINAL</div>
+          </div>
+          <div className="sb-team">
+            <div className="sb-abbr"><TL a={game.home_team_abbr}/></div>
+            <div className={`sb-score${!homeWon ? ' lose' : ''}`}>{game.home_score}</div>
+          </div>
         </div>
-        {game.context_blurb && <div className="blurb" style={{ marginTop:14 }}>{game.context_blurb}</div>}
-        <YourCall gameId={game.id} onLogged={() => setShowStory(true)} />
-        <RaftersButton gameId={game.id} />
-      </div>
+        <div className="sb-sub">
+          {formatDate(game.game_date)}{game.series_info ? ` \u00B7 ${capType(game.series_info)}` : ''}
+          {game.venue && <> \u00B7 {game.venue}</>}
+        </div>
+      </>) : isGolf ? (
+        <div style={{ padding: '16px 20px' }}>
+          <div style={{ marginBottom: 8 }}><SportBadge sport={sp}/></div>
+          <div style={{ fontSize: 22, color: 'var(--ink)', marginBottom: 8, fontFamily: 'var(--display)' }}>{game.title}</div>
+          <div className="game-meta">
+            <div>{formatDate(game.game_date)}</div>
+            {game.venue && <div><VL/>{game.venue_city && <> <span style={{color:'var(--dim)'}}>&middot;</span> <CL/></>}</div>}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Game meta + blurb (non-golf gets it below scoreboard) */}
+      {!isGolf && (
+        <div style={{ padding: '12px 20px 0' }}>
+          {game.venue && !showScore(game) && <div className="game-meta"><div><VL/>{game.venue_city && <> &middot; <CL/></>}</div></div>}
+          <WeatherDisplay weather={typeof game.weather === 'string' ? JSON.parse(game.weather) : game.weather} sport={sp} />
+          {game.context_blurb && <div className="blurb" style={{ marginTop: 14 }}>{game.context_blurb}</div>}
+          <YourCall gameId={game.id} onLogged={() => setShowStory(true)} />
+          <RaftersButton gameId={game.id} />
+        </div>
+      )}
+      {isGolf && (
+        <div style={{ padding: '0 20px' }}>
+          <WeatherDisplay weather={typeof game.weather === 'string' ? JSON.parse(game.weather) : game.weather} sport={sp} />
+          {game.context_blurb && <div className="blurb" style={{ marginTop: 14 }}>{game.context_blurb}</div>}
+          <YourCall gameId={game.id} onLogged={() => setShowStory(true)} />
+          <RaftersButton gameId={game.id} />
+        </div>
+      )}
+
       {showStory && <StoryOverlay game={game} onSave={async (story) => {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) await supabase.from('user_games').update({ story }).eq('user_id', user.id).eq('game_id', game.id)
@@ -184,46 +198,46 @@ export default function GamePage() {
 
       {/* FROM THE STANDS */}
       {stories.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
-        <div style={{ padding:20 }}>
+        <div style={{ padding: 20 }}>
           <div className="sec-head">FROM THE STANDS ({stories.length})</div>
-          {stories.map(s => (
-            <Link key={s.id} href={`/story/${s.id}`} style={{ display:'block', padding:'12px 0', borderBottom:'1px solid var(--faint)', textDecoration:'none' }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
-                <div style={{ display:'flex', alignItems:'center' }}>
-                  <span className="sans" style={{ fontSize:12, color:'var(--copper)', fontWeight:600 }}>
-                    {s.profile?.display_name || s.profile?.username || 'Anonymous'}
-                  </span>
+          {stories.map(s => {
+            const initial = (s.profile?.display_name || s.profile?.username || '?')[0].toUpperCase()
+            return (
+              <Link key={s.id} href={`/story/${s.id}`} style={{ display: 'block', padding: '12px 0', borderBottom: '1px solid var(--faint)', textDecoration: 'none' }}>
+                <div className="byline" style={{ marginBottom: 8 }}>
+                  <div className="avatar">{initial}</div>
+                  <span className="author-name">{s.profile?.display_name || s.profile?.username || 'Anonymous'}</span>
                   <FounderBadge number={s.profile?.member_number}/>
+                  <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {s.attended && <span className="mono" style={{ fontSize: 9, color: 'var(--copper)', fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', border: '1px solid var(--copper)', borderRadius: 2 }}>WAS THERE</span>}
+                    {s.rating && <span className="stars">{[1,2,3,4,5].map(i => <span key={i} className={`s${i <= s.rating ? ' on' : ''}`}>&#9733;</span>)}</span>}
+                  </div>
                 </div>
-                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                  {s.attended && <span className="sans" style={{ fontSize:9, color:'var(--copper)', fontWeight:600, letterSpacing:0.5, padding:'2px 6px', border:'1px solid var(--copper)', borderRadius:2 }}>WAS THERE</span>}
-                  {s.rating && <span style={{ fontSize:11, color:'var(--gold)' }}>{'★'.repeat(s.rating)}</span>}
+                <div className="story-text" style={{ fontStyle: 'italic' }}>{s.story}</div>
+                <div className="story-actions" onClick={e => e.preventDefault()}>
+                  <HighFive userGameId={s.id} />
+                  <span className="action-btn">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Reply
+                  </span>
+                  <span className="timestamp" style={{ marginLeft: 'auto' }}>
+                    {new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
                 </div>
-              </div>
-              <div style={{ fontSize:14, color:'var(--text)', lineHeight:1.7 }}>{s.story}</div>
-              <div style={{ display:'flex', alignItems:'center', gap:12, marginTop:8 }} onClick={e => e.preventDefault()}>
-                <HighFive userGameId={s.id} />
-                <span className="sans" style={{ fontSize:10, color:'var(--dim)', display:'flex', alignItems:'center', gap:3 }}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                  Reply
-                </span>
-                <span className="sans" style={{ fontSize:10, color:'var(--dim)', marginLeft:'auto' }}>
-                  {new Date(s.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}
-                </span>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            )
+          })}
         </div>
       </>)}
 
       {perfs.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
-        <div style={{ padding:'20px 0 0 20px' }}>
+        <div style={{ padding: '20px 0 0 20px' }}>
           <div className="sec-head">{sp === 'football' ? 'STAT LEADERS' : 'KEY PERFORMERS'}</div>
           <div className="perf-scroll">{perfs.map((p,i) => { const s = pS(p); return (
             <div key={i} className="perf-card" onClick={() => {
               if (playerMap[p.player_name]) window.location.href=`/player/${playerMap[p.player_name]}`
               else window.location.href=`/search?q=${encodeURIComponent(p.player_name)}`
-            }} style={{ cursor:'pointer' }}>
+            }} style={{ cursor: 'pointer' }}>
               <div className="perf-name">{p.player_name}</div><div className="perf-big">{s.big}</div><div className="perf-label">{s.label}</div><div className="perf-sub">{s.sub}</div><div className="perf-team">{p.team_abbr}</div>
             </div>)})}</div></div></>)}
 

@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 
 function HandIcon({ style = {} }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={style}>
       <path d="M18 11V6a2 2 0 0 0-4 0v1"/>
       <path d="M14 10V4a2 2 0 0 0-4 0v6"/>
       <path d="M10 10.5V6a2 2 0 0 0-4 0v8"/>
@@ -50,16 +50,12 @@ export default function HighFive({ userGameId }) {
   }
 
   return (
-    <button onClick={toggle} className="sans" style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-      padding: '4px 10px', fontSize: 11, fontWeight: 600,
-      background: 'none', border: 'none', cursor: 'pointer',
+    <button onClick={toggle} className="action-btn" style={{
       color: myHighFive ? 'var(--copper)' : 'var(--dim)',
       position: 'relative', overflow: 'hidden',
       transition: 'color 0.2s',
     }}>
-      <span style={{ position: 'relative', display: 'inline-flex', width: 22, height: 20, alignItems: 'center', justifyContent: 'center' }}>
-        {/* Main hand */}
+      <span style={{ position: 'relative', display: 'inline-flex', width: 20, height: 18, alignItems: 'center', justifyContent: 'center' }}>
         <span style={{
           display: 'inline-flex', position: 'absolute', left: 0,
           transform: animating ? 'scale(1.15) rotate(-8deg)' : 'scale(1)',
@@ -67,10 +63,8 @@ export default function HighFive({ userGameId }) {
         }}>
           <HandIcon />
         </span>
-        {/* Swooping second hand */}
         <span style={{
-          position: 'absolute', left: 2, top: 0,
-          display: 'inline-flex',
+          position: 'absolute', left: 2, top: 0, display: 'inline-flex',
           opacity: animating ? 1 : 0,
           transform: animating ? 'translateX(-2px) scaleX(-1) rotate(8deg)' : 'translateX(16px) scaleX(-1) rotate(30deg)',
           transition: animating ? 'all 0.2s cubic-bezier(0.2, 0, 0.2, 1)' : 'all 0.3s ease-in 0.15s',
