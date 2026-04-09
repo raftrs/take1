@@ -24,7 +24,7 @@ export default function VenuesPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: vn } = await supabase.from('venues').select('id,venue_name,venue_city,sport,description,capacity,opened')
+      const { data: vn } = await supabase.from('venues').select('id,venue_name,venue_city,sport,description,capacity,opened,active')
         .not('description', 'is', null).order('sport').order('venue_name')
       setVenues(vn || [])
 
@@ -50,15 +50,19 @@ export default function VenuesPage() {
     setVisited(newVisited)
   }
 
-  const filtered = sport === 'all' ? venues : venues.filter(v => v.sport === sport)
+  const allFiltered = sport === 'all' ? venues : venues.filter(v => v.sport === sport)
+  const filtered = allFiltered.filter(v => v.active !== false)
+  const historic = allFiltered.filter(v => v.active === false)
 
-  // Progress per sport
+  // Progress per sport (only active venues)
   const progress = {}
   SPORT_TABS.filter(t => t.k !== 'all').forEach(t => {
-    const sportVenues = venues.filter(v => v.sport === t.k)
+    const sportVenues = venues.filter(v => v.sport === t.k && v.active !== false)
     const sportVisited = sportVenues.filter(v => visited.has(v.id))
     progress[t.k] = { total: sportVenues.length, visited: sportVisited.length }
   })
+  const activeVenues = venues.filter(v => v.active !== false)
+  const activeVisited = activeVenues.filter(v => visited.has(v.id))
 
   if (loading) return <div className="loading">Loading...</div>
 
@@ -69,7 +73,7 @@ export default function VenuesPage() {
       <div style={{ padding: '20px 20px 0', borderBottom: '2px solid var(--rule)' }}>
         <div style={{ fontSize: 20, color: 'var(--ink)', marginBottom: 4 }}>Venue Checklist</div>
         <div className="sans" style={{ fontSize: 11, color: 'var(--dim)', marginBottom: 12, fontStyle: 'italic' }}>
-          {visited.size} of {venues.length} visited
+          {activeVisited.length} of {activeVenues.length} visited
         </div>
 
         {/* Sport tabs */}
@@ -142,6 +146,47 @@ export default function VenuesPage() {
         })}
         {filtered.length === 0 && <div className="empty">No venues found for this sport.</div>}
       </div>
+
+      {/* Historic venues */}
+      {historic.length > 0 && (<>
+        <div style={{ padding: '16px 20px 0', borderTop: '2px solid var(--rule)' }}>
+          <div className="sec-head">HISTORIC VENUES ({historic.length})</div>
+          <div className="sans" style={{ fontSize: 10, color: 'var(--dim)', marginBottom: 12 }}>No longer active. Not counted toward your progress.</div>
+        </div>
+        <div style={{ padding: '0 0 80px' }}>
+          {historic.map(v => {
+            const isVisited = visited.has(v.id)
+            return (
+              <div key={v.id} style={{ padding: '14px 20px', borderBottom: '1px solid var(--faint)', opacity: 0.7 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                  <Link href={`/venue/${v.id}`} style={{ flex: 1, textDecoration: 'none' }}>
+                    <div style={{ fontSize: 15, color: 'var(--ink)', fontWeight: 600 }}>{v.venue_name}</div>
+                    <div className="sans" style={{ fontSize: 11, color: 'var(--dim)', marginTop: 2 }}>
+                      {v.venue_city}
+                      {v.capacity ? ` \u00B7 ${Number(v.capacity).toLocaleString()} capacity` : ''}
+                    </div>
+                    {v.description && (
+                      <div className="sans" style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6, lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        {v.description}
+                      </div>
+                    )}
+                  </Link>
+                  <button onClick={() => toggleVisit(v.id)} className="sans" style={{
+                    flexShrink: 0, padding: '6px 12px', fontSize: 10, fontWeight: 600,
+                    border: isVisited ? '1.5px solid var(--copper)' : '1.5px solid var(--faint)',
+                    borderRadius: 4, cursor: 'pointer', whiteSpace: 'nowrap',
+                    background: isVisited ? 'rgba(181,86,58,0.08)' : 'transparent',
+                    color: isVisited ? 'var(--copper)' : 'var(--dim)',
+                    transition: 'all 0.2s',
+                  }}>
+                    {isVisited ? '\u2713 Visited' : 'Been here'}
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </>)}
     </div>
   )
 }

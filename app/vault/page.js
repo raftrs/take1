@@ -7,7 +7,6 @@ import SportBadge from '@/components/SportBadge'
 import TopLogo from '@/components/TopLogo'
 
 export default function VaultPage() {
-  const [featured, setFeatured] = useState(null)
   const [allTimers, setAllTimers] = useState({ basketball: [], football: [], golf: [], baseball: [] })
   const [collections, setCollections] = useState([])
   const [notables, setNotables] = useState([])
@@ -27,18 +26,6 @@ export default function VaultPage() {
         .order('game_date', { ascending: false })
 
       if (at?.length) {
-        // On This Day feature
-        const today = new Date()
-        const mm = String(today.getMonth() + 1).padStart(2, '0')
-        const dd = String(today.getDate()).padStart(2, '0')
-        const todayStr = `-${mm}-${dd}`
-        const todayGames = at.filter(g => g.game_date?.endsWith(todayStr))
-        if (todayGames.length > 0) {
-          setFeatured({ type: 'today', game: todayGames[Math.floor(Math.random() * todayGames.length)] })
-        } else {
-          setFeatured({ type: 'random', game: at[Math.floor(Math.random() * at.length)] })
-        }
-
         setAllTimers({
           basketball: at.filter(g => g.sport === 'basketball'),
           football: at.filter(g => g.sport === 'football'),
@@ -47,14 +34,17 @@ export default function VaultPage() {
         })
       }
 
-      // Collections with counts
+      // Collections with counts and sport info
       const { data: cg } = await supabase.from('notable_games')
-        .select('collections').not('collections', 'is', null).eq('tier', 1)
+        .select('collections,sport').not('collections', 'is', null).eq('tier', 1)
       if (cg) {
         const counts = {}
+        const collSports = {}
         cg.forEach(g => {
           if (Array.isArray(g.collections)) g.collections.forEach(c => {
             counts[c] = (counts[c] || 0) + 1
+            if (!collSports[c]) collSports[c] = new Set()
+            if (g.sport) collSports[c].add(g.sport)
           })
         })
         const skip = new Set(['Game 7s', 'Super Bowls', 'Greatest Playoff Games', 'Greatest Super Bowls', 'Greatest Majors'])
@@ -62,7 +52,7 @@ export default function VaultPage() {
           Object.entries(counts)
             .filter(([name]) => !skip.has(name))
             .sort((a, b) => b[1] - a[1])
-            .map(([name, count]) => ({ name, count }))
+            .map(([name, count]) => ({ name, count, sports: [...(collSports[name] || [])] }))
         )
       }
 
@@ -79,9 +69,23 @@ export default function VaultPage() {
 
   if (loading) return <div className="loading">Loading...</div>
 
-  const allAT = atSport === 'all'
+  // Pick featured hero based on sport filter
+  const heroPool = atSport === 'all'
     ? [...allTimers.basketball, ...allTimers.football, ...allTimers.golf, ...allTimers.baseball]
     : allTimers[atSport] || []
+
+  const hero = (() => {
+    if (!heroPool.length) return null
+    const today = new Date()
+    const mm = String(today.getMonth() + 1).padStart(2, '0')
+    const dd = String(today.getDate()).padStart(2, '0')
+    const todayStr = `-${mm}-${dd}`
+    const todayGames = heroPool.filter(g => g.game_date?.endsWith(todayStr))
+    if (todayGames.length > 0) return { type: 'today', game: todayGames[Math.floor(Math.random() * todayGames.length)] }
+    return { type: 'random', game: heroPool[Math.floor(Math.random() * heroPool.length)] }
+  })()
+
+  const allAT = heroPool
   const sortedAT = [...allAT].sort((a, b) =>
     atSort === 'desc' ? (b.game_date || '').localeCompare(a.game_date || '') : (a.game_date || '').localeCompare(b.game_date || '')
   )
@@ -92,9 +96,9 @@ export default function VaultPage() {
     notableSort === 'desc' ? (b.game_date || '').localeCompare(a.game_date || '') : (a.game_date || '').localeCompare(b.game_date || '')
   )
 
-  const filteredCollections = collections // collections don't have sport, keep as-is
+  const filteredCollections = atSport === 'all' ? collections : collections.filter(c => c.sports?.includes(atSport))
 
-  const hero = featured?.game
+  const heroGame = hero?.game
 
   return (
     <div>
@@ -116,16 +120,16 @@ export default function VaultPage() {
       </div>
 
       {/* FEATURED */}
-      {hero && (<>
+      {heroGame && (<>
         <hr className="sec-rule" /><hr className="sec-rule-thin" />
-        <Link href={`/notable/${hero.id}`} style={{ display: 'block', padding: '20px', textDecoration: 'none' }}>
-          <div className="sans" style={{ fontSize: 9, color: featured.type === 'today' ? 'var(--copper)' : 'var(--dim)', letterSpacing: 2.5, fontWeight: 700, marginBottom: 8 }}>
-            {featured.type === 'today' ? 'ON THIS DAY' : 'FEATURED ALL-TIMER'}
+        <Link href={`/notable/${heroGame.id}`} style={{ display: 'block', padding: '20px', textDecoration: 'none' }}>
+          <div className="sans" style={{ fontSize: 9, color: hero.type === 'today' ? 'var(--copper)' : 'var(--dim)', letterSpacing: 2.5, fontWeight: 700, marginBottom: 8 }}>
+            {hero.type === 'today' ? 'ON THIS DAY' : 'FEATURED ALL-TIMER'}
           </div>
-          <div style={{ fontSize: 20, color: 'var(--ink)', lineHeight: 1.3, marginBottom: 6 }}>{hero.title}</div>
-          {showScore(hero) && <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 4 }}>{showScore(hero)}</div>}
-          <div className="sans" style={{ fontSize: 11, color: 'var(--dim)' }}>{formatDate(hero.game_date)}{hero.venue ? ` \u00B7 ${hero.venue}` : ''}</div>
-          {hero.description && <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 10, lineHeight: 1.6 }}>{hero.description}</div>}
+          <div style={{ fontSize: 20, color: 'var(--ink)', lineHeight: 1.3, marginBottom: 6 }}>{heroGame.title}</div>
+          {showScore(heroGame) && <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 4 }}>{showScore(heroGame)}</div>}
+          <div className="sans" style={{ fontSize: 11, color: 'var(--dim)' }}>{formatDate(heroGame.game_date)}{heroGame.venue ? ` \u00B7 ${heroGame.venue}` : ''}</div>
+          {heroGame.description && <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 10, lineHeight: 1.6 }}>{heroGame.description}</div>}
         </Link>
       </>)}
 
@@ -168,12 +172,12 @@ export default function VaultPage() {
       </div>
 
       {/* COLLECTIONS */}
-      {collections.length > 0 && (<>
+      {filteredCollections.length > 0 && (<>
         <hr className="sec-rule" /><hr className="sec-rule-thin" />
         <div style={{ padding: 20 }}>
           <div className="sec-head">COLLECTIONS</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            {collections.map(c => (
+            {filteredCollections.map(c => (
               <Link key={c.name} href={`/collection/${encodeURIComponent(c.name)}`} style={{
                 padding: '14px 12px', backgroundColor: 'var(--card)', border: '1px solid var(--faint)',
                 borderRadius: 6, textDecoration: 'none',

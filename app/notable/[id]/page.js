@@ -12,6 +12,8 @@ import TopLogo from '@/components/TopLogo'
 import WeatherIntro from '@/components/WeatherIntro'
 import WeatherDisplay from '@/components/WeatherDisplay'
 import StoryOverlay from '@/components/StoryOverlay'
+import RaftersButton from '@/components/RaftersButton'
+import HighFive from '@/components/HighFive'
 
 export default function NotablePage() {
   const { id } = useParams()
@@ -91,9 +93,9 @@ export default function NotablePage() {
         .eq('game_id', storyGameId).not('story', 'is', null).neq('story', '').order('created_at', { ascending: false }).limit(20)
       if (st?.length) {
         const uids = [...new Set(st.map(s => s.user_id))]
-        const { data: profiles } = await supabase.from('user_profiles').select('user_id,username,display_name').in('user_id', uids)
+        const { data: profiles } = await supabase.from('profiles').select('id,username,display_name').in('id', uids)
         const pMap = {}
-        if (profiles) profiles.forEach(p => { pMap[p.user_id] = p })
+        if (profiles) profiles.forEach(p => { pMap[p.id] = p })
         setStories(st.map(s => ({ ...s, profile: pMap[s.user_id] })))
       }
       setLoading(false)
@@ -184,6 +186,7 @@ export default function NotablePage() {
         </div>
         {game.description && <div style={{ fontSize:15, color:'var(--text)', lineHeight:1.85, marginTop:16, borderLeft:'3px solid var(--gold)', paddingLeft:16 }}>{game.description}</div>}
         <YourCall gameId={game.game_id || game.id} notableGameId={game.id} onLogged={() => setShowStory(true)} />
+        <RaftersButton notableGameId={game.id} />
       </div>
       {showStory && <StoryOverlay game={game} onSave={async (story) => {
         const { data: { user } } = await supabase.auth.getUser()
@@ -207,8 +210,11 @@ export default function NotablePage() {
                 </div>
               </div>
               <div style={{ fontSize:14, color:'var(--text)', lineHeight:1.7 }}>{s.story}</div>
-              <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:6 }}>
-                {new Date(s.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:6 }}>
+                <div className="sans" style={{ fontSize:10, color:'var(--dim)' }}>
+                  {new Date(s.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}
+                </div>
+                <HighFive userGameId={s.id} />
               </div>
             </div>
           ))}

@@ -45,8 +45,8 @@ export default function TeamPage() {
       // Check if user has this team favorited
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const { data: ug } = await supabase.from('user_profiles').select('favorite_teams').eq('user_id', user.id).single()
-        if (ug?.favorite_teams && Array.isArray(ug.favorite_teams) && ug.favorite_teams.includes(abbr)) setIsFavorite(true)
+        const { data: prof } = await supabase.from('profiles').select('favorite_teams').eq('id', user.id).single()
+        if (prof?.favorite_teams && Array.isArray(prof.favorite_teams) && prof.favorite_teams.includes(t.id)) setIsFavorite(true)
       }
       setLoading(false)
     }
@@ -100,11 +100,11 @@ export default function TeamPage() {
         <button onClick={async () => {
           const { data: { user } } = await supabase.auth.getUser()
           if (!user) { alert('Sign in to add favorite teams'); return }
-          const abbr = team.team_abbr||team.abbreviation
-          const { data: ug } = await supabase.from('user_profiles').select('favorite_teams').eq('user_id', user.id).single()
-          const current = ug?.favorite_teams || []
-          const updated = isFavorite ? current.filter(t => t !== abbr) : [...current, abbr]
-          await supabase.from('user_profiles').upsert({ user_id: user.id, favorite_teams: updated })
+          const { data: prof } = await supabase.from('profiles').select('favorite_teams').eq('id', user.id).single()
+          const current = prof?.favorite_teams || []
+          const teamId = team.id
+          const updated = isFavorite ? current.filter(t => t !== teamId) : [...current, teamId]
+          await supabase.from('profiles').update({ favorite_teams: updated }).eq('id', user.id)
           setIsFavorite(!isFavorite)
         }} className="sans" style={{
           display:'inline-flex', alignItems:'center', gap:6, padding:'8px 16px', fontSize:12, fontWeight:600,

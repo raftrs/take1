@@ -134,30 +134,41 @@ export default function BrowsePage() {
       else q = q.ilike('venue_city', `%${f.city}%`)
     }
     if (f.player) {
-      let espnIds = []
+      let allGameResults = []
+      // NBA box scores -> nba_game_id -> games.nba_game_id
       const { data: nbaBS } = await supabase.from('box_scores').select('nba_game_id').eq('player_name', f.player).limit(500)
-      if (nbaBS?.length) espnIds.push(...nbaBS.map(b => b.nba_game_id))
+      const espnIds = nbaBS?.length ? [...new Set(nbaBS.map(b => b.nba_game_id))] : []
+      // NFL box scores -> espn_game_id -> games.nba_game_id
       const { data: nflBS } = await supabase.from('nfl_box_scores').select('espn_game_id').eq('player_name', f.player).limit(500)
       if (nflBS?.length) espnIds.push(...nflBS.map(b => b.espn_game_id))
+      // Fetch NBA/NFL games by nba_game_id
+      if (espnIds.length > 0) {
+        const { data: espnGames } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title')
+          .in('nba_game_id', [...new Set(espnIds)]).order('game_date',{ascending:browseSort==='asc'})
+        if (espnGames?.length) allGameResults.push(...espnGames)
+      }
+      // MLB box scores -> game_id -> games.id
       const { data: mlbBS } = await supabase.from('mlb_box_scores').select('game_id').eq('player_name', f.player).limit(500)
       if (mlbBS?.length) {
         const mlbGameIds = [...new Set(mlbBS.map(b => b.game_id))]
         const { data: mlbGames } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title')
           .in('id', mlbGameIds).order('game_date',{ascending:browseSort==='asc'})
-        if (espnIds.length === 0 && !golfLB?.length) { setFilteredGames(mlbGames||[]); setFiltering(false); return }
+        if (mlbGames?.length) allGameResults.push(...mlbGames)
       }
+      // Golf leaderboard -> game_id -> games.id
       const { data: golfLB } = await supabase.from('golf_leaderboard').select('game_id').eq('player_name', f.player).limit(500)
       if (golfLB?.length) {
         const golfGameIds = [...new Set(golfLB.map(g => g.game_id))]
         const { data: golfGames } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,series_info,sport,title')
           .in('id', golfGameIds).order('game_date',{ascending:browseSort==='asc'})
-        if (espnIds.length === 0) { setFilteredGames(golfGames||[]); setFiltering(false); return }
-        const { data: otherGames } = await q
-        const merged = [...(otherGames||[]), ...(golfGames||[])].sort((a,b) => browseSort==='asc' ? (a.game_date||'').localeCompare(b.game_date||'') : (b.game_date||'').localeCompare(a.game_date||''))
-        setFilteredGames(merged); setFiltering(false); return
+        if (golfGames?.length) allGameResults.push(...golfGames)
       }
-      if (espnIds.length === 0) { setFilteredGames([]); setFiltering(false); return }
-      q = q.in('nba_game_id', [...new Set(espnIds)])
+      // Dedupe and sort
+      const seen = new Set()
+      allGameResults = allGameResults.filter(g => { if (seen.has(g.id)) return false; seen.add(g.id); return true })
+      allGameResults.sort((a,b) => browseSort==='asc' ? (a.game_date||'').localeCompare(b.game_date||'') : (b.game_date||'').localeCompare(a.game_date||''))
+      if (sv) allGameResults = allGameResults.filter(g => g.sport === sv)
+      setFilteredGames(allGameResults); setFiltering(false); return
     }
     const { data } = await q; setFilteredGames(data||[]); setFiltering(false)
   }, [sv, browseSort])

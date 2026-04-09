@@ -4,7 +4,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
+import { formatDate } from '@/lib/utils'
 import TopLogo from '@/components/TopLogo'
+import SportBadge from '@/components/SportBadge'
 
 export default function ProfilePage() {
   const { user, profile, loading, signOut } = useAuth()
@@ -12,6 +14,8 @@ export default function ProfilePage() {
   const [favorites, setFavorites] = useState([])
   const [recentLogs, setRecentLogs] = useState([])
   const [showLogs, setShowLogs] = useState(false)
+  const [teamData, setTeamData] = useState([])
+  const [suggestions, setSuggestions] = useState([])
 
   useEffect(() => {
     if (!user) return
@@ -25,16 +29,28 @@ export default function ProfilePage() {
       const ratings = games.filter(g => g.rating).map(g => g.rating)
       const avgRating = ratings.length > 0 ? (ratings.reduce((a,b) => a+b, 0) / ratings.length).toFixed(1) : 0
 
-      // Venues attended
-      const attendedIds = games.filter(g => g.attended).map(g => g.game_id)
-      let venueCount = 0
-      if (attendedIds.length > 0) {
-        const { data: vg } = await supabase.from('games').select('venue').in('id', attendedIds.slice(0, 200))
-        if (vg) venueCount = new Set(vg.map(g => g.venue).filter(Boolean)).size
-      }
+      // Venues from user_venues checklist
+      const { count: venueCount } = await supabase.from('user_venues').select('id', { count: 'exact', head: true }).eq('user_id', user.id)
 
       // Encounters
       const { count: encCount } = await supabase.from('encounters').select('id', { count: 'exact', head: true }).eq('user_id', user.id)
+
+      // Load team data for favorite team chips
+      let allTeams = []
+      const { data: prof } = await supabase.from('profiles').select('favorite_teams').eq('id', user.id).single()
+      if (prof?.favorite_teams?.length) {
+        const ids = prof.favorite_teams.filter(t => typeof t === 'number')
+        const abbrs = prof.favorite_teams.filter(t => typeof t === 'string')
+        if (ids.length) {
+          const { data: td } = await supabase.from('teams').select('id,team_abbr,team_name,sport,primary_color').in('id', ids).eq('active', true)
+          if (td) allTeams.push(...td)
+        }
+        if (abbrs.length) {
+          const { data: td } = await supabase.from('teams').select('id,team_abbr,team_name,sport,primary_color').in('team_abbr', abbrs).eq('active', true)
+          if (td) allTeams.push(...td)
+        }
+        setTeamData(allTeams)
+      }
 
       // Favorites
       const { data: favs } = await supabase.from('favorite_games').select('*').eq('user_id', user.id).order('position')
@@ -56,7 +72,22 @@ export default function ProfilePage() {
         setRecentLogs(games.slice(0, 20).map(ug => ({ ...ug, game: gd?.find(g => g.id === ug.game_id) })))
       }
 
-      setStats({ logged, attended, stories, encounters: encCount || 0, venues: venueCount, avgRating })
+      setStats({ logged, attended, stories, encounters: encCount || 0, venues: venueCount || 0, avgRating })
+
+      // Rafters recommendations based on favorite teams
+      if (allTeams.length > 0) {
+        const favAbbrs = allTeams.map(t => t.team_abbr)
+        const raftedIds = (favs || []).filter(f => f.notable_game_id).map(f => f.notable_game_id)
+        const orClauses = favAbbrs.map(a => `home_team_abbr.eq.${a},away_team_abbr.eq.${a}`).join(',')
+        const { data: sug } = await supabase.from('notable_games')
+          .select('id,title,game_date,sport,tier,home_team_abbr,away_team_abbr')
+          .eq('tier', 1).or(orClauses)
+          .order('game_date', { ascending: false }).limit(20)
+        if (sug) {
+          const filtered = sug.filter(s => !raftedIds.includes(s.id)).slice(0, 5)
+          setSuggestions(filtered)
+        }
+      }
     }
     loadStats()
   }, [user])
@@ -110,8 +141,13 @@ export default function ProfilePage() {
         </div>
 
         {/* Favorite teams */}
-        {profile?.favorite_teams?.length > 0 && <div style={{ display:'flex', gap:6, marginTop:12, flexWrap:'wrap' }}>
-          {profile.favorite_teams.map(t => <span key={t} className="sans" style={{ fontSize:10, padding:'3px 8px', background:'rgba(181,86,58,0.08)', color:'var(--copper)', border:'1px solid var(--copper)', letterSpacing:0.5 }}>{t}</span>)}
+        {teamData.length > 0 && <div style={{ display:'flex', gap:6, marginTop:12, flexWrap:'wrap' }}>
+          {teamData.map(t => {
+            const color = t.primary_color || 'var(--copper)'
+            return <Link key={t.id} href={`/team/${t.id}`} style={{ textDecoration:'none' }}>
+              <span className="sans" style={{ fontSize:10, padding:'3px 8px', background:`${color}12`, color:color, border:`1px solid ${color}`, letterSpacing:0.5 }}>{t.team_name}</span>
+            </Link>
+          })}
         </div>}
 
         {/* THE FIVE BANNERS */}
@@ -177,6 +213,27 @@ export default function ProfilePage() {
             {log.story && <div style={{ fontSize:12, color:'var(--muted)', marginTop:4, fontStyle:'italic' }}>{log.story.slice(0, 80)}{log.story.length > 80 ? '...' : ''}</div>}
           </Link>
         })}
+      </>)}
+
+      {/* RAFTERS RECOMMENDATIONS */}
+      {suggestions.length > 0 && (<>
+        <hr className="sec-rule"/><hr className="sec-rule-thin"/>
+        <div style={{ padding:20 }}>
+          <div className="sec-head">SUGGESTED FOR YOUR RAFTERS</div>
+          <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:12 }}>All-Timers featuring your teams</div>
+          {suggestions.map(s => (
+            <Link key={s.id} href={`/notable/${s.id}`} className="game-row" style={{ padding:'8px 0' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <span className="at-badge-sm">&#9733;</span>
+                <SportBadge sport={s.sport}/>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:13, color:'var(--ink)' }}>{s.title}</div>
+                  <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{formatDate(s.game_date)}</div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
       </>)}
 
       <div style={{ height:80 }}></div>
