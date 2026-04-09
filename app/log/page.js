@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { formatDate, showScore, savePlaylist } from '@/lib/utils';
+import { formatDate, showScore, savePlaylist, isPlayoff } from '@/lib/utils';
 import SportBadge from '@/components/SportBadge';
 
 /* ── Design tokens ── */
@@ -58,7 +58,7 @@ function YearScroller({ value, onChange }) {
         const active = value === String(y);
         return <button key={y} data-y={y} onClick={() => onChange(active ? '' : String(y))}
           style={{
-            padding: '5px 12px', flexShrink: 0, fontFamily: 'Manrope, Arial, sans-serif',
+            padding: '5px 12px', flexShrink: 0, fontFamily: "'Libre Franklin', sans-serif",
             fontSize: 12, fontWeight: active ? 700 : 500,
             backgroundColor: active ? copper : 'transparent',
             color: active ? cream : dim,
@@ -87,7 +87,7 @@ function SortToggle({ value, onChange, count }) {
             }}>{s}</button>;
         })}
       </div>
-      {count > 0 && <span style={{ fontFamily: 'Manrope, Arial, sans-serif', fontSize: 11, color: dim }}>{count} game{count !== 1 ? 's' : ''}</span>}
+      {count > 0 && <span style={{ fontFamily: "'Libre Franklin', sans-serif", fontSize: 11, color: dim }}>{count} game{count !== 1 ? 's' : ''}</span>}
     </div>
   );
 }
@@ -218,7 +218,7 @@ function GameFinder({ onSelect, selectable }) {
         {['basketball', 'football', 'baseball'].map(s => (
           <button key={s} onClick={() => { setSport(s); clearAll(); }}
             style={{
-              padding: '5px 14px', fontFamily: 'Manrope, Arial, sans-serif',
+              padding: '5px 14px', fontFamily: "'Libre Franklin', sans-serif",
               fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
               border: sport === s ? `2px solid ${copper}` : `2px solid ${faint}`,
               borderRadius: 4, backgroundColor: sport === s ? copper : 'transparent',
@@ -310,10 +310,21 @@ function RecentlyPlayed() {
   useEffect(() => {
     setLoading(true);
     let q = supabase.from('games')
-      .select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,sport,series_info')
-      .order('game_date', { ascending: false }).limit(10);
+      .select('id,title,game_date,home_team_abbr,away_team_abbr,home_score,away_score,sport,series_info')
+      .order('game_date', { ascending: false }).limit(30);
     if (rpSport !== 'all') q = q.eq('sport', rpSport);
-    q.then(({ data }) => { setGames(data || []); setLoading(false); });
+    q.then(({ data }) => {
+      let filtered = data || [];
+      // Filter out Korn Ferry, Champions Tour, Q-School, Senior events
+      filtered = filtered.filter(g => {
+        if (g.sport !== 'golf') return true;
+        const t = (g.title || '').toLowerCase();
+        if (t.includes('korn ferry') || t.includes('champions tour') || t.includes('senior') || t.includes('q-school') || t.includes('legends')) return false;
+        return true;
+      });
+      setGames(filtered.slice(0, 10));
+      setLoading(false);
+    });
   }, [rpSport]);
   return (
     <div style={secStyle}>
@@ -333,27 +344,29 @@ function RecentlyPlayed() {
           {games.map(g => {
             const aw = Number(g.away_score), hw = Number(g.home_score)
             const awayWon = aw > hw, homeWon = hw > aw
-            const isPlayoff = g.series_info && g.series_info.length > 0
+            const playoff = isPlayoff(g.series_info)
             return (
             <button key={g.id} onClick={() => router.push(`/game/${g.id}`)} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '10px 12px', backgroundColor: card, border: `1px solid ${faint}`,
-              borderLeft: isPlayoff ? `3px solid ${copper}` : `1px solid ${faint}`,
+              borderLeft: playoff ? `3px solid ${copper}` : `1px solid ${faint}`,
               borderRadius: 4, cursor: 'pointer', textAlign: 'left', width: '100%',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
                 <SportBadge sport={g.sport} />
                 <div>
-                  {g.sport !== 'golf' && g.home_score != null ? (
+                  {g.sport === 'golf' ? (
+                    <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 14, color: ink }}>{g.title || 'Tournament'}</div>
+                  ) : g.home_score != null ? (
                     <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 14 }}>
                       <span style={{ color: awayWon ? ink : dim, fontWeight: awayWon ? 700 : 400 }}>{g.away_team_abbr} {g.away_score}</span>
                       <span style={{ color: dim }}> / </span>
                       <span style={{ color: homeWon ? ink : dim, fontWeight: homeWon ? 700 : 400 }}>{g.home_score} {g.home_team_abbr}</span>
                     </div>
                   ) : (
-                    <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 14, color: ink }}>{g.title || showScore(g)}</div>
+                    <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 14, color: ink }}>{g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</div>
                   )}
-                  {g.series_info && <div className="sans" style={{ fontSize: 10, color: copper }}>{g.series_info}</div>}
+                  {g.series_info && playoff && <div className="sans" style={{ fontSize: 10, color: copper }}>{g.series_info}</div>}
                 </div>
               </div>
               <span className="sans" style={{ fontSize: 11, color: dim, whiteSpace: 'nowrap' }}>{formatDate(g.game_date)}</span>
@@ -462,7 +475,7 @@ function SaySomethingSection() {
               transition: 'all 0.15s ease',
             }}>
               <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 15, fontWeight: 700, color: active ? copper : ink, marginBottom: 4 }}>{c.headline}</div>
-              <div style={{ fontFamily: 'Manrope, Arial, sans-serif', fontSize: 11, lineHeight: 1.4, color: dim, fontStyle: 'italic' }}>{c.sub}</div>
+              <div style={{ fontFamily: "'Libre Franklin', sans-serif", fontSize: 11, lineHeight: 1.4, color: dim, fontStyle: 'italic' }}>{c.sub}</div>
             </button>
           );
         })}

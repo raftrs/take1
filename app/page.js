@@ -104,7 +104,7 @@ export default function HomePage() {
 
       {/* Mode toggle */}
       <div style={{ display:'flex', borderBottom:'2px solid var(--rule)' }}>
-        {[{ k:'featured', l:'Featured' },{ k:'feed', l:'My Feed' }].map(m => (
+        {[{ k:'featured', l:'Featured' },{ k:'feed', l:'The Stands' }].map(m => (
           <div key={m.k} onClick={() => setMode(m.k)} style={{
             flex:1, textAlign:'center', padding:'10px 0', cursor:'pointer',
             borderBottom: mode === m.k ? '2px solid var(--copper)' : '2px solid transparent',
@@ -175,7 +175,7 @@ export default function HomePage() {
       <div style={{ padding:'24px 20px', textAlign:'center' }}>
         <div style={{ fontSize:18, color:'var(--ink)', lineHeight:1.4, marginBottom:8 }}>Every game has a story. What are yours?</div>
         <div style={{ fontSize:13, color:'var(--muted)', lineHeight:1.6, maxWidth:300, margin:'0 auto 16px' }}>Rate the games that matter. Share the stories behind them. Build your personal collection.</div>
-        <Link href="/log" style={{ display:'inline-block', padding:'10px 28px', background:'var(--copper)', color:'#fff', fontSize:12, fontFamily:'Arial,sans-serif', fontWeight:600, letterSpacing:1, textDecoration:'none' }}>FIND A GAME</Link>
+        <Link href="/log" style={{ display:'inline-block', padding:'10px 28px', background:'var(--copper)', color:'#fff', fontSize:12, fontFamily:"'Libre Franklin',sans-serif", fontWeight:600, letterSpacing:1, textDecoration:'none' }}>FIND A GAME</Link>
       </div>
 
       {/* ALL-TIMERS SAMPLE */}

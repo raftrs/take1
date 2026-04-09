@@ -106,7 +106,7 @@ export default function ProfilePage() {
       <div style={{ padding:'40px 20px', textAlign:'center', borderBottom:'1px solid var(--faint)' }}>
         <div style={{ fontSize:28, color:'var(--ink)', letterSpacing:4, marginBottom:8 }}>raftrs</div>
         <div style={{ fontSize:14, color:'var(--muted)', fontStyle:'italic', marginBottom:24 }}>Share the stories you&apos;ll never forget.</div>
-        <Link href="/auth" style={{ display:'inline-block', padding:'14px 36px', background:'var(--copper)', color:'#fff', fontSize:13, fontFamily:'Arial,sans-serif', fontWeight:600, letterSpacing:1, textDecoration:'none' }}>SIGN IN / CREATE ACCOUNT</Link>
+        <Link href="/auth" style={{ display:'inline-block', padding:'14px 36px', background:'var(--copper)', color:'#fff', fontSize:13, fontFamily:"'Libre Franklin',sans-serif", fontWeight:600, letterSpacing:1, textDecoration:'none' }}>SIGN IN / CREATE ACCOUNT</Link>
       </div>
       <div style={{ height:80 }}></div>
     </div>

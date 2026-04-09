@@ -127,7 +127,7 @@ export default function YourCall({ gameId, notableGameId, onLogged }) {
           onClick={() => setAttended(attended === true ? null : true)}
           style={{
             padding: '8px 16px',
-            fontFamily: 'Manrope, Arial, sans-serif',
+            fontFamily: "'Libre Franklin', sans-serif",
             fontSize: 13,
             fontWeight: 600,
             border: attended === true ? '2px solid #b5563a' : '2px solid #e5ddd1',
@@ -144,7 +144,7 @@ export default function YourCall({ gameId, notableGameId, onLogged }) {
           onClick={() => setAttended(attended === false ? null : false)}
           style={{
             padding: '8px 16px',
-            fontFamily: 'Manrope, Arial, sans-serif',
+            fontFamily: "'Libre Franklin', sans-serif",
             fontSize: 13,
             fontWeight: 600,
             border: attended === false ? '2px solid #b5563a' : '2px solid #e5ddd1',

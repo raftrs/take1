@@ -180,11 +180,11 @@ export default function PlayerPage() {
       } else if (sport === 'baseball') {
         const { data: bs } = await supabase.from('mlb_box_scores').select('*').eq('player_name', p.player_name)
         if (bs?.length) {
-          const gameIds = [...new Set(bs.map(b => b.game_id))]
-          const { data: games } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,series_info')
-            .in('id', gameIds).order('game_date', { ascending: false })
+          const espnIds = [...new Set(bs.map(b => b.espn_game_id).filter(Boolean))]
+          const { data: games } = await supabase.from('games').select('id,nba_game_id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,series_info')
+            .in('nba_game_id', espnIds).order('game_date', { ascending: false })
           if (games) {
-            setGameLog(games.map(g => ({ ...g, stats: bs.find(b => b.game_id === g.id) })))
+            setGameLog(games.map(g => ({ ...g, stats: bs.find(b => b.espn_game_id === g.nba_game_id) })))
             const gIds = games.map(g => g.id).filter(Boolean)
             if (gIds.length > 0) {
               const { data: at } = await supabase.from('notable_games').select('id,title,game_date,sport,tier')
@@ -359,7 +359,7 @@ export default function PlayerPage() {
             {g.series_info && <div className="sans" style={{ fontSize:10, color:'var(--copper)', marginTop:2 }}>{g.series_info}</div>}
             {isNBA && g.stats && <div className="sans" style={{ fontSize:11, color:'var(--muted)', marginTop:4 }}>{g.stats.points} pts &middot; {g.stats.rebounds} reb &middot; {g.stats.assists} ast{g.stats.steals?` \u00B7 ${g.stats.steals} stl`:''}{g.stats.blocks?` \u00B7 ${g.stats.blocks} blk`:''}</div>}
             {isNFL && g.stats && <div className="sans" style={{ fontSize:11, color:'var(--muted)', marginTop:4 }}>{nflGameLine(g.stats, player.position)}</div>}
-            {isMLB && g.stats && <div className="sans" style={{ fontSize:11, color:'var(--muted)', marginTop:4 }}>{g.stats.innings_pitched > 0 ? `${g.stats.innings_pitched} IP, ${g.stats.strikeouts||0} K, ${g.stats.earned_runs||0} ER` : `${g.stats.hits||0} H, ${g.stats.rbi||0} RBI, ${g.stats.runs||0} R${g.stats.home_runs ? `, ${g.stats.home_runs} HR` : ''}`}</div>}
+            {isMLB && g.stats && <div className="sans" style={{ fontSize:11, color:'var(--muted)', marginTop:4 }}>{g.stats.innings_pitched > 0 ? `${g.stats.innings_pitched} IP, ${g.stats.strikeouts_pitched||0} K, ${g.stats.earned_runs||0} ER` : `${g.stats.hits||0} H, ${g.stats.rbi||0} RBI, ${g.stats.runs||0} R${g.stats.home_runs ? `, ${g.stats.home_runs} HR` : ''}`}</div>}
           </Link>)}
         </ScrollList>
       </div></>)}

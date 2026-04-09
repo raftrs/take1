@@ -71,8 +71,8 @@ export default function GamePage() {
           const { data: p } = await supabase.from('players').select('id,player_name').in('player_name', names)
           if (p) { const m = {}; p.forEach(x => m[x.player_name] = x.id); setPlayerMap(m) }
         }
-      } else if (sp === 'baseball' && g.id) {
-        const { data: bs } = await supabase.from('mlb_box_scores').select('*').eq('game_id', g.id)
+      } else if (sp === 'baseball' && g.nba_game_id) {
+        const { data: bs } = await supabase.from('mlb_box_scores').select('*').eq('espn_game_id', g.nba_game_id)
         setBox(bs || [])
         if (bs?.length) {
           const names = [...new Set(bs.map(b => b.player_name))]
@@ -141,7 +141,7 @@ export default function GamePage() {
   function pS(p) {
     if (sp === 'basketball') return { big:p.points, label:'PTS', sub:`${p.rebounds} reb \u00B7 ${p.assists} ast` }
     if (sp === 'baseball') {
-      if ((p.innings_pitched||0) > 0) return { big:p.innings_pitched, label:'IP', sub:`${p.strikeouts||0} K, ${p.earned_runs||0} ER` }
+      if ((p.innings_pitched||0) > 0) return { big:p.innings_pitched, label:'IP', sub:`${p.strikeouts_pitched||0} K, ${p.earned_runs||0} ER` }
       if ((p.home_runs||0) > 0) return { big:p.home_runs, label:'HR', sub:`${p.hits||0} H, ${p.rbi||0} RBI` }
       return { big:p.hits||0, label:'H', sub:`${p.rbi||0} RBI, ${p.runs||0} R` }
     }
@@ -258,11 +258,11 @@ export default function GamePage() {
         <div className="box-toggle" onClick={() => setShowBox(!showBox)}>{showBox ? 'Hide box score \u2191':'View full box score \u2193'}</div>
         {showBox && [game.away_team_abbr, game.home_team_abbr].filter(Boolean).map(a => {
           const rows = box.filter(b => b.team_abbr === a); if (!rows.length) return null
-          const pitchers = rows.filter(r => r.role === 'pitcher' || (r.innings_pitched && r.innings_pitched > 0)).sort((a,b) => (b.innings_pitched||0) - (a.innings_pitched||0))
-          const hitters = rows.filter(r => r.role !== 'pitcher' && !(r.innings_pitched > 0)).sort((a,b) => (b.hits||0) - (a.hits||0))
+          const pitchers = rows.filter(r => r.is_pitcher || (r.innings_pitched && r.innings_pitched > 0)).sort((a,b) => (b.innings_pitched||0) - (a.innings_pitched||0))
+          const hitters = rows.filter(r => !r.is_pitcher && !(r.innings_pitched > 0)).sort((a,b) => (b.hits||0) - (a.hits||0))
           return <div key={a}><div className="box-team-label">{a}</div>
             {hitters.length>0 && <table className="box-table"><thead><tr><th style={{textAlign:'left'}}>Batting</th><th>AB</th><th>H</th><th>R</th><th>RBI</th><th>HR</th><th>BB</th></tr></thead><tbody>{hitters.map((p,i)=><tr key={i}><td><PL n={p.player_name}/></td><td>{p.at_bats}</td><td className="pts">{p.hits}</td><td>{p.runs}</td><td>{p.rbi}</td><td>{p.home_runs}</td><td>{p.walks}</td></tr>)}</tbody></table>}
-            {pitchers.length>0 && <table className="box-table"><thead><tr><th style={{textAlign:'left'}}>Pitching</th><th>IP</th><th>H</th><th>R</th><th>ER</th><th>K</th><th>BB</th></tr></thead><tbody>{pitchers.map((p,i)=><tr key={i}><td><PL n={p.player_name}/></td><td>{p.innings_pitched}</td><td>{p.hits_allowed}</td><td>{p.runs_allowed}</td><td className="pts">{p.earned_runs}</td><td>{p.strikeouts}</td><td>{p.walks_allowed}</td></tr>)}</tbody></table>}
+            {pitchers.length>0 && <table className="box-table"><thead><tr><th style={{textAlign:'left'}}>Pitching</th><th>IP</th><th>H</th><th>R</th><th>ER</th><th>K</th><th>BB</th></tr></thead><tbody>{pitchers.map((p,i)=><tr key={i}><td><PL n={p.player_name}/></td><td>{p.innings_pitched}</td><td>{p.hits_allowed}</td><td>{p.runs_allowed}</td><td className="pts">{p.earned_runs}</td><td>{p.strikeouts_pitched}</td><td>{p.walks_allowed}</td></tr>)}</tbody></table>}
           </div>})}</div></>)}
       <GameNav position="bottom" />
       <div style={{ height:80 }}></div>

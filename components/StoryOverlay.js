@@ -132,7 +132,7 @@ export default function StoryOverlay({ game, onSave, onSkip }) {
         </button>
 
         <p style={{
-          fontFamily: 'Manrope, Arial, sans-serif',
+          fontFamily: "'Libre Franklin', sans-serif",
           fontSize: 12,
           color: '#a09888',
           textAlign: 'center',
