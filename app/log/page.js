@@ -11,25 +11,26 @@ const copper = '#b5563a', cream = '#f5f0e8', ink = '#2c2a25',
       dim = '#a09888', faint = '#e5ddd1', card = '#faf7f2';
 
 /* ── Shared styles ── */
-const secStyle = { padding: '24px 16px', borderBottom: `2px solid ${faint}` };
+const secStyle = { padding: '28px 20px', borderBottom: `1px solid ${faint}` };
 const secHead = {
   fontFamily: "'Crete Round', Georgia, serif", fontSize: 13, color: dim,
-  textTransform: 'uppercase', letterSpacing: 2, marginBottom: 14, marginTop: 0,
+  textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16, marginTop: 0,
 };
 const inputStyle = {
-  width: '100%', padding: '12px', fontFamily: "'Crete Round', Georgia, serif",
-  fontSize: 14, color: ink, backgroundColor: card,
-  border: `2px solid ${faint}`, borderRadius: 4, outline: 'none', boxSizing: 'border-box',
+  width: '100%', padding: '12px 14px', fontFamily: "'Crete Round', Georgia, serif",
+  fontSize: 14, color: ink, backgroundColor: 'transparent',
+  border: 'none', borderBottom: `1px solid ${faint}`, borderRadius: 0, outline: 'none', boxSizing: 'border-box',
 };
-const inputActiveStyle = { ...inputStyle, border: `2px solid ${copper}` };
+const inputActiveStyle = { ...inputStyle, borderBottom: `2px solid ${copper}` };
 const dropWrap = {
   position: 'absolute', top: '100%', left: 0, right: 0,
-  backgroundColor: card, border: `1px solid ${faint}`,
-  borderRadius: 4, zIndex: 50, maxHeight: 220, overflowY: 'auto',
+  backgroundColor: cream, border: `1px solid ${faint}`,
+  borderRadius: 0, zIndex: 50, maxHeight: 220, overflowY: 'auto',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 };
 const dropRow = {
   display: 'flex', alignItems: 'center', gap: 8,
-  width: '100%', padding: '10px 12px', border: 'none', backgroundColor: 'transparent',
+  width: '100%', padding: '10px 14px', border: 'none', backgroundColor: 'transparent',
   cursor: 'pointer', textAlign: 'left', borderBottom: `1px solid ${faint}`,
   fontFamily: "'Crete Round', Georgia, serif", fontSize: 13, color: ink,
 };
@@ -447,19 +448,21 @@ function SaySomethingSection() {
     <div style={secStyle}>
       <h3 style={secHead}>Say Something About...</h3>
 
-      {/* Editorial cards - 2x2 grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: mode ? 16 : 0 }}>
+      {/* Editorial prompts */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: mode ? 20 : 0 }}>
         {CARDS.map(c => {
           const active = mode === c.key;
           return (
             <button key={c.key} onClick={() => pickMode(c.key)} style={{
-              padding: '14px 12px', backgroundColor: active ? ink : card,
-              border: active ? `1.5px solid ${ink}` : `1.5px solid ${faint}`,
-              borderRadius: 6, cursor: 'pointer', textAlign: 'left',
+              padding: '16px 14px', backgroundColor: 'transparent',
+              borderLeft: active ? `3px solid ${copper}` : `3px solid ${faint}`,
+              border: 'none', borderLeftStyle: 'solid', borderLeftWidth: 3,
+              borderLeftColor: active ? copper : faint,
+              cursor: 'pointer', textAlign: 'left',
               transition: 'all 0.15s ease',
             }}>
-              <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 15, fontWeight: 700, color: active ? cream : ink, marginBottom: 4 }}>{c.headline}</div>
-              <div style={{ fontFamily: 'Manrope, Arial, sans-serif', fontSize: 11, lineHeight: 1.4, color: active ? '#c9c0b4' : dim, fontStyle: 'italic' }}>{c.sub}</div>
+              <div style={{ fontFamily: "'Crete Round', Georgia, serif", fontSize: 15, fontWeight: 700, color: active ? copper : ink, marginBottom: 4 }}>{c.headline}</div>
+              <div style={{ fontFamily: 'Manrope, Arial, sans-serif', fontSize: 11, lineHeight: 1.4, color: dim, fontStyle: 'italic' }}>{c.sub}</div>
             </button>
           );
         })}
@@ -515,17 +518,16 @@ function SaySomethingSection() {
       {mode && <>
         <textarea value={story} onChange={e => setStory(e.target.value)} placeholder={placeholder} rows={4}
           style={{
-            width: '100%', padding: 14, fontFamily: 'Manrope, Arial, sans-serif',
-            fontSize: 14, lineHeight: 1.5, color: ink, backgroundColor: card,
-            border: `2px solid ${faint}`, borderRadius: 4, outline: 'none',
+            width: '100%', padding: '14px 16px', fontFamily: "'Crete Round', Georgia, serif",
+            fontSize: 15, lineHeight: 1.8, color: ink, backgroundColor: 'transparent',
+            border: 'none', borderLeft: `3px solid ${copper}`, borderRadius: 0, outline: 'none',
             resize: 'vertical', boxSizing: 'border-box', marginTop: 8,
           }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
-          <button onClick={handleSave} disabled={!canSave || saving} style={{
-            padding: '10px 24px', fontFamily: "'Crete Round', Georgia, serif",
-            fontSize: 14, fontWeight: 700, backgroundColor: canSave ? copper : faint,
-            color: canSave ? cream : dim, border: 'none', borderRadius: 4,
-            cursor: canSave ? 'pointer' : 'default', opacity: saving ? 0.6 : 1,
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
+          <button onClick={handleSave} disabled={!canSave || saving} className="sans" style={{
+            padding: '10px 28px', fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+            backgroundColor: canSave ? copper : faint, color: canSave ? cream : dim,
+            border: 'none', cursor: canSave ? 'pointer' : 'default', opacity: saving ? 0.6 : 1,
           }}>{saving ? 'Saving...' : saved ? 'Saved' : 'Post'}</button>
           {!user && <span className="sans" style={{ fontSize: 11, color: dim, fontStyle: 'italic' }}>Sign in to post</span>}
         </div>
@@ -570,9 +572,9 @@ function LogEncounter() {
   return (
     <div style={secStyle}>
       <h3 style={secHead}>Log an Encounter</h3>
-      <p className="sans" style={{ fontSize: 11, color: dim, marginBottom: 12, marginTop: -8, fontStyle: 'italic' }}>Met a player? Saw them at the airport? Got an autograph?</p>
+      <p className="sans" style={{ fontSize: 11, color: dim, marginBottom: 16, marginTop: -8, fontStyle: 'italic' }}>Met a player? Saw them at the airport? Got an autograph?</p>
 
-      <div style={{ position: 'relative', marginBottom: 12 }}>
+      <div style={{ position: 'relative', marginBottom: 14 }}>
         <input value={pSearch} onChange={e => { setPSearch(e.target.value); setSelP(null); setSaved(false); }}
           placeholder="Who did you meet?" style={selP ? inputActiveStyle : inputStyle} />
         {pOpts.length > 0 && <div style={dropWrap}>{pOpts.map(p =>
@@ -583,21 +585,21 @@ function LogEncounter() {
         )}</div>}
       </div>
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
         <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Where?" style={{ ...inputStyle, flex: 2 }} />
         <input value={year} onChange={e => setYear(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Year" inputMode="numeric" style={{ ...inputStyle, flex: 1 }} />
       </div>
 
       <textarea value={story} onChange={e => setStory(e.target.value)} placeholder="Tell the story..." rows={3}
-        style={{ width: '100%', padding: 14, fontFamily: 'Manrope, Arial, sans-serif', fontSize: 14, lineHeight: 1.5, color: ink, backgroundColor: card, border: `2px solid ${faint}`, borderRadius: 4, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+        style={{ width: '100%', padding: '14px 16px', fontFamily: "'Crete Round', Georgia, serif", fontSize: 15, lineHeight: 1.8, color: ink, backgroundColor: 'transparent', border: 'none', borderLeft: `3px solid ${copper}`, borderRadius: 0, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
-        <button onClick={handleSave} disabled={!canSave || saving} style={{
-          padding: '10px 24px', fontFamily: "'Crete Round', Georgia, serif", fontSize: 14, fontWeight: 700,
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
+        <button onClick={handleSave} disabled={!canSave || saving} className="sans" style={{
+          padding: '10px 28px', fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
           backgroundColor: canSave ? copper : faint, color: canSave ? cream : dim,
-          border: 'none', borderRadius: 4, cursor: canSave ? 'pointer' : 'default', opacity: saving ? 0.6 : 1,
+          border: 'none', cursor: canSave ? 'pointer' : 'default', opacity: saving ? 0.6 : 1,
         }}>{saving ? 'Saving...' : saved ? 'Logged' : 'Log Encounter'}</button>
-        {(selP || location || year || story) && !saved && <button onClick={() => { setSelP(null); setPSearch(''); setLocation(''); setYear(''); setStory(''); }} className="sans" style={{ fontSize: 12, color: dim, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Clear</button>}
+        {(selP || location || year || story) && !saved && <button onClick={() => { setSelP(null); setPSearch(''); setLocation(''); setYear(''); setStory(''); }} className="sans" style={{ fontSize: 11, color: dim, background: 'none', border: 'none', cursor: 'pointer' }}>Clear</button>}
         {!user && <span className="sans" style={{ fontSize: 11, color: dim, fontStyle: 'italic' }}>Sign in to log</span>}
       </div>
     </div>

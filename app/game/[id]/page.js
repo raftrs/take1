@@ -187,12 +187,12 @@ export default function GamePage() {
         <div style={{ padding:20 }}>
           <div className="sec-head">FROM THE STANDS ({stories.length})</div>
           {stories.map(s => (
-            <div key={s.id} style={{ padding:'12px 0', borderBottom:'1px solid var(--faint)' }}>
+            <Link key={s.id} href={`/story/${s.id}`} style={{ display:'block', padding:'12px 0', borderBottom:'1px solid var(--faint)', textDecoration:'none' }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
                 <div style={{ display:'flex', alignItems:'center' }}>
-                  <Link href={s.profile?.username ? `/user/${s.profile.username}` : '#'} className="sans" style={{ fontSize:12, color:'var(--copper)', fontWeight:600, textDecoration:'none' }}>
+                  <span className="sans" style={{ fontSize:12, color:'var(--copper)', fontWeight:600 }}>
                     {s.profile?.display_name || s.profile?.username || 'Anonymous'}
-                  </Link>
+                  </span>
                   <FounderBadge number={s.profile?.member_number}/>
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:6 }}>
@@ -201,17 +201,17 @@ export default function GamePage() {
                 </div>
               </div>
               <div style={{ fontSize:14, color:'var(--text)', lineHeight:1.7 }}>{s.story}</div>
-              <div style={{ display:'flex', alignItems:'center', gap:12, marginTop:6 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginTop:8 }} onClick={e => e.preventDefault()}>
                 <HighFive userGameId={s.id} />
-                <Link href={`/story/${s.id}`} className="sans" style={{ fontSize:10, color:'var(--dim)', textDecoration:'none', display:'flex', alignItems:'center', gap:3 }}>
+                <span className="sans" style={{ fontSize:10, color:'var(--dim)', display:'flex', alignItems:'center', gap:3 }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                   Reply
-                </Link>
-                <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginLeft:'auto' }}>
+                </span>
+                <span className="sans" style={{ fontSize:10, color:'var(--dim)', marginLeft:'auto' }}>
                   {new Date(s.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}
-                </div>
+                </span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </>)}

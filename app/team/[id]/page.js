@@ -17,6 +17,7 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true)
   const [story, setStory] = useState('')
   const [archiveSort, setArchiveSort] = useState('desc')
+  const [showAllArchives, setShowAllArchives] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
 
   useEffect(() => {
@@ -35,11 +36,11 @@ export default function TeamPage() {
 
       let gq = supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,series_info,sport')
         .eq('sport',sp).or(`home_team_abbr.eq.${abbr},away_team_abbr.eq.${abbr}`)
-        .not('series_info', 'is', null).order('game_date',{ascending:false}).limit(50)
+        .not('series_info', 'is', null).order('game_date',{ascending:false}).limit(200)
       if (sp !== 'golf') gq = gq.gt('home_score', 0)
       const { data: gs } = await gq
       // Filter out regular season + games that appear in notable section
-      const filtered = (gs||[]).filter(g => isPlayoff(g.series_info) && !notableGameIds.includes(g.id)).slice(0, 10)
+      const filtered = (gs||[]).filter(g => isPlayoff(g.series_info) && !notableGameIds.includes(g.id))
       setGames(filtered)
 
       if (t.arena) { const { data: v } = await supabase.from('venues').select('id').eq('venue_name',t.arena).limit(1); if (v?.[0]) setVenueId(v[0].id) }
@@ -166,23 +167,34 @@ export default function TeamPage() {
 
       {games.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-          <div className="sec-head" style={{ marginBottom:0 }}>FROM THE ARCHIVES</div>
+          <div className="sec-head" style={{ marginBottom:0 }}>FROM THE ARCHIVES ({games.length})</div>
           <div style={{ display:'flex', gap:0 }}>
             {['Recent','Oldest'].map(s => <button key={s} onClick={() => setArchiveSort(s==='Recent'?'desc':'asc')} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===archiveSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===archiveSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
           </div>
         </div>
         <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Playoff and championship games</div>
-        {[...games].sort((a,b) => archiveSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||'')).map((g, idx) => { const sw = scoreWithWinner(g); return <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
-          const playlist = games.map(gm => ({ href: `/game/${gm.id}`, title: gm.sport === 'golf' ? gm.title : `${gm.away_team_abbr} ${gm.away_score} / ${gm.home_score} ${gm.home_team_abbr}` }))
-          savePlaylist(playlist, idx)
-        }} className="game-row" style={{ padding:'10px 0' }}>
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
-            {sw ? <span style={{ fontSize:14 }}><span style={{ color: sw.away.won ? 'var(--ink)' : 'var(--dim)', fontWeight: sw.away.won ? 700 : 400 }}>{sw.away.abbr} {sw.away.score}</span><span style={{ color:'var(--dim)' }}> / </span><span style={{ color: sw.home.won ? 'var(--ink)' : 'var(--dim)', fontWeight: sw.home.won ? 700 : 400 }}>{sw.home.score} {sw.home.abbr}</span></span>
-              : <span style={{ fontSize:14, color:'var(--ink)' }}>{g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</span>}
-            <span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</span>
-          </div>
-          {g.series_info && <div className="sans" style={{ fontSize:10, color:'var(--copper)', marginTop:2 }}>{g.series_info}</div>}
-        </Link>})}
+        {(() => {
+          const sorted = [...games].sort((a,b) => archiveSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||''))
+          const display = showAllArchives ? sorted : sorted.slice(0, 20)
+          return <>
+            {display.map((g, idx) => { const sw = scoreWithWinner(g); return <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
+              const playlist = sorted.map(gm => ({ href: `/game/${gm.id}`, title: gm.sport === 'golf' ? gm.title : `${gm.away_team_abbr} ${gm.away_score} / ${gm.home_score} ${gm.home_team_abbr}` }))
+              savePlaylist(playlist, idx)
+            }} className="game-row" style={{ padding:'10px 0' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
+                {sw ? <span style={{ fontSize:14 }}><span style={{ color: sw.away.won ? 'var(--ink)' : 'var(--dim)', fontWeight: sw.away.won ? 700 : 400 }}>{sw.away.abbr} {sw.away.score}</span><span style={{ color:'var(--dim)' }}> / </span><span style={{ color: sw.home.won ? 'var(--ink)' : 'var(--dim)', fontWeight: sw.home.won ? 700 : 400 }}>{sw.home.score} {sw.home.abbr}</span></span>
+                  : <span style={{ fontSize:14, color:'var(--ink)' }}>{g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</span>}
+                <span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</span>
+              </div>
+              {g.series_info && <div className="sans" style={{ fontSize:10, color:'var(--copper)', marginTop:2 }}>{g.series_info}</div>}
+            </Link>})}
+            {sorted.length > 20 && (
+              <div onClick={() => setShowAllArchives(!showAllArchives)} className="sans" style={{ textAlign:'center', marginTop:10, fontSize:11, color:'var(--copper)', cursor:'pointer', fontWeight:600 }}>
+                {showAllArchives ? 'Show fewer' : `See all ${sorted.length} games`}
+              </div>
+            )}
+          </>
+        })()}
       </div></>}
       <div style={{ height:80 }}></div>
     </div>
