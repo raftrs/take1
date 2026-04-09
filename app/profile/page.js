@@ -152,19 +152,41 @@ export default function ProfilePage() {
 
         {/* THE FIVE BANNERS */}
         <div style={{ marginTop:16 }}>
-          <div className="sans" style={{ fontSize:8, color:'var(--dim)', letterSpacing:2, fontWeight:600, marginBottom:8 }}>MY RAFTERS</div>
-          <div style={{ display:'flex', gap:6 }}>
+          <div className="sans" style={{ fontSize:8, color:'var(--dim)', letterSpacing:2, fontWeight:600, marginBottom:6 }}>MY RAFTERS</div>
+          {/* Rod */}
+          <div style={{ height:3, background:'linear-gradient(90deg, var(--faint), var(--dim), var(--faint))', borderRadius:2 }}/>
+          <div style={{ display:'flex', gap:4, justifyContent:'center' }}>
             {[1,2,3,4,5].map(pos => {
               const fav = favorites.find(f => f.position === pos)
-              return <Link key={pos} href={fav?.game ? (fav.notable_game_id ? `/notable/${fav.notable_game_id}` : `/game/${fav.game_id}`) : '/log'} style={{
-                flex:1, padding:'8px 4px', background: fav ? 'rgba(181,86,58,0.06)' : 'var(--surface)',
-                border:`1px solid ${fav ? 'var(--copper)' : 'var(--faint)'}`, textAlign:'center',
-                minHeight:52, display:'flex', alignItems:'center', justifyContent:'center',
-                textDecoration:'none', borderRadius:4,
-              }}>
-                {fav?.game ? <div style={{ fontSize:10, color:'var(--ink)', lineHeight:1.3 }}>{fav.game.title || `${fav.game.away_team_abbr} @ ${fav.game.home_team_abbr}`}</div>
-                : <div className="sans" style={{ fontSize:22, color:'var(--faint)' }}>+</div>}
-              </Link>
+              const hasFav = fav?.game
+              const href = hasFav ? (fav.notable_game_id ? `/notable/${fav.notable_game_id}` : `/game/${fav.game_id}`) : '/log'
+              return (
+                <div key={pos} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center' }}>
+                  <Link href={href} style={{ textDecoration:'none', width:'100%' }}>
+                    {hasFav ? (
+                      <div style={{
+                        width:'100%', minHeight:72, padding:'10px 4px 16px',
+                        background:'var(--copper)', color:'#fff',
+                        clipPath:'polygon(0 0,100% 0,100% 85%,50% 100%,0 85%)',
+                        display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center',
+                      }}>
+                        <div style={{ fontSize:8, lineHeight:1.4, fontWeight:600, padding:'0 2px', letterSpacing:0.3 }}>{fav.game.title || `${fav.game.away_team_abbr} @ ${fav.game.home_team_abbr}`}</div>
+                      </div>
+                    ) : (
+                      <div style={{
+                        width:'100%', minHeight:72, padding:'10px 4px 16px',
+                        background:'var(--surface)',
+                        clipPath:'polygon(0 0,100% 0,100% 85%,50% 100%,0 85%)',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        border:'none', position:'relative',
+                      }}>
+                        <div style={{ position:'absolute', inset:0, border:'1.5px dashed var(--faint)', clipPath:'polygon(0 0,100% 0,100% 85%,50% 100%,0 85%)' }}/>
+                        <div className="sans" style={{ fontSize:18, color:'var(--faint)' }}>+</div>
+                      </div>
+                    )}
+                  </Link>
+                </div>
+              )
             })}
           </div>
         </div>

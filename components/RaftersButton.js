@@ -88,7 +88,7 @@ export default function RaftersButton({ gameId, notableGameId }) {
         borderRadius: 4, cursor: 'pointer',
         background: isRafted ? 'rgba(181,86,58,0.08)' : 'transparent',
         color: isRafted ? 'var(--copper)' : 'var(--dim)',
-        transition: 'all 0.2s', marginTop: 12,
+        transition: 'all 0.2s', marginTop: 20, marginBottom: 8,
       }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill={isRafted ? 'var(--copper)' : 'none'} stroke={isRafted ? 'var(--copper)' : 'var(--dim)'} strokeWidth="2">
           <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>

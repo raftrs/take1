@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { formatDate, showScore, savePlaylist, golfMajorDisplay } from '@/lib/utils'
 import Link from 'next/link'
 import SportBadge from '@/components/SportBadge'
+import HighFive from '@/components/HighFive'
 
 function Banner({ w=22, h=32 }) {
   return <svg width={w} height={h} viewBox="0 0 34 50"><path d="M0,0 L34,0 L34,50 L17,43 L0,50 Z" fill="#b5563a"/><path d="M3.5,3.5 L30.5,3.5 L30.5,44 L17,38.5 L3.5,44 Z" fill="#d4a843" opacity="0.85"/><path d="M7,7 L27,7 L27,39.5 L17,34.5 L7,39.5 Z" fill="#b5563a"/></svg>
@@ -17,6 +18,8 @@ export default function HomePage() {
   const [allTimerSample, setAllTimerSample] = useState([])
   const [allTimerTotal, setAllTimerTotal] = useState(0)
   const [loaded, setLoaded] = useState(false)
+  const [mode, setMode] = useState('featured')
+  const [feed, setFeed] = useState([])
 
   useEffect(() => {
     async function load() {
@@ -64,6 +67,24 @@ export default function HomePage() {
         .select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,context_blurb,sport,series_info')
         .not('context_blurb', 'is', null).order('game_date', { ascending: false }).limit(6)
       setRecent(rg || [])
+
+      // Feed: recent stories from all users
+      const { data: st } = await supabase.from('user_games')
+        .select('id,user_id,story,rating,attended,created_at,game_id')
+        .not('story', 'is', null).neq('story', '')
+        .order('created_at', { ascending: false }).limit(20)
+      if (st?.length) {
+        const uids = [...new Set(st.map(s => s.user_id))]
+        const { data: profiles } = await supabase.from('profiles').select('id,username,display_name').in('id', uids)
+        const pMap = {}; if (profiles) profiles.forEach(p => { pMap[p.id] = p })
+        const gids = [...new Set(st.map(s => s.game_id).filter(Boolean))]
+        const { data: games } = await supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,sport,title').in('id', gids)
+        const gMap = {}; if (games) games.forEach(g => { gMap[g.id] = g })
+        const { data: notables } = await supabase.from('notable_games').select('id,title,game_id,sport,game_date').in('game_id', gids)
+        const nMap = {}; if (notables) notables.forEach(n => { if (n.game_id) nMap[n.game_id] = n })
+        setFeed(st.map(s => ({ ...s, profile: pMap[s.user_id], game: gMap[s.game_id], notable: nMap[s.game_id] })))
+      }
+
       setLoaded(true)
     }
     load()
@@ -79,6 +100,62 @@ export default function HomePage() {
         </div>
         <div className="masthead-sub">The games you carry with you</div>
       </div>
+
+      {/* Mode toggle */}
+      <div style={{ display:'flex', borderBottom:'2px solid var(--rule)' }}>
+        {[{ k:'featured', l:'Featured' },{ k:'feed', l:'My Feed' }].map(m => (
+          <div key={m.k} onClick={() => setMode(m.k)} style={{
+            flex:1, textAlign:'center', padding:'10px 0', cursor:'pointer',
+            borderBottom: mode === m.k ? '2px solid var(--copper)' : '2px solid transparent',
+            marginBottom:-2,
+          }}>
+            <span className="sans" style={{ fontSize:11, fontWeight:700, letterSpacing:1, color: mode === m.k ? 'var(--copper)' : 'var(--dim)' }}>{m.l}</span>
+          </div>
+        ))}
+      </div>
+
+      {mode === 'feed' ? (<>
+        {/* MY FEED */}
+        {feed.length > 0 ? feed.map(s => {
+          const p = s.profile
+          const g = s.game
+          const n = s.notable
+          const gameTitle = n?.title || g?.title || (g ? `${g.away_team_abbr} ${g.away_score} / ${g.home_score} ${g.home_team_abbr}` : 'A game')
+          const gameHref = n ? `/notable/${n.id}` : `/game/${s.game_id}`
+          const gameDate = n?.game_date || g?.game_date
+          const gameSport = n?.sport || g?.sport
+          return (
+            <div key={s.id} style={{ padding:'16px 20px', borderBottom:'1px solid var(--faint)' }}>
+              <Link href={p?.username ? `/user/${p.username}` : '#'} style={{ textDecoration:'none' }}>
+                <div style={{ fontSize:14, color:'var(--copper)', fontWeight:600 }}>{p?.display_name || p?.username || 'A fan'}</div>
+              </Link>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:4, marginBottom:8 }}>
+                {s.rating && <span style={{ fontSize:13, color:'var(--gold)' }}>{'★'.repeat(s.rating)}</span>}
+                {s.attended && <span className="sans" style={{ fontSize:9, color:'var(--copper)', fontWeight:600, letterSpacing:0.5, padding:'2px 6px', border:'1px solid var(--copper)', borderRadius:2 }}>WAS THERE</span>}
+              </div>
+              <Link href={gameHref} style={{ textDecoration:'none', display:'block', marginBottom:8 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                  {gameSport && <SportBadge sport={gameSport}/>}
+                  <div style={{ fontSize:14, color:'var(--ink)', fontWeight:600 }}>{gameTitle}</div>
+                </div>
+                {gameDate && <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2, marginLeft: gameSport ? 22 : 0 }}>{formatDate(gameDate)}</div>}
+              </Link>
+              <div style={{ fontSize:14, color:'var(--text)', lineHeight:1.7, fontStyle:'italic' }}>
+                &ldquo;{s.story.length > 200 ? s.story.slice(0, 200) + '...' : s.story}&rdquo;
+              </div>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:8 }}>
+                <HighFive userGameId={s.id}/>
+                <div className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{new Date(s.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric' })}</div>
+              </div>
+            </div>
+          )
+        }) : (
+          <div style={{ padding:'40px 20px', textAlign:'center' }}>
+            <div style={{ fontSize:16, color:'var(--muted)', marginBottom:8 }}>No stories yet</div>
+            <div className="sans" style={{ fontSize:12, color:'var(--dim)' }}>Stories from the community will show up here.</div>
+          </div>
+        )}
+      </>) : (<>
 
       {/* HERO */}
       {hero && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
@@ -153,6 +230,7 @@ export default function HomePage() {
           {g.series_info && <div className="sans" style={{ fontSize:10, color:'var(--copper)', marginTop:2 }}>{g.series_info}</div>}
         </Link>)}
       </div></>)}
+      </>)}
     </div>
   )
 }

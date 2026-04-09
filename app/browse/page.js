@@ -379,6 +379,25 @@ export default function BrowsePage() {
           {v.description && <div className="sans" style={{ fontSize:11, color:'var(--muted)', marginTop:4, lineHeight:1.5, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>{v.description}</div>}
         </Link>)}</div></>}
       </div>}
+
+      {/* THE VAULT - easter egg */}
+      <div onClick={() => router.push('/vault')} style={{
+        margin:'20px 20px 0', padding:'28px 20px', cursor:'pointer',
+        background:'radial-gradient(ellipse at center, #2a2520 0%, #1a1714 100%)',
+        borderRadius:8, textAlign:'center', position:'relative', overflow:'hidden',
+        border:'2px solid #3d3530',
+      }}>
+        {/* Rivets */}
+        {[{t:8,l:8},{t:8,r:8},{b:8,l:8},{b:8,r:8}].map((p,i) => (
+          <div key={i} style={{ position:'absolute', ...p, width:8, height:8, borderRadius:'50%', background:'#4a4035', border:'1px solid #5a5045' }}/>
+        ))}
+        {/* Handle */}
+        <div style={{ width:48, height:48, borderRadius:'50%', border:'3px solid var(--gold)', margin:'0 auto 12px', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ width:24, height:24, borderRadius:'50%', border:'2px solid var(--gold)', opacity:0.6 }}/>
+        </div>
+        <div style={{ fontSize:11, letterSpacing:4, color:'var(--gold)', fontWeight:700, fontFamily:'Arial,sans-serif' }}>THE VAULT</div>
+        <div style={{ fontSize:10, color:'#8a7d70', marginTop:6, fontStyle:'italic' }}>All-Timers. Collections. The ones that matter.</div>
+      </div>
     </div>
   )
 }

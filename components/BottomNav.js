@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-const HIDE = ['/game/','/notable/','/collection/','/venue/','/team/','/player/','/city/','/auth']
+const HIDE = ['/game/','/notable/','/collection/','/venue/','/team/','/player/','/city/','/auth','/user/']
 export default function BottomNav() {
   const path = usePathname()
   if (HIDE.some(p => path.startsWith(p))) return null
@@ -9,7 +9,7 @@ export default function BottomNav() {
     { href:'/', label:'Home', d:'M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1V9.5z' },
     { href:'/browse', label:'Browse', d:'M4 6h16M4 12h16M4 18h7' },
     { href:'/log', label:'Log', raised:true },
-    { href:'/vault', label:'Vault', d:'M12 2L4 8v14l8-4 8 4V8z' },
+    { href:'/community', label:'Community', d:'M17 21v-2a4 4 0 00-3-3.87M9 21v-2a4 4 0 00-4-4H5M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75M12 7a4 4 0 11-8 0 4 4 0 018 0z' },
     { href:'/profile', label:'Profile', d:'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 3a4 4 0 100 8 4 4 0 000-8z' },
   ]
   return (
