@@ -328,7 +328,8 @@ export default function PlayerPage() {
       {/* FROM THE STANDS */}
       <hr className="sec-rule"/>
       <div style={{ padding:20 }}>
-        <div className="sec-head">SAY SOMETHING</div>
+        <div className="sec-head">SAY SOMETHING ABOUT {player.player_name.toUpperCase()}</div>
+        <div style={{ fontFamily:'var(--ui)', fontSize:11, color:'var(--dim)', marginBottom:12, lineHeight:1.6, fontStyle:'italic' }}>A game where they took over. The play you still think about. Where they rank all time. How they changed the game.</div>
         <textarea className="story-textarea" placeholder={`Say something about ${player.player_name}...`} value={story} onChange={e => setStory(e.target.value)} />
       </div>
 

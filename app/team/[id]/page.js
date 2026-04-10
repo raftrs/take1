@@ -161,7 +161,8 @@ export default function TeamPage() {
 
       <hr className="sec-rule"/>
       <div style={{ padding:20 }}>
-        <div className="sec-head">SAY SOMETHING</div>
+        <div className="sec-head">SAY SOMETHING ABOUT THE {(team.full_name || team.team_name).toUpperCase()}</div>
+        <div style={{ fontFamily:'var(--ui)', fontSize:11, color:'var(--dim)', marginBottom:12, lineHeight:1.6, fontStyle:'italic' }}>Favorite players who have worn the jersey. Games you'll never forget. The funnest seasons. The most disappointing moments.</div>
         <textarea className="story-textarea" placeholder={`Say something about the ${team.full_name || team.team_name}...`} value={story} onChange={e => setStory(e.target.value)} />
       </div>
 

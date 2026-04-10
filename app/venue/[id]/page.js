@@ -116,7 +116,8 @@ export default function VenuePage() {
 
       <hr className="sec-rule"/>
       <div style={{ padding:20 }}>
-        <div className="sec-head">SAY SOMETHING</div>
+        <div className="sec-head">SAY SOMETHING ABOUT {venue.venue_name.toUpperCase()}</div>
+        <div style={{ fontFamily:'var(--ui)', fontSize:11, color:'var(--dim)', marginBottom:12, lineHeight:1.6, fontStyle:'italic' }}>The layout. The food. The smells. The parking lot. The pre-game tailgate. The post-game walkout.</div>
         <textarea className="story-textarea" placeholder={`Say something about ${venue.venue_name}...`} value={story} onChange={e => setStory(e.target.value)} />
       </div>
 

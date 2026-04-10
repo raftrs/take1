@@ -67,6 +67,7 @@ export default function BrowsePage() {
   const [filters, setFilters] = useState({ team:null, teamSport:null, teamLabel:null, venue:null, year:null, round:null, player:null, city:null })
   const [expanded, setExpanded] = useState(null)
   const [filterSearch, setFilterSearch] = useState('')
+  const [venueSearch, setVenueSearch] = useState('')
   const [filteredGames, setFilteredGames] = useState([])
   const [filtering, setFiltering] = useState(false)
   const [browseSort, setBrowseSort] = useState('desc')
@@ -417,7 +418,9 @@ export default function BrowsePage() {
           <GameFinder />
         </div>
         {browseCities.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>CITIES</div><div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>{browseCities.map(c => <Link key={c} href={`/city/${encodeURIComponent(c)}`} style={{ padding:'6px 12px', fontSize:11, fontFamily:'var(--ui)', background:'var(--card)', border:'1px solid var(--faint)', color:'var(--ink)', textDecoration:'none', borderRadius:4 }}>{c}</Link>)}</div></>}
-        {venues.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>{isGolf?'COURSES':'VENUES'} <Link href="/venues" className="sec-link">See all</Link></div><div style={{ maxHeight:420, overflowY:'auto', display:'flex', flexDirection:'column', gap:8 }}>{venues.slice(0,7).map(v => <div key={v.id} style={{ padding:'12px 14px', background:'var(--surface)', border:'1px solid var(--faint)', borderRadius:4 }}>
+        {venues.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>{isGolf?'COURSES':'VENUES'} <Link href="/venues" className="sec-link">Checklist</Link></div>
+          <input value={venueSearch} onChange={e => setVenueSearch(e.target.value)} placeholder="Search venues..." style={{ width:'100%', padding:'8px 12px', fontSize:13, fontFamily:'var(--ui)', border:'1px solid var(--faint)', borderRadius:4, marginBottom:8, outline:'none', color:'var(--ink)', background:'var(--surface)' }} />
+          <div style={{ maxHeight:480, overflowY:'auto', display:'flex', flexDirection:'column', gap:8 }}>{venues.filter(v => !venueSearch || v.venue_name?.toLowerCase().includes(venueSearch.toLowerCase()) || v.venue_city?.toLowerCase().includes(venueSearch.toLowerCase())).map(v => <div key={v.id} style={{ padding:'12px 14px', background:'var(--surface)', border:'1px solid var(--faint)', borderRadius:4 }}>
           <Link href={`/venue/${v.id}`} style={{ textDecoration:'none', display:'block' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
               <span style={{ fontSize:14, color:'var(--ink)', fontWeight:600 }}>{v.venue_name}</span>

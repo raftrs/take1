@@ -176,21 +176,27 @@ export default function NotablePage() {
       <WeatherIntro weather={weather} sport={sp} venue={game.venue} />
       <div style={{ padding:'0 20px', marginTop:12 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14 }}>
-          {/* FIX #53: Only show ALL-TIMER badge for tier 1 */}
           {isTier1 && <span className="at-badge-sm">&#9733; ALL-TIMER</span>}
           <SportBadge sport={sp}/>
         </div>
         <div style={{ fontSize:26, color:'var(--ink)', lineHeight:1.15, marginBottom:6 }}>{game.title}</div>
         {linkedTitle && linkedTitle !== game.title && <div style={{ fontFamily:'var(--ui)', fontSize:13, color:'var(--muted)', marginBottom:14 }}>{linkedTitle}</div>}
-        {!isGolf && (game.away_score != null && game.home_score != null) && (
-          <div className="scoreboard">
-            <div className="sb-team"><div className="sb-abbr">{game.away_team_abbr}</div><div className={`sb-score${awayWon ? " win" : " lose"}`}>{game.away_score}</div></div>
-            <div style={{textAlign:"center"}}><div className="sb-final">FINAL</div></div>
-            <div className="sb-team"><div className="sb-abbr">{game.home_team_abbr}</div><div className={`sb-score${homeWon ? " win" : " lose"}`}>{game.home_score}</div></div>
-          </div>
-        )}
+      </div>
+
+      {/* Dark scoreboard - full width */}
+      {!isGolf && (game.away_score != null && game.home_score != null) && (<>
+        <div className="scoreboard">
+          <div className="sb-team"><div className="sb-abbr">{game.away_team_abbr}</div><div className={`sb-score${awayWon ? " win" : " lose"}`}>{game.away_score}</div></div>
+          <div style={{textAlign:"center"}}><div className="sb-final">FINAL</div></div>
+          <div className="sb-team"><div className="sb-abbr">{game.home_team_abbr}</div><div className={`sb-score${homeWon ? " win" : " lose"}`}>{game.home_score}</div></div>
+        </div>
+        <div className="sb-sub">{formatDate(game.game_date)}{game.game_type ? ` \u00B7 ${capType(game.game_type)}` : ''}{game.venue ? ` \u00B7 ${game.venue}` : ''}</div>
+        <div className="sb-curtain"></div>
+      </>)}
+
+      <div style={{ padding:'0 20px' }}>
         <div className="game-meta">
-          <div>{formatDate(game.game_date)}{game.game_type ? ` \u00B7 ${capType(game.game_type)}` : ''}</div>
+          {isGolf && <div>{formatDate(game.game_date)}{game.game_type ? ` \u00B7 ${capType(game.game_type)}` : ''}</div>}
           {game.venue && <div><VL/>{game.venue_city && <> <span style={{color:'var(--dim)'}}>&middot;</span> <CL/></>}</div>}
           <WeatherDisplay weather={weather} sport={sp} />
         </div>

@@ -31,16 +31,34 @@ export default function VenuesPage() {
       setVenues(vn || [])
 
       if (user) {
-        const { data: uv } = await supabase.from('user_venues').select('venue_id,status').eq('user_id', user.id)
-        if (uv) {
+        const { data: uv, error } = await supabase.from('user_venues').select('venue_id,status').eq('user_id', user.id)
+        if (uv && !error) {
           setVisited(new Set(uv.filter(v => !v.status || v.status === 'visited').map(v => v.venue_id)))
           setMyList(new Set(uv.filter(v => v.status === 'want').map(v => v.venue_id)))
+        } else {
+          // Fallback if status column doesn't exist
+          const { data: uv2 } = await supabase.from('user_venues').select('venue_id').eq('user_id', user.id)
+          if (uv2) setVisited(new Set(uv2.map(v => v.venue_id)))
         }
       }
       setLoading(false)
     }
     load()
   }, [user])
+
+  async function toggleWant(venueId) {
+    if (!user) { alert('Sign in to save venues'); return }
+    const newMyList = new Set(myList)
+    if (myList.has(venueId)) {
+      newMyList.delete(venueId)
+      await supabase.from('user_venues').delete().eq('user_id', user.id).eq('venue_id', venueId)
+    } else {
+      newMyList.add(venueId)
+      const newVisited = new Set(visited); newVisited.delete(venueId); setVisited(newVisited)
+      await supabase.from('user_venues').upsert({ user_id: user.id, venue_id: venueId, status: 'want' }, { onConflict: 'user_id,venue_id' })
+    }
+    setMyList(newMyList)
+  }
 
   async function toggleVisit(venueId) {
     if (!user) { alert('Sign in to track venue visits'); return }
@@ -127,6 +145,7 @@ export default function VenuesPage() {
       <div style={{ padding: '0 0 80px' }}>
         {filtered.map(v => {
           const isVisited = visited.has(v.id)
+            const isListed = myList.has(v.id)
           return (
             <div key={v.id} style={{ padding: '14px 20px', borderBottom: '1px solid var(--faint)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
@@ -142,16 +161,22 @@ export default function VenuesPage() {
                     </div>
                   )}
                 </Link>
-                <button onClick={() => toggleVisit(v.id)} className="sans" style={{
-                  flexShrink: 0, padding: '6px 12px', fontSize: 10, fontWeight: 600,
-                  border: isVisited ? '1.5px solid var(--copper)' : '1.5px solid var(--faint)',
-                  borderRadius: 4, cursor: 'pointer', whiteSpace: 'nowrap',
-                  background: isVisited ? 'rgba(181,86,58,0.08)' : 'transparent',
-                  color: isVisited ? 'var(--copper)' : 'var(--dim)',
-                  transition: 'all 0.2s',
-                }}>
-                  {isVisited ? '\u2713 Visited' : 'Been here'}
-                </button>
+                <div style={{ display:'flex', flexDirection:'column', gap:4, flexShrink:0 }}>
+                  <button onClick={() => toggleVisit(v.id)} style={{
+                    padding: '5px 10px', fontSize: 10, fontWeight: 600, fontFamily:'var(--ui)',
+                    border: isVisited ? '1.5px solid var(--amber)' : '1.5px solid var(--faint)',
+                    borderRadius: 20, cursor: 'pointer', whiteSpace: 'nowrap',
+                    background: isVisited ? 'var(--amber)' : 'transparent',
+                    color: isVisited ? '#fff' : 'var(--dim)', transition: 'all 0.2s',
+                  }}>{isVisited ? '\u2713 Been here' : 'Been here'}</button>
+                  <button onClick={() => toggleWant(v.id)} style={{
+                    padding: '5px 10px', fontSize: 10, fontWeight: 600, fontFamily:'var(--ui)',
+                    border: isListed ? '1.5px solid var(--gold)' : '1.5px solid var(--faint)',
+                    borderRadius: 20, cursor: 'pointer', whiteSpace: 'nowrap',
+                    background: isListed ? 'var(--gold)' : 'transparent',
+                    color: isListed ? '#fff' : 'var(--dim)', transition: 'all 0.2s',
+                  }}>{isListed ? '\u2713 Want to go' : 'Want to go'}</button>
+                </div>
               </div>
             </div>
           )
@@ -168,6 +193,7 @@ export default function VenuesPage() {
         <div style={{ padding: '0 0 80px' }}>
           {historic.map(v => {
             const isVisited = visited.has(v.id)
+            const isListed = myList.has(v.id)
             return (
               <div key={v.id} style={{ padding: '14px 20px', borderBottom: '1px solid var(--faint)', opacity: 0.7 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>

@@ -272,9 +272,10 @@ export default function HomePage() {
           <div style={{ display:'flex', gap:12, overflowX:'auto', paddingBottom:8, paddingRight:20, WebkitOverflowScrolling:'touch', scrollbarWidth:'none' }}>
             <style>{`.at-carousel::-webkit-scrollbar{display:none}`}</style>
             {allTimerSample.map(g => (
-              <Link key={g.id} href={`/notable/${g.id}`} style={{ flexShrink:0, width:200, padding:'16px 14px', background:'var(--surface)', border:'1px solid var(--faint)', borderTop:'3px solid var(--amber)', textDecoration:'none', display:'block' }}>
+              <Link key={g.id} href={`/notable/${g.id}`} style={{ flexShrink:0, width:220, padding:'16px 14px', background:'var(--surface)', border:'1px solid var(--faint)', borderTop:'3px solid var(--amber)', textDecoration:'none', display:'block' }}>
                 <div style={{ marginBottom:8 }}><SportBadge sport={g.sport}/></div>
-                <div style={{ fontFamily:'var(--body)', fontSize:15, color:'var(--ink)', lineHeight:1.3, marginBottom:8 }}>{g.title}</div>
+                <div style={{ fontFamily:'var(--body)', fontSize:15, color:'var(--ink)', lineHeight:1.3, marginBottom:6 }}>{g.title}</div>
+                {g.description && <div style={{ fontFamily:'var(--ui)', fontSize:11, color:'var(--muted)', lineHeight:1.5, marginBottom:8, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>{g.description}</div>}
                 <div style={{ fontFamily:'var(--ui)', fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</div>
               </Link>
             ))}
