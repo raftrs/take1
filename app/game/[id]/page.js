@@ -164,9 +164,9 @@ export default function GamePage() {
       {/* Dark scoreboard - full width */}
       {!isGolf && showScore(game) ? (<>
         <div className="scoreboard">
-          <div className="sb-team"><div className="sb-abbr">{game.away_team_abbr}</div><div className={`sb-score${awayWon ? ' win' : ' lose'}`}>{game.away_score}</div></div>
+          <div className="sb-team"><div className="sb-abbr"><TL a={game.away_team_abbr}/></div><div className={`sb-score${awayWon ? ' win' : ' lose'}`}>{game.away_score}</div></div>
           <div style={{textAlign:'center'}}><div className="sb-final">FINAL</div></div>
-          <div className="sb-team"><div className="sb-abbr">{game.home_team_abbr}</div><div className={`sb-score${homeWon ? ' win' : ' lose'}`}>{game.home_score}</div></div>
+          <div className="sb-team"><div className="sb-abbr"><TL a={game.home_team_abbr}/></div><div className={`sb-score${homeWon ? ' win' : ' lose'}`}>{game.home_score}</div></div>
         </div>
         <div className="sb-sub">{formatDate(game.game_date)}{game.series_info ? ` \u00B7 ${capType(game.series_info)}` : ''}</div>
         <div className="sb-curtain"></div>

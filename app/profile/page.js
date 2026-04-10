@@ -126,7 +126,7 @@ export default function ProfilePage() {
 
       {/* Rafters */}
       <div style={{ padding: '20px 24px 24px', background: 'var(--surface)', borderBottom: '1px solid var(--rule)' }}>
-        <div style={{ fontFamily: 'var(--ui)', fontSize: 10, fontWeight: 600, letterSpacing: 0.8, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 10 }}>My Rafters</div>
+        <div style={{ fontFamily: 'var(--ui)', fontSize: 10, fontWeight: 600, letterSpacing: 0.8, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 10 }}>My Banners</div>
         <div className="rafters-rod"></div>
         <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
           {[1,2,3,4,5].map(pos => {

@@ -96,7 +96,7 @@ export default function UserProfilePage() {
         {teamData.length > 0 && <div style={{ display: 'flex', gap: 6, marginTop: 18, flexWrap: 'wrap' }}>{teamData.map(t => <Link key={t.id} href={`/team/${t.id}`} style={{ textDecoration: 'none' }}><span style={{ fontFamily: 'var(--ui)', fontSize: 9, fontWeight: 700, padding: '4px 10px', background: `${t.primary_color || 'var(--amber)'}0F`, color: t.primary_color || 'var(--amber)', border: `1px solid ${t.primary_color || 'var(--amber)'}`, borderRadius: 3, letterSpacing: 0.5 }}>{t.team_name.toUpperCase()}</span></Link>)}</div>}
 
         {favorites.some(f => f.game) && <div style={{ marginTop: 20 }}>
-          <div style={{ fontFamily: 'var(--ui)', fontSize: 10, fontWeight: 600, letterSpacing: 0.8, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 10 }}>Their Rafters</div>
+          <div style={{ fontFamily: 'var(--ui)', fontSize: 10, fontWeight: 600, letterSpacing: 0.8, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 10 }}>Their Banners</div>
           <div className="rafters-rod"></div>
           <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>{[1,2,3,4,5].map(pos => {
             const fav = favorites.find(f => f.position === pos); const hasFav = fav?.game

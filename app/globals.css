@@ -76,6 +76,8 @@ a{color:inherit;text-decoration:none;}
 .scoreboard{padding:24px 24px 16px;display:flex;align-items:center;justify-content:center;gap:32px;background:var(--surface);border-top:2px solid var(--amber);border-bottom:1px solid var(--rule);}
 .sb-team{text-align:center;}
 .sb-abbr{font-family:var(--ui);font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1.5px;margin-bottom:6px;}
+.sb-abbr a,.sb-abbr .team-link{color:var(--ink);border-bottom:none;text-decoration:none;}
+.sb-abbr a:hover,.sb-abbr .team-link:hover{color:var(--amber);}
 .sb-score{font-family:var(--display);font-size:48px;color:var(--ink);line-height:1;}
 .sb-score.win{color:var(--ink);}
 .sb-score.lose{color:var(--dim);font-size:44px;}
@@ -132,9 +134,9 @@ a{color:inherit;text-decoration:none;}
 
 /* ── Rafters ── */
 .rafters-rod{height:3px;border-radius:2px;margin-bottom:10px;background:linear-gradient(90deg,#9a7b1a,#c49a2a,#ddb84d,#c49a2a,#9a7b1a);box-shadow:0 1px 3px rgba(0,0,0,.1);}
-.banner{flex:1;text-align:center;height:80px;padding:10px 4px 20px;clip-path:polygon(0 0,100% 0,100% 78%,50% 100%,0 78%);background:var(--amber);display:flex;align-items:center;justify-content:center;overflow:hidden;}
-.banner-text{font-family:var(--ui);font-size:8px;font-weight:700;color:rgba(255,255,255,.92);line-height:1.35;letter-spacing:.3px;}
-.banner.empty{background:var(--subtle);border:1.5px dashed var(--dim);clip-path:polygon(0 0,100% 0,100% 78%,50% 100%,0 78%);height:80px;display:flex;align-items:center;justify-content:center;}
+.banner{flex:1;text-align:center;height:110px;max-width:72px;padding:10px 4px 24px;clip-path:polygon(0 0,100% 0,100% 82%,50% 100%,0 82%);background:var(--amber);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;box-shadow:0 2px 6px rgba(0,0,0,0.1);}
+.banner-text{font-family:var(--ui);font-size:7px;font-weight:700;color:rgba(255,255,255,.92);line-height:1.4;letter-spacing:.3px;padding:0 2px;}
+.banner.empty{background:var(--subtle);border:1.5px dashed var(--dim);clip-path:polygon(0 0,100% 0,100% 82%,50% 100%,0 82%);height:110px;max-width:72px;display:flex;align-items:center;justify-content:center;}
 
 /* ── Profile tabs ── */
 .prof-tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--rule);}
