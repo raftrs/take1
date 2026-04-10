@@ -269,7 +269,7 @@ export default function ProfilePage() {
       )}
 
       <div style={{ padding:'24px 24px 12px', textAlign:'center' }}>
-        <div style={{ fontFamily:'var(--ui)', fontSize:10, color:'var(--dim)', lineHeight:1.6 }}>RAFTRS is a one-man shop. Let me know when you see an error.</div>
+        <div style={{ fontFamily:'var(--ui)', fontSize:10, color:'var(--dim)', lineHeight:1.6 }}>raftrs is a one-man shop. Let me know when you see an error.</div>
         <a href="mailto:klein031@gmail.com" style={{ fontFamily:'var(--ui)', fontSize:10, color:'var(--amber)', textDecoration:'none' }}>klein031@gmail.com</a>
       </div>
       <div style={{ height: 80 }}></div>
