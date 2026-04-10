@@ -224,10 +224,10 @@ export default function PlayerPage() {
         {player.draft_info && <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{player.draft_info}</div>}
         <div style={{ marginTop:8 }}>
           {(() => {
-            const isActive = player.active && (!player.debut_year || player.debut_year >= 2010)
+            const isActive = player.active
             return <span className="sans" style={{ fontSize:10, fontWeight:600, letterSpacing:1, padding:'3px 8px', background:isActive?'rgba(181,86,58,0.08)':'var(--surface)', color:isActive?'var(--copper)':'var(--dim)', border:`1px solid ${isActive?'var(--copper)':'var(--faint)'}` }}>{isActive?'ACTIVE':'RETIRED'}</span>
           })()}
-          {player.debut_year && <span className="sans" style={{ fontSize:10, color:'var(--dim)', marginLeft:8 }}>{player.active && (!player.debut_year || player.debut_year >= 2010) ? 'Since' : ''} {player.debut_year}</span>}
+          {player.debut_year && <span className="sans" style={{ fontSize:10, color:'var(--dim)', marginLeft:8 }}>{player.active ? 'Since' : ''} {player.debut_year}</span>}
         </div>
       </div>
 
