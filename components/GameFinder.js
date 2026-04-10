@@ -67,9 +67,9 @@ function TeamInput({ value, onChange, selected, onSelect, onClear, sport, placeh
   );
 }
 
-function GameFinder({ onSelect }) {
+function GameFinder({ onSelect, defaultSport }) {
   const router = useRouter();
-  const [sport, setSport] = useState('basketball');
+  const [sport, setSport] = useState(defaultSport || 'basketball');
   const [t1s, setT1s] = useState(''); const [t1, setT1] = useState(null);
   const [t2s, setT2s] = useState(''); const [t2, setT2] = useState(null);
   const [year, setYear] = useState('');
@@ -112,13 +112,13 @@ function GameFinder({ onSelect }) {
 
   return (
     <div>
-      <div className="prompt-row" style={{ marginBottom: 12 }}>
+      {!defaultSport && <div className="prompt-row" style={{ marginBottom: 12 }}>
         {['basketball', 'football', 'baseball'].map(s => (
           <button key={s} onClick={() => { setSport(s); clearAll(); }} className={`prompt-btn${sport === s ? ' active' : ''}`}>
             {s === 'basketball' ? 'NBA' : s === 'football' ? 'NFL' : 'MLB'}
           </button>
         ))}
-      </div>
+      </div>}
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
         <TeamInput value={t1s} onChange={setT1s} selected={t1} onSelect={t => { setT1(t); setT1s(t.team_name); }} onClear={() => { setT1(null); setSelected(null); }} sport={sport} />
         <span style={{ fontFamily: 'var(--body)', fontSize: 14, color: 'var(--dim)' }}>vs</span>

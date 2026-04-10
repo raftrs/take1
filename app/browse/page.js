@@ -90,7 +90,9 @@ export default function BrowsePage() {
       if (sv) aq = aq.eq('sport', sv)
       const { data: at } = await aq; setAts((at||[]).sort(() => Math.random() - 0.5))
 
-      const { data: ct } = await supabase.from('teams').select('city').eq('active', true).order('city')
+      let ctq = supabase.from('teams').select('city,sport').eq('active', true).order('city')
+      if (sv) ctq = ctq.eq('sport', sv)
+      const { data: ct } = await ctq
       if (ct) {
         const stateNames = new Set(['Arizona','Minnesota','Golden State','Indiana','Carolina','Tennessee','New England','Utah','Oklahoma','Carolina'])
         const citySet = new Set()
@@ -230,8 +232,10 @@ export default function BrowsePage() {
 
   async function searchPlayers(q) {
     if (q.length < 2) { setPlayerOptions([]); return }
-    let pq = supabase.from('players').select('id,player_name,position,sport').ilike('player_name', `%${q}%`).order('career_points',{ascending:false}).limit(10)
+    let pq = supabase.from('players').select('id,player_name,position,sport').ilike('player_name', `%${q}%`).limit(10)
     if (sv) pq = pq.eq('sport', sv)
+    if (!sv || sv === 'basketball') pq = pq.order('career_points', {ascending:false})
+    else pq = pq.order('player_name')
     const { data } = await pq; setPlayerOptions(data||[])
   }
   async function searchCities(q) {
@@ -415,7 +419,7 @@ export default function BrowsePage() {
         {ats.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>ALL-TIMERS</div>{ats.map(g => <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'8px 0' }}><div style={{ display:'flex', alignItems:'center', gap:8 }}><SportBadge sport={g.sport}/><span style={{ fontSize:13, color:'var(--ink)' }}>{g.title}</span></div><div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2, marginLeft:44 }}>{formatDate(g.game_date)}</div></Link>)}</>}
         <div style={{ marginTop:24 }}>
           <div className="sec-head">FIND A MATCHUP</div>
-          <GameFinder />
+          <GameFinder defaultSport={sv || null} />
         </div>
         {browseCities.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>CITIES</div><div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>{browseCities.map(c => <Link key={c} href={`/city/${encodeURIComponent(c)}`} style={{ padding:'6px 12px', fontSize:11, fontFamily:'var(--ui)', background:'var(--card)', border:'1px solid var(--faint)', color:'var(--ink)', textDecoration:'none', borderRadius:4 }}>{c}</Link>)}</div></>}
         {venues.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>{isGolf?'COURSES':'VENUES'} <Link href="/venues" className="sec-link">Checklist</Link></div>
@@ -432,7 +436,8 @@ export default function BrowsePage() {
         </div>)}</div></>}
       </div>}
 
-      {/* THE VAULT - hidden entrance */}
+      {/* THE VAULT - only show on All tab */}
+      {sport === 'all' && <>
       <div onClick={() => router.push('/vault')} style={{
         margin:'20px 20px 0', padding:'24px 20px', cursor:'pointer',
         background:'linear-gradient(180deg, #3d1f0e 0%, #2a1508 100%)',
@@ -444,6 +449,7 @@ export default function BrowsePage() {
         <div style={{ fontSize:11, color:'#8a7d70', marginTop:8, fontStyle:'italic' }}>All-Timers. Collections. The ones that matter.</div>
         <div style={{ width:40, height:1, background:'var(--gold)', margin:'14px auto 0', opacity:0.4 }}/>
       </div>
+      </>}
     </div>
   )
 }

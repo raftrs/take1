@@ -289,29 +289,29 @@ export default function HomePage() {
           <Link href={`/collection/${encodeURIComponent(c.name)}`} style={{ fontSize:16, color:'var(--ink)', textDecoration:'none', borderBottom:'1px solid var(--copper)' }}>{c.name}</Link>
           <div style={{ marginTop:8 }}>{c.games.map(g =>
             <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'6px 0', display:'flex', alignItems:'baseline', gap:8 }}>
-              <span style={{fontFamily:"var(--ui)"}} style={{ fontSize:10, color:'var(--dim)', minWidth:32 }}>{g.game_date?.split('-')[0]}</span>
+              <span style={{ fontFamily:"var(--ui)", fontSize:10, color:'var(--dim)', minWidth:32 }}>{g.game_date?.split('-')[0]}</span>
               <span style={{ fontSize:13, color:'var(--text)' }}>{g.title}</span>
             </Link>
           )}</div>
-          <Link href={`/collection/${encodeURIComponent(c.name)}`} style={{fontFamily:"var(--ui)"}} style={{ fontSize:11, color:'var(--copper)', marginTop:4, display:'inline-block' }}>View all &rarr;</Link>
+          <Link href={`/collection/${encodeURIComponent(c.name)}`} style={{ fontFamily:"var(--ui)", fontSize:11, color:'var(--copper)', marginTop:4, display:'inline-block' }}>View all &rarr;</Link>
         </div>)}
         <div style={{ textAlign:'center', marginTop:8 }}>
-          <Link href="/vault" style={{fontFamily:"var(--ui)"}} style={{ fontSize:12, color:'var(--copper)', fontWeight:600, letterSpacing:0.5 }}>All Collections in The Vault &rarr;</Link>
+          <Link href="/vault" style={{ fontFamily:"var(--ui)", fontSize:12, color:'var(--copper)', fontWeight:600, letterSpacing:0.5 }}>All Collections in The Vault &rarr;</Link>
         </div>
       </div></>)}
 
       {/* LATEST IN THE ARCHIVE */}
       {recent.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
         <div className="sec-head">LATEST IN THE ARCHIVE<Link href="/browse" className="sec-link">Browse all &rarr;</Link></div>
-        <div style={{fontFamily:"var(--ui)"}} style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Recently added playoff and championship games</div>
+        <div style={{ fontFamily:"var(--ui)", fontSize:10, color:'var(--dim)', marginBottom:14 }}>Recently added playoff and championship games</div>
         {recent.map(g => <Link key={g.id} href={`/game/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}><SportBadge sport={g.sport}/>
               <span style={{ fontSize:14, color:'var(--ink)' }}>{showScore(g) || g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</span>
             </div>
-            <span style={{fontFamily:"var(--ui)"}} style={{ fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</span>
+            <span style={{ fontFamily:"var(--ui)", fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</span>
           </div>
-          {g.series_info && <div style={{fontFamily:"var(--ui)"}} style={{ fontSize:10, color:'var(--copper)', marginTop:2 }}>{g.series_info}</div>}
+          {g.series_info && <div style={{ fontFamily:"var(--ui)", fontSize:10, color:'var(--copper)', marginTop:2 }}>{g.series_info}</div>}
         </Link>)}
       </div></>)}
       </>)}
