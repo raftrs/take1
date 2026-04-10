@@ -307,7 +307,7 @@ export default function PlayerPage() {
       </div>)}
 
       {/* ALL-TIMERS - scrollable */}
-      {allTimers.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+      {allTimers.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
         <div className="sec-head">ALL-TIMERS ({allTimers.length})</div>
         <ScrollList maxH={280}>
           {allTimers.map((g, idx) => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => {
@@ -326,14 +326,14 @@ export default function PlayerPage() {
       </div></>)}
 
       {/* FROM THE STANDS */}
-      <hr className="sec-rule"/><hr className="sec-rule-thin"/>
+      <hr className="sec-rule"/>
       <div style={{ padding:20 }}>
         <div className="sec-head">SAY SOMETHING</div>
         <textarea className="story-textarea" placeholder={`Say something about ${player.player_name}...`} value={story} onChange={e => setStory(e.target.value)} />
       </div>
 
       {/* NBA/NFL GAME LOG - scrollable */}
-      {rawGameLog.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+      {rawGameLog.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
           <div className="sec-head" style={{ marginBottom:0 }}>{gameLogFilter === 'playoff' ? 'PLAYOFF' : 'ALL'} GAMES ({activeGameLog.length})</div>
           <div style={{ display:'flex', gap:0 }}>
@@ -365,7 +365,7 @@ export default function PlayerPage() {
       </div></>)}
 
       {/* GOLF TOURNAMENT HISTORY - scrollable */}
-      {isGolf && golfResults.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+      {isGolf && golfResults.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
           <div className="sec-head" style={{ marginBottom:0 }}>MAJOR RESULTS ({golfResults.length})</div>
           <div style={{ display:'flex', gap:0 }}>

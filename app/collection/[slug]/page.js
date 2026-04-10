@@ -46,7 +46,7 @@ export default function CollectionPage() {
         <div style={{ fontSize:24, color:'var(--ink)', marginBottom:4 }}>{name}</div>
         <div className="sans" style={{ fontSize:12, color:'var(--dim)' }}>{games.length} game{games.length!==1?'s':''}</div>
       </div>
-      <hr className="sec-rule" style={{marginTop:16}}/><hr className="sec-rule-thin"/>
+      <hr className="sec-rule" style={{marginTop:16}}/>
       <div style={{ padding:20 }}>
         <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:10 }}>
           {['Oldest','Recent'].map(s => <button key={s} onClick={() => setCollSort(s==='Recent'?'desc':'asc')} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===collSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===collSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}

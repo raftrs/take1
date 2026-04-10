@@ -136,7 +136,7 @@ export default function TeamPage() {
           savePlaylist(allNotablePlaylist, idx >= 0 ? idx : 0)
         }
         return <>
-          {allTimerGames.length > 0 && <><hr className="sec-rule" style={{marginTop:16}}/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+          {allTimerGames.length > 0 && <><hr className="sec-rule" style={{marginTop:16}}/><div style={{ padding:20 }}>
             <div className="sec-head">ALL-TIMERS</div>
             <div style={{ maxHeight:300, overflowY:'auto' }}>
               {allTimerGames.map(g => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleNotableClick(g)} className="game-row" style={{ padding:'10px 0' }}>
@@ -146,7 +146,7 @@ export default function TeamPage() {
               </Link>)}
             </div>
           </div></>}
-          {otherNotable.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+          {otherNotable.length > 0 && <><hr className="sec-rule"/><div style={{ padding:20 }}>
             <div className="sec-head">{sp === 'golf' ? 'NOTABLE TOURNAMENTS' : 'NOTABLE GAMES'}</div>
             <div style={{ maxHeight:300, overflowY:'auto' }}>
               {otherNotable.map(g => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleNotableClick(g)} className="game-row" style={{ padding:'10px 0' }}>
@@ -159,13 +159,13 @@ export default function TeamPage() {
         </>
       })()}
 
-      <hr className="sec-rule"/><hr className="sec-rule-thin"/>
+      <hr className="sec-rule"/>
       <div style={{ padding:20 }}>
         <div className="sec-head">SAY SOMETHING</div>
         <textarea className="story-textarea" placeholder={`Say something about the ${team.full_name || team.team_name}...`} value={story} onChange={e => setStory(e.target.value)} />
       </div>
 
-      {games.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+      {games.length > 0 && <><hr className="sec-rule"/><div style={{ padding:20 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
           <div className="sec-head" style={{ marginBottom:0 }}>FROM THE ARCHIVES ({games.length})</div>
           <div style={{ display:'flex', gap:0 }}>

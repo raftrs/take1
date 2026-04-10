@@ -98,7 +98,7 @@ export default function StoryComments({ userGameId }) {
                 flex: 1, padding: '8px 10px', fontSize: 13,
                 border: '1px solid var(--faint)', borderRadius: 4,
                 background: 'var(--surface)', color: 'var(--ink)',
-                fontFamily: "'Crete Round', Georgia, serif",
+                fontFamily: 'var(--body)',
               }}
             />
             <button onClick={submit} disabled={sending || !text.trim()} className="sans" style={{

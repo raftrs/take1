@@ -21,6 +21,8 @@ export default function VenuesPage() {
   const [visited, setVisited] = useState(new Set())
   const [sport, setSport] = useState('all')
   const [loading, setLoading] = useState(true)
+  const [myList, setMyList] = useState(new Set())
+  const [view, setView] = useState('all')
 
   useEffect(() => {
     async function load() {
@@ -29,8 +31,11 @@ export default function VenuesPage() {
       setVenues(vn || [])
 
       if (user) {
-        const { data: uv } = await supabase.from('user_venues').select('venue_id').eq('user_id', user.id)
-        if (uv) setVisited(new Set(uv.map(v => v.venue_id)))
+        const { data: uv } = await supabase.from('user_venues').select('venue_id,status').eq('user_id', user.id)
+        if (uv) {
+          setVisited(new Set(uv.filter(v => v.status === 'visited').map(v => v.venue_id)))
+          setMyList(new Set(uv.filter(v => v.status === 'want').map(v => v.venue_id)))
+        }
       }
       setLoading(false)
     }
@@ -45,12 +50,15 @@ export default function VenuesPage() {
       await supabase.from('user_venues').delete().eq('user_id', user.id).eq('venue_id', venueId)
     } else {
       newVisited.add(venueId)
-      await supabase.from('user_venues').upsert({ user_id: user.id, venue_id: venueId })
+      const newMyList = new Set(myList); newMyList.delete(venueId); setMyList(newMyList)
+      await supabase.from('user_venues').upsert({ user_id: user.id, venue_id: venueId, status: 'visited' }, { onConflict: 'user_id,venue_id' })
     }
     setVisited(newVisited)
   }
 
-  const allFiltered = sport === 'all' ? venues : venues.filter(v => v.sport === sport)
+  let allFiltered = sport === 'all' ? venues : venues.filter(v => v.sport === sport)
+  if (view === 'visited') allFiltered = allFiltered.filter(v => visited.has(v.id))
+  if (view === 'mylist') allFiltered = allFiltered.filter(v => myList.has(v.id))
   const filtered = allFiltered.filter(v => v.active !== false)
   const historic = allFiltered.filter(v => v.active === false)
 
@@ -72,6 +80,12 @@ export default function VenuesPage() {
       <BackButton />
       <div style={{ padding: '20px 20px 0', borderBottom: '2px solid var(--rule)' }}>
         <div style={{ fontSize: 20, color: 'var(--ink)', marginBottom: 4 }}>Venue Checklist</div>
+        {/* View toggle */}
+        <div style={{ display:'flex', gap:4, marginBottom:10 }}>
+          {[{k:'all',l:'All Venues'},{k:'visited',l:'Visited'},{k:'mylist',l:'My List'}].map(v => (
+            <button key={v.k} onClick={() => setView(v.k)} className={view === v.k ? 'prompt-btn active' : 'prompt-btn'} style={{ flex:'none' }}>{v.l}{v.k === 'visited' ? ` (${visited.size})` : v.k === 'mylist' ? ` (${myList.size})` : ''}</button>
+          ))}
+        </div>
         <div className="sans" style={{ fontSize: 11, color: 'var(--dim)', marginBottom: 12, fontStyle: 'italic' }}>
           {activeVisited.length} of {activeVenues.length} visited
         </div>

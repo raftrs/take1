@@ -17,7 +17,7 @@ export default function BottomNav() {
         const active = t.href === '/' ? path === '/' : path?.startsWith(t.href)
         return (
           <Link key={t.href} href={t.href} className={`nav-tab${active ? ' active' : ''}`}>
-            <svg viewBox="0 0 24 24" fill="none" stroke={active ? 'var(--brown)' : 'var(--dim)'} strokeWidth="1.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke={active ? 'var(--amber)' : 'var(--dim)'} strokeWidth="1.5">
               {t.circle ? <><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></> : null}
               {t.circle2 ? <><path d={t.icon}/><circle cx="12" cy="7" r="4"/></> : null}
               {!t.circle && !t.circle2 ? <path d={t.icon}/> : null}

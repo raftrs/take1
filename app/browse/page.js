@@ -6,11 +6,42 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import SportBadge from '@/components/SportBadge'
 import TopLogo from '@/components/TopLogo'
+import { useAuth } from '@/lib/auth'
 
 const ROUNDS_NBA = ['First Round','Conference Semifinals','Conference Finals','NBA Finals']
 const ROUNDS_NFL = ['Wild Card','Divisional','Conference Championship','Super Bowl']
 const ROUNDS_GOLF = ['Masters','U.S. Open','The Open','PGA Championship']
 const ROUNDS_MLB = ['Wild Card','Division Series','Championship Series','World Series']
+
+function VenueActions({ venueId }) {
+  const { user } = useAuth()
+  const [visited, setVisited] = useState(false)
+  const [listed, setListed] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  useEffect(() => {
+    if (!user) return
+    async function check() {
+      const { data: v } = await supabase.from('user_venues').select('id,status').eq('user_id', user.id).eq('venue_id', venueId).limit(1)
+      if (v?.[0]) { if (v[0].status === 'visited') setVisited(true); else setListed(true) }
+      setLoaded(true)
+    }
+    check()
+  }, [user, venueId])
+  async function toggle(status) {
+    if (!user) return
+    if (status === 'visited' && visited) { await supabase.from('user_venues').delete().eq('user_id', user.id).eq('venue_id', venueId); setVisited(false); return }
+    if (status === 'want' && listed) { await supabase.from('user_venues').delete().eq('user_id', user.id).eq('venue_id', venueId); setListed(false); return }
+    await supabase.from('user_venues').upsert({ user_id: user.id, venue_id: venueId, status }, { onConflict: 'user_id,venue_id' })
+    if (status === 'visited') { setVisited(true); setListed(false) } else { setListed(true); setVisited(false) }
+  }
+  if (!loaded) return null
+  return (
+    <div style={{ display:'flex', gap:8, marginTop:8 }}>
+      <button onClick={() => toggle('visited')} style={{ fontFamily:'var(--ui)', fontSize:10, fontWeight:600, padding:'4px 10px', borderRadius:20, border: visited ? '1px solid var(--amber)' : '1px solid var(--faint)', background: visited ? 'var(--amber)' : 'transparent', color: visited ? '#fff' : 'var(--dim)', cursor:'pointer' }}>{visited ? '\u2713 Been here' : "I've been here"}</button>
+      <button onClick={() => toggle('want')} style={{ fontFamily:'var(--ui)', fontSize:10, fontWeight:600, padding:'4px 10px', borderRadius:20, border: listed ? '1px solid var(--gold)' : '1px solid var(--faint)', background: listed ? 'var(--gold)' : 'transparent', color: listed ? '#fff' : 'var(--dim)', cursor:'pointer' }}>{listed ? '\u2713 On my list' : 'Want to visit'}</button>
+    </div>
+  )
+}
 
 export default function BrowsePage() {
   const router = useRouter()
@@ -55,13 +86,14 @@ export default function BrowsePage() {
 
       let aq = supabase.from('notable_games').select('id,title,game_date,sport').eq('tier',1).order('game_date',{ascending:false}).limit(12)
       if (sv) aq = aq.eq('sport', sv)
-      const { data: at } = await aq; setAts(at||[])
+      const { data: at } = await aq; setAts((at||[]).sort(() => Math.random() - 0.5))
 
       const { data: ct } = await supabase.from('teams').select('city').eq('active', true).order('city')
       if (ct) {
+        const stateNames = new Set(['Arizona','Minnesota','Golden State','Indiana','Carolina','Tennessee','New England','Utah','Oklahoma','Carolina'])
         const citySet = new Set()
-        ct.forEach(t => { if (t.city) citySet.add(t.city) })
-        setBrowseCities([...citySet])
+        ct.forEach(t => { if (t.city && !stateNames.has(t.city)) citySet.add(normalizeCity(t.city)) })
+        setBrowseCities([...citySet].sort())
       }
     }
     ld()
@@ -127,7 +159,11 @@ export default function BrowsePage() {
     }
     if (f.venue) q = q.eq('venue', f.venue)
     if (f.year) q = q.gte('game_date',`${f.year}-01-01`).lte('game_date',`${f.year}-12-31`)
-    if (f.round) q = q.ilike('series_info', `%${f.round}%`)
+    if (f.round) {
+      if (f.round === 'Division Series') q = q.or('series_info.ilike.%ALDS%,series_info.ilike.%NLDS%,series_info.ilike.%Division%')
+      else if (f.round === 'Championship Series') q = q.or('series_info.ilike.%ALCS%,series_info.ilike.%NLCS%,series_info.ilike.%Championship%')
+      else q = q.ilike('series_info', `%${f.round}%`)
+    }
     if (f.city) {
       const { data: cv } = await supabase.from('venues').select('venue_name').or(`venue_city.ilike.%${f.city}%`).limit(50)
       if (cv?.length) q = q.in('venue', cv.map(v => v.venue_name))
@@ -171,7 +207,12 @@ export default function BrowsePage() {
       if (f.venue) allGameResults = allGameResults.filter(g => g.venue === f.venue)
       if (f.team) allGameResults = allGameResults.filter(g => g.home_team_abbr === f.team || g.away_team_abbr === f.team)
       if (f.year) allGameResults = allGameResults.filter(g => g.game_date?.startsWith(f.year))
-      if (f.round) allGameResults = allGameResults.filter(g => g.series_info?.toLowerCase().includes(f.round.toLowerCase()))
+      if (f.round) allGameResults = allGameResults.filter(g => {
+        const si = (g.series_info || '').toLowerCase()
+        if (f.round === 'Division Series') return si.includes('alds') || si.includes('nlds') || si.includes('division')
+        if (f.round === 'Championship Series') return si.includes('alcs') || si.includes('nlcs') || si.includes('championship')
+        return si.includes(f.round.toLowerCase())
+      })
       if (f.city) allGameResults = allGameResults.filter(g => g.venue_city?.toLowerCase().includes(f.city.toLowerCase()))
       allGameResults.sort((a,b) => browseSort==='asc' ? (a.game_date||'').localeCompare(b.game_date||'') : (b.game_date||'').localeCompare(a.game_date||''))
       setFilteredGames(allGameResults); setFiltering(false); return
@@ -231,7 +272,7 @@ export default function BrowsePage() {
           onKeyDown={handleSearchKeyDown}
           placeholder="Search players, teams, games, venues..."
           className="search-input"
-          style={{ width:'100%', fontSize:16, fontFamily:"'Crete Round', Georgia, serif", color:'var(--ink)', backgroundColor:'var(--card)', border:'2px solid var(--faint)', borderRadius:4, outline:'none', boxSizing:'border-box' }}
+          style={{ width:'100%', fontSize:16, fontFamily:'var(--body)', color:'var(--ink)', backgroundColor:'var(--card)', border:'2px solid var(--faint)', borderRadius:4, outline:'none', boxSizing:'border-box' }}
         />
         {/* Autocomplete dropdown - stays on top */}
         {showSuggestions && suggestions.length > 0 && (
@@ -263,7 +304,7 @@ export default function BrowsePage() {
         <div style={{ display:'flex' }}>
           {['all','basketball','football','golf','baseball'].map(s => {
             const active = sport===s
-            return <button key={s} onClick={() => switchSport(s)} style={{ flex:1, padding:'10px 0', fontSize:12, fontFamily:"'Libre Franklin',sans-serif", fontWeight:600, background:'none', border:'none', cursor:'pointer', color:active?'var(--copper)':'var(--dim)', borderBottom:active?'2px solid var(--copper)':'2px solid var(--faint)' }}>{s==='all'?'All':sportLabel(s)}</button>
+            return <button key={s} onClick={() => switchSport(s)} style={{ flex:1, padding:'10px 0', fontSize:12, fontFamily:'var(--ui)', fontWeight:600, background:'none', border:'none', cursor:'pointer', color:active?'var(--copper)':'var(--dim)', borderBottom:active?'2px solid var(--copper)':'2px solid var(--faint)' }}>{s==='all'?'All':sportLabel(s)}</button>
           })}
         </div>
       </div>
@@ -275,7 +316,7 @@ export default function BrowsePage() {
           const isOpen = expanded === f.k
           const display = f.k === 'team' && filters.teamLabel ? filters.teamLabel : v
           return <button key={f.k} onClick={() => setExpanded(isOpen ? null : f.k)} style={{
-            padding:'6px 12px', fontSize:11, fontFamily:"'Libre Franklin',sans-serif", fontWeight:600,
+            padding:'6px 12px', fontSize:11, fontFamily:'var(--ui)', fontWeight:600,
             background: v ? 'var(--copper)' : 'var(--card)',
             color: v ? '#fff' : 'var(--dim)',
             border: `1px solid ${v ? 'var(--copper)' : 'var(--faint)'}`,
@@ -369,15 +410,18 @@ export default function BrowsePage() {
             {(sport === 'all' || sport === 'baseball') && mlbTeams.length > 0 && <><div className="sec-head" style={{ marginTop:(nbaTeams.length||nflTeams.length) > 0 ? 20 : 0 }}>MLB</div><div className="team-grid">{mlbTeams.map(t => <Link key={t.id} href={`/team/${t.id}`} className="team-chip" style={{ borderLeftColor:t.primary_color||'var(--faint)' }}>{t.team_abbr}</Link>)}</div></>}
           </>
         })()}
-        {ats.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>ALL-TIMERS</div>{ats.slice(0,6).map(g => <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'8px 0' }}><div style={{ display:'flex', alignItems:'center', gap:8 }}><SportBadge sport={g.sport}/><span style={{ fontSize:13, color:'var(--ink)' }}>{g.title}</span></div><div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2, marginLeft:44 }}>{formatDate(g.game_date)}</div></Link>)}</>}
-        {browseCities.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>CITIES</div><div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>{browseCities.map(c => <Link key={c} href={`/city/${encodeURIComponent(c)}`} style={{ padding:'6px 12px', fontSize:11, fontFamily:"'Libre Franklin',sans-serif", background:'var(--card)', border:'1px solid var(--faint)', color:'var(--ink)', textDecoration:'none', borderRadius:4 }}>{c}</Link>)}</div></>}
-        {venues.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>{isGolf?'COURSES':'VENUES'}</div><div style={{ display:'flex', flexDirection:'column', gap:8 }}>{venues.slice(0,20).map(v => <Link key={v.id} href={`/venue/${v.id}`} style={{ padding:'12px 14px', background:'var(--card)', border:'1px solid var(--faint)', textDecoration:'none', borderRadius:4, display:'block' }}>
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
-            <span style={{ fontSize:14, color:'var(--ink)', fontWeight:600 }}>{v.venue_name}</span>
-            <span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{v.venue_city}</span>
-          </div>
-          {v.description && <div className="sans" style={{ fontSize:11, color:'var(--muted)', marginTop:4, lineHeight:1.5, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>{v.description}</div>}
-        </Link>)}</div></>}
+        {ats.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>ALL-TIMERS</div>{ats.map(g => <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'8px 0' }}><div style={{ display:'flex', alignItems:'center', gap:8 }}><SportBadge sport={g.sport}/><span style={{ fontSize:13, color:'var(--ink)' }}>{g.title}</span></div><div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2, marginLeft:44 }}>{formatDate(g.game_date)}</div></Link>)}</>}
+        {browseCities.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>CITIES</div><div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>{browseCities.map(c => <Link key={c} href={`/city/${encodeURIComponent(c)}`} style={{ padding:'6px 12px', fontSize:11, fontFamily:'var(--ui)', background:'var(--card)', border:'1px solid var(--faint)', color:'var(--ink)', textDecoration:'none', borderRadius:4 }}>{c}</Link>)}</div></>}
+        {venues.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>{isGolf?'COURSES':'VENUES'} <Link href="/venues" className="sec-link">See all</Link></div><div style={{ maxHeight:420, overflowY:'auto', display:'flex', flexDirection:'column', gap:8 }}>{venues.slice(0,7).map(v => <div key={v.id} style={{ padding:'12px 14px', background:'var(--surface)', border:'1px solid var(--faint)', borderRadius:4 }}>
+          <Link href={`/venue/${v.id}`} style={{ textDecoration:'none', display:'block' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
+              <span style={{ fontSize:14, color:'var(--ink)', fontWeight:600 }}>{v.venue_name}</span>
+              <span style={{ fontFamily:'var(--ui)', fontSize:10, color:'var(--dim)' }}>{v.venue_city}</span>
+            </div>
+            {v.description && <div style={{ fontFamily:'var(--ui)', fontSize:11, color:'var(--muted)', marginTop:4, lineHeight:1.5, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>{v.description}</div>}
+          </Link>
+          <VenueActions venueId={v.id} />
+        </div>)}</div></>}
       </div>}
 
       {/* THE VAULT - hidden entrance */}
@@ -387,7 +431,7 @@ export default function BrowsePage() {
         borderRadius:6, textAlign:'center', position:'relative',
         border:'1px solid #5a4a3a',
       }}>
-        <div style={{ fontSize:9, letterSpacing:4, color:'#a08b70', fontWeight:700, fontFamily:"'Libre Franklin',sans-serif", marginBottom:8 }}>ENTER</div>
+        <div style={{ fontSize:9, letterSpacing:4, color:'#a08b70', fontWeight:700, fontFamily:'var(--ui)', marginBottom:8 }}>ENTER</div>
         <div style={{ fontSize:18, color:'var(--gold)', letterSpacing:2 }}>The Vault</div>
         <div style={{ fontSize:11, color:'#8a7d70', marginTop:8, fontStyle:'italic' }}>All-Timers. Collections. The ones that matter.</div>
         <div style={{ width:40, height:1, background:'var(--gold)', margin:'14px auto 0', opacity:0.4 }}/>

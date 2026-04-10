@@ -82,86 +82,87 @@ export default function StoryCard({ s, currentUserId, onDelete }) {
   }
 
   return (
-    <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--faint)' }}>
-      {/* Byline: avatar + name + founder + timestamp */}
-      <div className="byline">
-        <Link href={p?.username ? `/user/${p.username}` : '#'} style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+    <div style={{ padding: '24px 24px 20px', borderBottom: '1px solid var(--rule)', background: 'var(--surface)' }}>
+      {/* Byline */}
+      <div className="byline" style={{ marginBottom: 16 }}>
+        <Link href={p?.username ? `/user/${p.username}` : '#'} style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 10 }}>
           <div className="avatar">{initial}</div>
-          <span className="author-name">{p?.display_name || p?.username || 'A fan'}</span>
-          <FounderBadge number={p?.member_number} />
+          <div>
+            <div><span className="author-name">{p?.display_name || p?.username || 'A fan'}</span><FounderBadge number={p?.member_number} /></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+              {s.attended && <span className="attended-badge">WAS THERE</span>}
+              <span className="timestamp">{p?.city || ''}</span>
+            </div>
+          </div>
         </Link>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="timestamp">
-            {new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-          </span>
-          {isOwn && (
-            <button onClick={handleDelete} className="action-btn" style={{ fontSize: 9 }}>delete</button>
-          )}
-        </div>
+        {isOwn && (
+          <button onClick={handleDelete} className="action-btn" style={{ marginLeft: 'auto', fontSize: 9 }}>delete</button>
+        )}
       </div>
 
-      {/* Game ref card */}
-      <Link href={gameHref} style={{ textDecoration: 'none', display: 'block', margin: '10px 0' }}>
-        <div className="game-ref" style={{ width: 'fit-content' }}>
+      {/* Game ref (ticket stub) */}
+      <Link href={gameHref} style={{ textDecoration: 'none', display: 'block', marginBottom: 16 }}>
+        <div className="game-ref" style={{ width: 'fit-content', maxWidth: '100%' }}>
           {gameSport && <SportBadge sport={gameSport} />}
           {sc ? (
             <span className="game-ref-score">
-              <span className={sc.away.won ? '' : 'dim'}>{sc.away.abbr} {sc.away.score}</span>
-              {' / '}
-              <span className={sc.home.won ? '' : 'dim'}>{sc.home.abbr} {sc.home.score}</span>
+              {sc.away.abbr} {sc.away.score} <span className={sc.away.won ? '' : 'lose'}>/ {sc.home.score} {sc.home.abbr}</span>
             </span>
           ) : (
             <span className="game-ref-score">{gameTitle}</span>
           )}
           {g?.series_info && <span className="game-ref-series">{g.series_info}</span>}
+          {gameDate && <span className="game-ref-detail" style={{ marginLeft: 'auto' }}>{formatDate(gameDate)}</span>}
         </div>
-        {gameDate && <div className="game-ref-detail" style={{ marginTop: -8, marginBottom: 4, paddingLeft: 2 }}>{formatDate(gameDate)}</div>}
       </Link>
-
-      {/* Rating + attendance */}
-      {(s.rating || s.attended) && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          {s.rating && <span className="stars">{[1,2,3,4,5].map(i => <span key={i} className={`s${i <= s.rating ? ' on' : ''}`}>&#9733;</span>)}</span>}
-          {s.attended && <span className="mono" style={{ fontSize: 9, color: 'var(--copper)', fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', border: '1px solid var(--copper)', borderRadius: 2 }}>WAS THERE</span>}
-        </div>
-      )}
 
       {/* Story text */}
       <div
         onClick={() => { if (!expanded && isLong) setExpanded(true) }}
         className="story-text"
-        style={{ cursor: isLong && !expanded ? 'pointer' : 'default', fontStyle: 'italic' }}
+        style={{ cursor: isLong && !expanded ? 'pointer' : 'default' }}
       >
         {expanded || !isLong ? (
-          <>&ldquo;<span className="story-opener">{s.story.split('. ')[0]}.</span>{s.story.indexOf('. ') > -1 ? ' ' + s.story.slice(s.story.indexOf('. ') + 2) : ''}&rdquo;</>
+          <><span className="story-opener">{s.story.split('. ')[0]}.</span>{s.story.indexOf('. ') > -1 ? ' ' + s.story.slice(s.story.indexOf('. ') + 2) : ''}</>
         ) : (
-          <>&ldquo;{s.story.slice(0, 180)}...&rdquo; <span className="mono" style={{ fontSize: 11, color: 'var(--copper)', fontWeight: 600, fontStyle: 'normal' }}>Read more</span></>
+          <>{s.story.slice(0, 180)}... <span style={{ fontSize: 11, color: 'var(--amber)', fontWeight: 600, fontFamily: 'var(--ui)' }}>Read more</span></>
         )}
       </div>
+
+      {/* Stars */}
+      {s.rating && (
+        <div className="stars" style={{ marginTop: 12 }}>
+          {[1,2,3,4,5].map(i => <span key={i} className={`s${i <= s.rating ? ' on' : ''}`}>&#9733;</span>)}
+        </div>
+      )}
 
       {/* Actions */}
       <div className="story-actions">
         <HighFive userGameId={s.id} />
         <button onClick={() => setExpanded(!expanded)} className="action-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
           {commentCount > 0 && <span>{commentCount}</span>}
         </button>
+        <span style={{ flex: 1 }}></span>
+        <span className="timestamp">
+          {new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        </span>
       </div>
 
       {/* Expanded: comments */}
       {expanded && (
-        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--faint)' }}>
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--rule-light)' }}>
           {loadingComments ? (
-            <div className="mono" style={{ fontSize: 11, color: 'var(--dim)', padding: '8px 0' }}>Loading...</div>
+            <div style={{ fontSize: 11, color: 'var(--dim)', fontFamily: 'var(--ui)', padding: '8px 0' }}>Loading...</div>
           ) : (
             <>
               {comments.map(c => {
                 const ci = (c.profile?.display_name || c.profile?.username || '?')[0].toUpperCase()
                 return (
                   <div key={c.id} className="convo-item">
-                    <div className="avatar" style={{ width: 22, height: 22, fontSize: 9 }}>{ci}</div>
+                    <div className="avatar avatar-sm">{ci}</div>
                     <div style={{ flex: 1 }}>
                       <div>
                         <Link href={c.profile?.username ? `/user/${c.profile.username}` : '#'} style={{ textDecoration: 'none' }}>
@@ -178,20 +179,20 @@ export default function StoryCard({ s, currentUserId, onDelete }) {
                 )
               })}
               {comments.length === 0 && (
-                <div className="mono" style={{ fontSize: 11, color: 'var(--dim)', padding: '4px 0 8px' }}>No comments yet. Be the first.</div>
+                <div style={{ fontSize: 11, color: 'var(--dim)', fontFamily: 'var(--ui)', padding: '4px 0 8px' }}>No comments yet. Be the first.</div>
               )}
-              <div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'flex-end' }}>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'flex-end' }}>
                 <input
                   type="text"
                   value={newComment}
                   onChange={e => setNewComment(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !submitting) submitComment() }}
                   placeholder="Add a comment..."
-                  className="sans"
                   style={{
-                    flex: 1, padding: '8px 12px', fontSize: 13,
-                    border: '1px solid var(--faint)', borderRadius: 4,
-                    background: 'var(--surface)', color: 'var(--ink)', outline: 'none',
+                    flex: 1, padding: '10px 14px', fontSize: 13,
+                    border: '1px solid var(--rule)', borderRadius: 4,
+                    background: 'var(--surface)', color: 'var(--ink)',
+                    outline: 'none', fontFamily: 'var(--body)',
                   }}
                 />
                 <button onClick={submitComment} disabled={submitting || !newComment.trim()} className={`post-btn${newComment.trim() ? '' : ' off'}`}>Post</button>

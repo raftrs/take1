@@ -1,9 +1,11 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { formatDate, showScore, golfMajorDisplay } from '@/lib/utils'
+import { formatDate, showScore, savePlaylist, golfMajorDisplay } from '@/lib/utils'
 import Link from 'next/link'
 import SportBadge from '@/components/SportBadge'
+import HighFive from '@/components/HighFive'
+import FounderBadge from '@/components/FounderBadge'
 import StoryCard from '@/components/StoryCard'
 import { useAuth } from '@/lib/auth'
 
@@ -25,10 +27,12 @@ export default function HomePage() {
 
   useEffect(() => {
     async function load() {
+      // All tier 1 with descriptions
       const { data: pool } = await supabase.from('notable_games').select('*')
         .eq('tier', 1).not('description', 'is', null).limit(300)
 
       if (pool?.length) {
+        // On This Day: check if any game matches today's month-day
         const now = new Date()
         const mm = String(now.getMonth() + 1).padStart(2, '0')
         const dd = String(now.getDate()).padStart(2, '0')
@@ -43,11 +47,13 @@ export default function HomePage() {
           setHeroType('random')
         }
 
+        // Random sample of 10 for the list
         const shuffled = [...pool].sort(() => Math.random() - 0.5)
         setAllTimerSample(shuffled.slice(0, 10))
         setAllTimerTotal(pool.length)
       }
 
+      // Collections: only 4
       const { data: cd } = await supabase.from('notable_games')
         .select('id,title,game_date,away_team_abbr,home_team_abbr,away_score,home_score,sport,collections')
         .not('collections', 'is', null).eq('tier', 1).order('game_date', { ascending: false }).limit(500)
@@ -102,7 +108,7 @@ export default function HomePage() {
       {/* Mode toggle */}
       <div className="feed-nav">
         {[{ k:'featured', l:'Featured' },{ k:'feed', l:'The Stands' }].map(m => (
-          <button key={m.k} onClick={() => setMode(m.k)} className={`feed-nav-btn${mode === m.k ? ' active' : ''}`} style={{ flex: 1, textAlign: 'center' }}>
+          <button key={m.k} onClick={() => setMode(m.k)} className={`feed-nav-btn${mode === m.k ? ' active' : ''}`}>
             {m.l}
           </button>
         ))}
@@ -114,13 +120,13 @@ export default function HomePage() {
         )) : (
           <div className="empty">
             <div style={{ fontSize: 16, color: 'var(--muted)', marginBottom: 8 }}>No stories yet</div>
-            <div className="mono" style={{ fontSize: 12, color: 'var(--dim)' }}>Stories from the community will show up here.</div>
+            <div style={{ fontSize: 12, color: 'var(--dim)', fontFamily: 'var(--ui)' }}>Stories from the community will show up here.</div>
           </div>
         )}
       </>) : (<>
 
       {/* HERO */}
-      {hero && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
+      {hero && (<><hr className="sec-rule"/>
         <Link href={`/notable/${hero.id}`} className="hero-link">
           <div className="hero-label">
             <SportBadge sport={hero.sport}/>
@@ -136,60 +142,60 @@ export default function HomePage() {
       </>)}
 
       {/* FIND A GAME */}
-      <hr className="sec-rule"/><hr className="sec-rule-thin"/>
+      <hr className="sec-rule"/>
       <div style={{ padding:'24px 20px', textAlign:'center' }}>
-        <div style={{ fontSize:18, color:'var(--ink)', lineHeight:1.4, marginBottom:8, fontFamily:'var(--display)' }}>Every game has a story. What are yours?</div>
+        <div style={{ fontSize:18, color:'var(--ink)', lineHeight:1.4, marginBottom:8 }}>Every game has a story. What are yours?</div>
         <div style={{ fontSize:13, color:'var(--muted)', lineHeight:1.6, maxWidth:300, margin:'0 auto 16px' }}>Rate the games that matter. Share the stories behind them. Build your personal collection.</div>
-        <Link href="/log" className="sans" style={{ display:'inline-block', padding:'10px 28px', background:'var(--copper)', color:'#fff', fontSize:12, fontWeight:600, letterSpacing:1, textDecoration:'none' }}>FIND A GAME</Link>
+        <Link href="/log" style={{ display:'inline-block', padding:'10px 28px', background:'var(--copper)', color:'#fff', fontSize:12, fontFamily:'var(--ui)', fontWeight:600, letterSpacing:1, textDecoration:'none' }}>FIND A GAME</Link>
       </div>
 
-      {/* ALL-TIMERS SAMPLE */}
-      {allTimerSample.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
-        <div style={{ padding:20 }}>
-          <div className="sec-head">ALL-TIMERS</div>
-          {allTimerSample.map(g => <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'8px 0', display:'flex', alignItems:'center', gap:10 }}>
-            <SportBadge sport={g.sport}/>
-            <div>
-              <div style={{ fontSize:14, color:'var(--ink)' }}>{g.title}</div>
-              <div className="mono" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{formatDate(g.game_date)}</div>
-            </div>
-          </Link>)}
-          <div style={{ textAlign:'center', marginTop:12 }}>
-            <Link href="/vault" className="mono" style={{ fontSize:12, color:'var(--copper)', fontWeight:600, letterSpacing:0.5 }}>See all {allTimerTotal} in The Vault &rarr;</Link>
+      {/* ALL-TIMERS CAROUSEL */}
+      {allTimerSample.length > 0 && (<><hr className="sec-rule"/>
+        <div style={{ padding:'20px 0 20px 20px' }}>
+          <div className="sec-head" style={{ paddingRight:20 }}>ALL-TIMERS <Link href="/vault" style={{ fontFamily:'var(--ui)', fontSize:11, color:'var(--amber)', fontWeight:600, textDecoration:'none', letterSpacing:0 }}>See all &rarr;</Link></div>
+          <div style={{ display:'flex', gap:12, overflowX:'auto', paddingBottom:8, paddingRight:20, WebkitOverflowScrolling:'touch', scrollbarWidth:'none' }}>
+            <style>{`.at-carousel::-webkit-scrollbar{display:none}`}</style>
+            {allTimerSample.map(g => (
+              <Link key={g.id} href={`/notable/${g.id}`} style={{ flexShrink:0, width:200, padding:'16px 14px', background:'var(--surface)', border:'1px solid var(--faint)', borderTop:'3px solid var(--amber)', textDecoration:'none', display:'block' }}>
+                <div style={{ marginBottom:8 }}><SportBadge sport={g.sport}/></div>
+                <div style={{ fontFamily:'var(--body)', fontSize:15, color:'var(--ink)', lineHeight:1.3, marginBottom:8 }}>{g.title}</div>
+                <div style={{ fontFamily:'var(--ui)', fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</div>
+              </Link>
+            ))}
           </div>
         </div>
       </>)}
 
-      {/* COLLECTIONS */}
-      {colls.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+      {/* COLLECTIONS (3-4) */}
+      {colls.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
         <div className="sec-head">COLLECTIONS</div>
         {colls.map(c => <div key={c.name} style={{ marginBottom:20 }}>
           <Link href={`/collection/${encodeURIComponent(c.name)}`} style={{ fontSize:16, color:'var(--ink)', textDecoration:'none', borderBottom:'1px solid var(--copper)' }}>{c.name}</Link>
           <div style={{ marginTop:8 }}>{c.games.map(g =>
             <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'6px 0', display:'flex', alignItems:'baseline', gap:8 }}>
-              <span className="mono" style={{ fontSize:10, color:'var(--dim)', minWidth:32 }}>{g.game_date?.split('-')[0]}</span>
+              <span style={{fontFamily:"var(--ui)"}} style={{ fontSize:10, color:'var(--dim)', minWidth:32 }}>{g.game_date?.split('-')[0]}</span>
               <span style={{ fontSize:13, color:'var(--text)' }}>{g.title}</span>
             </Link>
           )}</div>
-          <Link href={`/collection/${encodeURIComponent(c.name)}`} className="mono" style={{ fontSize:11, color:'var(--copper)', marginTop:4, display:'inline-block' }}>View all &rarr;</Link>
+          <Link href={`/collection/${encodeURIComponent(c.name)}`} style={{fontFamily:"var(--ui)"}} style={{ fontSize:11, color:'var(--copper)', marginTop:4, display:'inline-block' }}>View all &rarr;</Link>
         </div>)}
         <div style={{ textAlign:'center', marginTop:8 }}>
-          <Link href="/vault" className="mono" style={{ fontSize:12, color:'var(--copper)', fontWeight:600, letterSpacing:0.5 }}>All Collections in The Vault &rarr;</Link>
+          <Link href="/vault" style={{fontFamily:"var(--ui)"}} style={{ fontSize:12, color:'var(--copper)', fontWeight:600, letterSpacing:0.5 }}>All Collections in The Vault &rarr;</Link>
         </div>
       </div></>)}
 
       {/* LATEST IN THE ARCHIVE */}
-      {recent.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+      {recent.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
         <div className="sec-head">LATEST IN THE ARCHIVE<Link href="/browse" className="sec-link">Browse all &rarr;</Link></div>
-        <div className="mono" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Recently added playoff and championship games</div>
+        <div style={{fontFamily:"var(--ui)"}} style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Recently added playoff and championship games</div>
         {recent.map(g => <Link key={g.id} href={`/game/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}><SportBadge sport={g.sport}/>
               <span style={{ fontSize:14, color:'var(--ink)' }}>{showScore(g) || g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</span>
             </div>
-            <span className="mono" style={{ fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</span>
+            <span style={{fontFamily:"var(--ui)"}} style={{ fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</span>
           </div>
-          {g.series_info && <div className="mono" style={{ fontSize:10, color:'var(--copper)', marginTop:2 }}>{g.series_info}</div>}
+          {g.series_info && <div style={{fontFamily:"var(--ui)"}} style={{ fontSize:10, color:'var(--copper)', marginTop:2 }}>{g.series_info}</div>}
         </Link>)}
       </div></>)}
       </>)}

@@ -31,7 +31,7 @@ export default function VenuePage() {
       const notableGameIds = (ng||[]).map(n => n.game_id).filter(Boolean)
       // FIX #52: Get more games. FIX #65: no home_score filter for golf
       let gq = supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,series_info,sport,title')
-        .eq('venue', v.venue_name).order('game_date', {ascending:false}).limit(50)
+        .eq('venue', v.venue_name).not('series_info', 'is', null).neq('series_info', '').neq('series_info', 'Regular Season').order('game_date', {ascending:false}).limit(50)
       if (v.sport !== 'golf') gq = gq.gt('home_score', 0)
       const { data: gs } = await gq
       setGames((gs||[]).filter(g => !notableGameIds.includes(g.id)))
@@ -85,7 +85,7 @@ export default function VenuePage() {
           savePlaylist(allNotablePlaylist, idx >= 0 ? idx : 0)
         }
         return <>
-          {allTimerGames.length > 0 && <><hr className="sec-rule" style={{marginTop:16}}/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+          {allTimerGames.length > 0 && <><hr className="sec-rule" style={{marginTop:16}}/><div style={{ padding:20 }}>
             <div className="sec-head">ALL-TIMERS HERE</div>
             {allTimerGames.map(g => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleNotableClick(g)} className="game-row" style={{ padding:'10px 0' }}>
               <span className="at-badge-sm">&#9733; ALL-TIMER</span>
@@ -93,7 +93,7 @@ export default function VenuePage() {
               <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{formatDate(g.game_date)}</div>
             </Link>)}
           </div></>}
-          {superBowls.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+          {superBowls.length > 0 && <><hr className="sec-rule"/><div style={{ padding:20 }}>
             <div className="sec-head">SUPER BOWLS</div>
             {superBowls.map(g => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleNotableClick(g)} className="game-row" style={{ padding:'10px 0' }}>
               <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -103,7 +103,7 @@ export default function VenuePage() {
               <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2, marginLeft:22 }}>{formatDate(g.game_date)}</div>
             </Link>)}
           </div></>}
-          {otherNotable.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+          {otherNotable.length > 0 && <><hr className="sec-rule"/><div style={{ padding:20 }}>
             <div className="sec-head">{isGolf ? 'NOTABLE TOURNAMENTS' : 'NOTABLE GAMES'}</div>
             {otherNotable.map(g => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleNotableClick(g)} className="game-row" style={{ padding:'10px 0' }}>
               <div style={{ fontSize:14, color:'var(--ink)' }}>{g.title}</div>
@@ -114,13 +114,13 @@ export default function VenuePage() {
         </>
       })()}
 
-      <hr className="sec-rule"/><hr className="sec-rule-thin"/>
+      <hr className="sec-rule"/>
       <div style={{ padding:20 }}>
         <div className="sec-head">SAY SOMETHING</div>
         <textarea className="story-textarea" placeholder={`Say something about ${venue.venue_name}...`} value={story} onChange={e => setStory(e.target.value)} />
       </div>
 
-      {games.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+      {games.length > 0 && <><hr className="sec-rule"/><div style={{ padding:20 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
           <div className="sec-head" style={{ marginBottom:0 }}>{isGolf ? 'MAJORS HOSTED' : 'FROM THE ARCHIVES'}</div>
           <div style={{ display:'flex', gap:0 }}>

@@ -69,9 +69,9 @@ export default function YourCall({ gameId, notableGameId, onLogged }) {
     return (
       <div style={{ padding: '20px 0', textAlign: 'center' }}>
         <p style={{
-          fontFamily: "'Crete Round', Georgia, serif",
+          fontFamily: 'var(--body)',
           fontSize: 14,
-          color: '#b5563a',
+          color: 'var(--amber)',
           fontWeight: 700,
           letterSpacing: 1.5,
           textTransform: 'uppercase',
@@ -88,9 +88,9 @@ export default function YourCall({ gameId, notableGameId, onLogged }) {
     <div style={{ padding: '24px 0' }}>
       {/* Section header */}
       <h3 style={{
-        fontFamily: "'Crete Round', Georgia, serif",
+        fontFamily: 'var(--body)',
         fontSize: 13,
-        color: '#a09888',
+        color: 'var(--dim)',
         textTransform: 'uppercase',
         letterSpacing: 2,
         marginBottom: 16,
@@ -111,7 +111,7 @@ export default function YourCall({ gameId, notableGameId, onLogged }) {
               border: 'none',
               cursor: 'pointer',
               fontSize: 28,
-              color: n <= displayRating ? '#c49a2a' : '#e5ddd1',
+              color: n <= displayRating ? '#c49a2a' : 'var(--faint)',
               padding: 0,
               lineHeight: 1,
             }}
@@ -127,13 +127,13 @@ export default function YourCall({ gameId, notableGameId, onLogged }) {
           onClick={() => setAttended(attended === true ? null : true)}
           style={{
             padding: '8px 16px',
-            fontFamily: "'Libre Franklin', sans-serif",
+            fontFamily: 'var(--ui)',
             fontSize: 13,
             fontWeight: 600,
             border: attended === true ? '2px solid #b5563a' : '2px solid #e5ddd1',
             borderRadius: 4,
-            backgroundColor: attended === true ? '#b5563a' : 'transparent',
-            color: attended === true ? '#f5f0e8' : '#a09888',
+            backgroundColor: attended === true ? 'var(--amber)' : 'transparent',
+            color: attended === true ? 'var(--surface)' : 'var(--dim)',
             cursor: 'pointer',
             letterSpacing: 0.5,
           }}
@@ -144,13 +144,13 @@ export default function YourCall({ gameId, notableGameId, onLogged }) {
           onClick={() => setAttended(attended === false ? null : false)}
           style={{
             padding: '8px 16px',
-            fontFamily: "'Libre Franklin', sans-serif",
+            fontFamily: 'var(--ui)',
             fontSize: 13,
             fontWeight: 600,
             border: attended === false ? '2px solid #b5563a' : '2px solid #e5ddd1',
             borderRadius: 4,
-            backgroundColor: attended === false ? '#b5563a' : 'transparent',
-            color: attended === false ? '#f5f0e8' : '#a09888',
+            backgroundColor: attended === false ? 'var(--amber)' : 'transparent',
+            color: attended === false ? 'var(--surface)' : 'var(--dim)',
             cursor: 'pointer',
             letterSpacing: 0.5,
           }}
@@ -168,11 +168,11 @@ export default function YourCall({ gameId, notableGameId, onLogged }) {
             display: 'block',
             width: '100%',
             padding: '14px 0',
-            backgroundColor: (rating > 0 || attended !== null) ? '#b5563a' : '#e5ddd1',
-            color: (rating > 0 || attended !== null) ? '#f5f0e8' : '#a09888',
+            backgroundColor: (rating > 0 || attended !== null) ? 'var(--amber)' : 'var(--faint)',
+            color: (rating > 0 || attended !== null) ? 'var(--surface)' : 'var(--dim)',
             border: 'none',
             borderRadius: 4,
-            fontFamily: "'Crete Round', Georgia, serif",
+            fontFamily: 'var(--body)',
             fontSize: 15,
             fontWeight: 700,
             letterSpacing: 1.5,

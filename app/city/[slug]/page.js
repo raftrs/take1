@@ -123,7 +123,7 @@ export default function CityPage() {
       </div>
 
       {/* TEAMS */}
-      {teams.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+      {teams.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
         <div className="sec-head">TEAMS</div>
         {teams.map(t => {
           const color = t.primary_color || 'var(--copper)'
@@ -141,7 +141,7 @@ export default function CityPage() {
       </div></>)}
 
       {/* VENUES */}
-      {venues.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+      {venues.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
         <div className="sec-head">VENUES</div>
         {venues.map(v => <Link key={v.id} href={`/venue/${v.id}`} className="game-row" style={{ padding:'10px 0', display:'flex', alignItems:'center', gap:10 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--copper)" strokeWidth="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
@@ -154,7 +154,7 @@ export default function CityPage() {
       </div></>)}
 
       {/* ALL-TIMERS */}
-      {allTimers.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+      {allTimers.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
         <div className="sec-head">{cityName.toUpperCase()} ALL-TIMERS</div>
         {allTimers.map((g, idx) => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => {
           const playlist = allTimers.map(a => ({ href: `/notable/${a.id}`, title: a.title }))
@@ -169,14 +169,14 @@ export default function CityPage() {
         </Link>)}
       </div></>)}
 
-      {teams.length >= 2 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
+      {teams.length >= 2 && (<><hr className="sec-rule"/>
       <div style={{ padding:20 }}>
         <div className="sec-head">SAY SOMETHING</div>
         <textarea className="story-textarea" placeholder={`Say something about ${cityName}...`} value={story} onChange={e => setStory(e.target.value)} />
       </div></>)}
 
       {/* GAMES */}
-      {games.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+      {games.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
           <div className="sec-head" style={{ marginBottom:0 }}>FROM THE ARCHIVES</div>
           <div style={{ display:'flex', gap:0 }}>
