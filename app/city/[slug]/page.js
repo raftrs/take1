@@ -186,7 +186,7 @@ export default function CityPage() {
             {['Recent','Oldest'].map(s => <button key={s} onClick={() => setArchiveSort(s==='Recent'?'desc':'asc')} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===archiveSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===archiveSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
           </div>
         </div>
-        <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Playoff and championship games in {cityName}</div>
+        <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Playoff Games in {cityName}</div>
         <div style={{ maxHeight:480, overflowY:'auto' }}>
         {[...games].sort((a,b) => archiveSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||'')).map((g, idx) => <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
           const playlist = games.map(gm => ({ href: `/game/${gm.id}`, title: showScore(gm) || gm.title || `${gm.away_team_abbr} @ ${gm.home_team_abbr}` }))

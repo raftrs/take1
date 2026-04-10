@@ -31,10 +31,10 @@ export default function VenuePage() {
       const notableGameIds = (ng||[]).map(n => n.game_id).filter(Boolean)
       // FIX #52: Get more games. FIX #65: no home_score filter for golf
       let gq = supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,series_info,sport,title')
-        .eq('venue', v.venue_name).not('series_info', 'is', null).neq('series_info', '').neq('series_info', 'Regular Season').order('game_date', {ascending:false}).limit(50)
+        .eq('venue', v.venue_name).order('game_date', {ascending:false}).limit(200)
       if (v.sport !== 'golf') gq = gq.gt('home_score', 0)
       const { data: gs } = await gq
-      setGames((gs||[]).filter(g => !notableGameIds.includes(g.id)))
+      setGames((gs||[]).filter(g => !notableGameIds.includes(g.id) && isPlayoff(g.series_info)))
       setLoading(false)
     }
     load()
@@ -128,7 +128,7 @@ export default function VenuePage() {
             {['Recent','Oldest'].map(s => <button key={s} onClick={() => setArchiveSort(s==='Recent'?'desc':'asc')} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===archiveSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===archiveSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
           </div>
         </div>
-        {!isGolf && <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Playoff and championship games</div>}
+        {!isGolf && <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Playoff Games</div>}
         {(() => { const sorted = [...(showAllGames ? games : games.slice(0, 10))].sort((a,b) => archiveSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||'')); return sorted.map((g, idx) => <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
           const playlist = games.map(gm => ({ href: `/game/${gm.id}`, title: isGolf ? gm.title : (showScore(gm) || `${gm.away_team_abbr} @ ${gm.home_team_abbr}`) }))
           savePlaylist(playlist, idx)
