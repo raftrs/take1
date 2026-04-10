@@ -250,7 +250,6 @@ export default function HomePage() {
           </div>
           <div className="hero-title">{hero.title}</div>
           {showScore(hero) && <div className="hero-score">{showScore(hero)}</div>}
-          {hero.sport === 'golf' && <div className="hero-score">{golfMajorDisplay(hero)}</div>}
           <div className="game-meta">{formatDate(hero.game_date)}</div>
           {hero.venue && <div className="game-meta">{hero.venue}</div>}
           {hero.description && <div className="hero-blurb">{hero.description}</div>}
