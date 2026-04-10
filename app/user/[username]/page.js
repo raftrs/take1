@@ -74,6 +74,10 @@ export default function UserProfilePage() {
   if (loading) return <div className="loading">Loading...</div>
   if (!prof) return <div className="empty">User not found</div>
 
+  const sportBannerColor = (sport) => {
+    const colors = { basketball: '#E56020', football: '#013369', baseball: '#CE1141', golf: '#006747' }
+    return colors[sport] || 'var(--amber)'
+  }
   const initial = (prof.display_name || prof.username || '?')[0].toUpperCase()
   const memberNum = prof.member_number && prof.member_number <= 1000 ? prof.member_number : null
 
@@ -100,7 +104,7 @@ export default function UserProfilePage() {
           <div className="rafters-rod"></div>
           <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>{[1,2,3,4,5].map(pos => {
             const fav = favorites.find(f => f.position === pos); const hasFav = fav?.game
-            return <div key={pos} style={{ flex: 1 }}>{hasFav ? <Link href={fav.notable_game_id ? `/notable/${fav.notable_game_id}` : `/game/${fav.game_id}`} style={{ textDecoration: 'none' }}><div className="banner" style={{ width: '100%' }}><div className="banner-text">{fav.game.title || `${fav.game.away_team_abbr} @ ${fav.game.home_team_abbr}`}</div></div></Link> : <div className="banner empty" style={{ width: '100%' }} />}</div>
+            return <div key={pos} style={{ flex: 1 }}>{hasFav ? <Link href={fav.notable_game_id ? `/notable/${fav.notable_game_id}` : `/game/${fav.game_id}`} style={{ textDecoration: 'none' }}><div className="banner" style={{ width: '100%', background: sportBannerColor(fav.game.sport) }}><div className="banner-text">{fav.game.title || `${fav.game.away_team_abbr} @ ${fav.game.home_team_abbr}`}{fav.game.game_date && <><br/><span style={{opacity:0.7,fontSize:6}}>{fav.game.game_date.split('-')[0]}</span></>}</div></div></Link> : <div className="banner empty" style={{ width: '100%' }} />}</div>
           })}</div>
         </div>}
       </div>

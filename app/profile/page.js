@@ -50,8 +50,8 @@ export default function ProfilePage() {
       if (favs && favs.length > 0) {
         const gIds = favs.filter(f => f.game_id).map(f => f.game_id)
         const nIds = favs.filter(f => f.notable_game_id).map(f => f.notable_game_id)
-        const { data: gd } = gIds.length > 0 ? await supabase.from('games').select('id,title,home_team_abbr,away_team_abbr,home_score,away_score,game_date,sport').in('id', gIds) : { data: [] }
-        const { data: nd } = nIds.length > 0 ? await supabase.from('notable_games').select('id,title,game_date,sport').in('id', nIds) : { data: [] }
+        const { data: gd } = gIds.length > 0 ? await supabase.from('games').select('id,title,home_team_abbr,away_team_abbr,home_score,away_score,game_date,sport,series_info').in('id', gIds) : { data: [] }
+        const { data: nd } = nIds.length > 0 ? await supabase.from('notable_games').select('id,title,game_date,sport,game_type').in('id', nIds) : { data: [] }
         setFavorites(favs.map(f => ({ ...f, game: gd?.find(g => g.id === f.game_id) || nd?.find(n => n.id === f.notable_game_id) })))
       }
 
@@ -88,6 +88,10 @@ export default function ProfilePage() {
     </div>
   )
 
+  const sportBannerColor = (sport) => {
+    const colors = { basketball: '#E56020', football: '#013369', baseball: '#CE1141', golf: '#006747' }
+    return colors[sport] || 'var(--amber)'
+  }
   const initial = (profile?.display_name || profile?.username || '?')[0].toUpperCase()
   const memberNum = profile?.member_number && profile.member_number <= 1000 ? profile.member_number : null
 
@@ -136,8 +140,11 @@ export default function ProfilePage() {
             return (
               <Link key={pos} href={href} style={{ flex: 1, textDecoration: 'none' }}>
                 {hasFav ? (
-                  <div className="banner" style={{ width: '100%' }}>
-                    <div className="banner-text">{fav.game.title || `${fav.game.away_team_abbr} @ ${fav.game.home_team_abbr}`}</div>
+                  <div className="banner" style={{ width: '100%', background: sportBannerColor(fav.game.sport) }}>
+                    <div className="banner-text">
+                      {fav.game.title || `${fav.game.away_team_abbr} @ ${fav.game.home_team_abbr}`}
+                      {fav.game.game_date && <><br/><span style={{opacity:0.7,fontSize:6}}>{fav.game.game_date.split('-')[0]}</span></>}
+                    </div>
                   </div>
                 ) : (
                   <div className="banner empty" style={{ width: '100%' }}>
