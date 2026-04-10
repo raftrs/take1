@@ -88,7 +88,7 @@ export default function StoryPage() {
 
       {/* Theatrical dark scoreboard */}
       {sc ? (
-        <div style={{ background: 'var(--ink)', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'relative' }}>
           <div className="scoreboard">
             <div className="sb-team">
               <div className="sb-abbr">{sc.away.abbr}</div>
@@ -107,10 +107,10 @@ export default function StoryPage() {
           <div className="sb-curtain"></div>
         </div>
       ) : (
-        <div style={{ padding: '20px 24px', background: 'var(--ink)' }}>
+        <div style={{ padding: '20px 24px', background: 'var(--surface)', borderTop: '2px solid var(--amber)', borderBottom: '1px solid var(--rule)' }}>
           {gameSport && <div style={{ marginBottom: 8 }}><SportBadge sport={gameSport} /></div>}
-          <div style={{ fontFamily: 'var(--display)', fontSize: 22, color: '#fff', lineHeight: 1.3 }}>{gameTitle}</div>
-          <div style={{ fontFamily: 'var(--ui)', fontSize: 11, color: '#888', marginTop: 6 }}>
+          <div style={{ fontFamily: 'var(--display)', fontSize: 22, color: 'var(--ink)', lineHeight: 1.3 }}>{gameTitle}</div>
+          <div style={{ fontFamily: 'var(--ui)', fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
             {formatDate(game?.game_date || notable?.game_date)}
             {game?.venue ? ` \u00B7 ${game.venue}` : ''}
           </div>
