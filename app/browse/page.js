@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import SportBadge from '@/components/SportBadge'
 import TopLogo from '@/components/TopLogo'
+import GameFinder from '@/components/GameFinder'
 import { useAuth } from '@/lib/auth'
 
 const ROUNDS_NBA = ['First Round','Conference Semifinals','Conference Finals','NBA Finals']
@@ -22,7 +23,7 @@ function VenueActions({ venueId }) {
     if (!user) return
     async function check() {
       const { data: v } = await supabase.from('user_venues').select('id,status').eq('user_id', user.id).eq('venue_id', venueId).limit(1)
-      if (v?.[0]) { if (v[0].status === 'visited') setVisited(true); else setListed(true) }
+      if (v?.[0]) { if (!v[0].status || v[0].status === 'visited') setVisited(true); else setListed(true) }
       setLoaded(true)
     }
     check()
@@ -411,6 +412,10 @@ export default function BrowsePage() {
           </>
         })()}
         {ats.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>ALL-TIMERS</div>{ats.map(g => <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'8px 0' }}><div style={{ display:'flex', alignItems:'center', gap:8 }}><SportBadge sport={g.sport}/><span style={{ fontSize:13, color:'var(--ink)' }}>{g.title}</span></div><div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2, marginLeft:44 }}>{formatDate(g.game_date)}</div></Link>)}</>}
+        <div style={{ marginTop:24 }}>
+          <div className="sec-head">FIND A MATCHUP</div>
+          <GameFinder />
+        </div>
         {browseCities.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>CITIES</div><div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>{browseCities.map(c => <Link key={c} href={`/city/${encodeURIComponent(c)}`} style={{ padding:'6px 12px', fontSize:11, fontFamily:'var(--ui)', background:'var(--card)', border:'1px solid var(--faint)', color:'var(--ink)', textDecoration:'none', borderRadius:4 }}>{c}</Link>)}</div></>}
         {venues.length > 0 && <><div className="sec-head" style={{ marginTop:24 }}>{isGolf?'COURSES':'VENUES'} <Link href="/venues" className="sec-link">See all</Link></div><div style={{ maxHeight:420, overflowY:'auto', display:'flex', flexDirection:'column', gap:8 }}>{venues.slice(0,7).map(v => <div key={v.id} style={{ padding:'12px 14px', background:'var(--surface)', border:'1px solid var(--faint)', borderRadius:4 }}>
           <Link href={`/venue/${v.id}`} style={{ textDecoration:'none', display:'block' }}>

@@ -7,6 +7,7 @@ import SportBadge from '@/components/SportBadge'
 import HighFive from '@/components/HighFive'
 import FounderBadge from '@/components/FounderBadge'
 import StoryCard from '@/components/StoryCard'
+import FollowButton from '@/components/FollowButton'
 import { useAuth } from '@/lib/auth'
 
 function Banner({ w=22, h=32 }) {
@@ -14,7 +15,7 @@ function Banner({ w=22, h=32 }) {
 }
 
 export default function HomePage() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [hero, setHero] = useState(null)
   const [heroType, setHeroType] = useState('random')
   const [colls, setColls] = useState([])
@@ -24,6 +25,10 @@ export default function HomePage() {
   const [loaded, setLoaded] = useState(false)
   const [mode, setMode] = useState('featured')
   const [feed, setFeed] = useState([])
+  const [cityMembers, setCityMembers] = useState([])
+  const [teamMembers, setTeamMembers] = useState([])
+  const [userSearch, setUserSearch] = useState('')
+  const [userResults, setUserResults] = useState([])
 
   useEffect(() => {
     async function load() {
@@ -94,6 +99,42 @@ export default function HomePage() {
     load()
   }, [])
 
+  // Social discovery - load when profile is available
+  useEffect(() => {
+    if (!profile) return
+    async function loadSocial() {
+      if (profile.city) {
+        const { data: cm } = await supabase.from('profiles')
+          .select('id,username,display_name,city,member_number')
+          .ilike('city', `%${profile.city}%`).limit(10)
+        if (cm) setCityMembers(cm.filter(m => m.id !== user?.id))
+      }
+      if (profile.favorite_teams?.length) {
+        const { data: allP } = await supabase.from('profiles')
+          .select('id,username,display_name,city,favorite_teams,member_number')
+          .not('favorite_teams', 'is', null).limit(50)
+        if (allP) {
+          const myTeams = profile.favorite_teams
+          setTeamMembers(allP.filter(p => p.id !== user?.id && Array.isArray(p.favorite_teams) && p.favorite_teams.some(t => myTeams.includes(t))).slice(0, 10))
+        }
+      }
+    }
+    loadSocial()
+  }, [profile, user])
+
+  // User search
+  useEffect(() => {
+    if (userSearch.length < 2) { setUserResults([]); return }
+    const t = setTimeout(async () => {
+      const { data } = await supabase.from('profiles')
+        .select('id,username,display_name,city,member_number')
+        .or(`display_name.ilike.%${userSearch}%,username.ilike.%${userSearch}%`)
+        .limit(8)
+      setUserResults((data || []).filter(p => p.id !== user?.id))
+    }, 200)
+    return () => clearTimeout(t)
+  }, [userSearch, user])
+
   if (!loaded) return <div className="loading">Loading...</div>
 
   return (
@@ -123,6 +164,81 @@ export default function HomePage() {
             <div style={{ fontSize: 12, color: 'var(--dim)', fontFamily: 'var(--ui)' }}>Stories from the community will show up here.</div>
           </div>
         )}
+
+        {/* Find Fans */}
+        <hr className="sec-rule" />
+        <div style={{ padding: 24 }}>
+          <div className="sec-head">Find Fans</div>
+          <div style={{ position: 'relative', marginBottom: 20 }}>
+            <input
+              value={userSearch}
+              onChange={e => setUserSearch(e.target.value)}
+              placeholder="Search by name or username..."
+              className="search-input"
+              style={{ width: '100%' }}
+            />
+            {userResults.length > 0 && (
+              <div className="ac-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50 }}>
+                {userResults.map(p => {
+                  const pi = (p.display_name || p.username || '?')[0].toUpperCase()
+                  return (
+                    <Link key={p.id} href={`/user/${p.username}`} onClick={() => { setUserSearch(''); setUserResults([]) }}
+                      className="ac-item" style={{ textDecoration: 'none' }}>
+                      <div className="avatar avatar-sm">{pi}</div>
+                      <div style={{ flex: 1 }}>
+                        <div className="author-name" style={{ fontSize: 13 }}>{p.display_name || p.username}<FounderBadge number={p.member_number} /></div>
+                        {p.city && <div style={{ fontFamily: 'var(--ui)', fontSize: 10, color: 'var(--dim)' }}>{p.city}</div>}
+                      </div>
+                      <FollowButton targetUserId={p.id} />
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Fans in Your Area */}
+          {cityMembers.length > 0 && (<>
+            <div style={{ fontFamily: 'var(--ui)', fontSize: 10, fontWeight: 600, letterSpacing: 0.8, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 12 }}>Fans in {profile?.city || 'Your Area'}</div>
+            {cityMembers.map(m => {
+              const mi = (m.display_name || m.username || '?')[0].toUpperCase()
+              return (
+                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--rule-light)' }}>
+                  <Link href={`/user/${m.username}`} style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, textDecoration: 'none' }}>
+                    <div className="avatar avatar-sm">{mi}</div>
+                    <div>
+                      <span className="author-name" style={{ fontSize: 13 }}>{m.display_name || m.username}</span>
+                      <FounderBadge number={m.member_number} />
+                      {m.city && <div style={{ fontFamily: 'var(--ui)', fontSize: 10, color: 'var(--dim)' }}>{m.city}</div>}
+                    </div>
+                  </Link>
+                  <FollowButton targetUserId={m.id} />
+                </div>
+              )
+            })}
+          </>)}
+
+          {/* Fans Who Share Your Teams */}
+          {teamMembers.length > 0 && (<>
+            <div style={{ fontFamily: 'var(--ui)', fontSize: 10, fontWeight: 600, letterSpacing: 0.8, color: 'var(--muted)', textTransform: 'uppercase', marginTop: 24, marginBottom: 12 }}>Fans Who Share Your Teams</div>
+            {teamMembers.map(m => {
+              const mi = (m.display_name || m.username || '?')[0].toUpperCase()
+              return (
+                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--rule-light)' }}>
+                  <Link href={`/user/${m.username}`} style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, textDecoration: 'none' }}>
+                    <div className="avatar avatar-sm">{mi}</div>
+                    <div>
+                      <span className="author-name" style={{ fontSize: 13 }}>{m.display_name || m.username}</span>
+                      <FounderBadge number={m.member_number} />
+                      {m.city && <div style={{ fontFamily: 'var(--ui)', fontSize: 10, color: 'var(--dim)' }}>{m.city}</div>}
+                    </div>
+                  </Link>
+                  <FollowButton targetUserId={m.id} />
+                </div>
+              )
+            })}
+          </>)}
+        </div>
       </>) : (<>
 
       {/* HERO */}

@@ -15,7 +15,7 @@ export default function ProfilePage() {
   const [recentLogs, setRecentLogs] = useState([])
   const [teamData, setTeamData] = useState([])
   const [suggestions, setSuggestions] = useState([])
-  const [tab, setTab] = useState('scorebook')
+  const [tab, setTab] = useState('activity')
   const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 })
 
   useEffect(() => {
@@ -131,7 +131,7 @@ export default function ProfilePage() {
           {[1,2,3,4,5].map(pos => {
             const fav = favorites.find(f => f.position === pos)
             const hasFav = fav?.game
-            const href = hasFav ? (fav.notable_game_id ? `/notable/${fav.notable_game_id}` : `/game/${fav.game_id}`) : '/log'
+            const href = hasFav ? (fav.notable_game_id ? `/notable/${fav.notable_game_id}` : `/game/${fav.game_id}`) : '/browse'
             return (
               <Link key={pos} href={href} style={{ flex: 1, textDecoration: 'none' }}>
                 {hasFav ? (
@@ -152,12 +152,12 @@ export default function ProfilePage() {
       {/* Stat bar */}
       <div className="stat-bar">
         {[
-          { v: stats.logged, l: 'Games' },
-          { v: stats.stories, l: 'Stories' },
+          { v: stats.logged, l: 'Games', action: () => setTab('activity') },
+          { v: stats.stories, l: 'Stories', action: () => setTab('stories') },
           { v: stats.venues, l: 'Venues', href: '/venues' },
           { v: stats.encounters, l: 'Met' },
         ].map((s, i) => (
-          <div key={i} className="stat-box" onClick={() => { if (s.href) window.location.href = s.href }}>
+          <div key={i} className="stat-box" onClick={() => { if (s.href) window.location.href = s.href; else if (s.action) s.action() }}>
             <div className="stat-val">{s.v}</div>
             <div className="stat-lbl">{s.l}</div>
           </div>
@@ -166,15 +166,15 @@ export default function ProfilePage() {
 
       {/* Tabs */}
       <div className="prof-tabs">
-        {['scorebook', 'stories', 'rafters'].map(t => (
+        {['activity', 'stories', 'rafters'].map(t => (
           <button key={t} className={`prof-tab${tab === t ? ' active' : ''}`} onClick={() => setTab(t)}>
-            {t === 'scorebook' ? 'Scorebook' : t === 'stories' ? 'Stories' : 'Rafters'}
+            {t === 'activity' ? 'Recent Activity' : t === 'stories' ? 'Stories' : 'Rafters'}
           </button>
         ))}
       </div>
 
       {/* Scorebook tab */}
-      {tab === 'scorebook' && (
+      {tab === 'activity' && (
         <div>
           {recentLogs.length > 0 ? recentLogs.map(log => {
             const g = log.game

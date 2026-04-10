@@ -33,7 +33,7 @@ export default function VenuesPage() {
       if (user) {
         const { data: uv } = await supabase.from('user_venues').select('venue_id,status').eq('user_id', user.id)
         if (uv) {
-          setVisited(new Set(uv.filter(v => v.status === 'visited').map(v => v.venue_id)))
+          setVisited(new Set(uv.filter(v => !v.status || v.status === 'visited').map(v => v.venue_id)))
           setMyList(new Set(uv.filter(v => v.status === 'want').map(v => v.venue_id)))
         }
       }
@@ -104,9 +104,8 @@ export default function VenuesPage() {
       </div>
 
       {/* Progress bars per sport */}
-      {sport === 'all' && (
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--faint)' }}>
-          {SPORT_TABS.filter(t => t.k !== 'all').map(t => {
+      <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--faint)' }}>
+          {SPORT_TABS.filter(t => t.k !== 'all').filter(t => sport === 'all' || t.k === sport).map(t => {
             const p = progress[t.k]
             if (!p || p.total === 0) return null
             const pct = p.total > 0 ? (p.visited / p.total * 100) : 0
@@ -123,7 +122,6 @@ export default function VenuesPage() {
             )
           })}
         </div>
-      )}
 
       {/* Venue list */}
       <div style={{ padding: '0 0 80px' }}>

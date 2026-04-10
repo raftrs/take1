@@ -29,6 +29,7 @@ export default function NotablePage() {
   const [showStory, setShowStory] = useState(false)
   const [stories, setStories] = useState([])
   const [loading, setLoading] = useState(true)
+  const [linkedTitle, setLinkedTitle] = useState(null)
 
   useEffect(() => {
     async function load() {
@@ -46,7 +47,8 @@ export default function NotablePage() {
         if (v?.[0]) setVenueId(v[0].id)
       }
       if (g.game_id) {
-        const { data: linked } = await supabase.from('games').select('id,nba_game_id,weather').eq('id', g.game_id).single()
+        const { data: linked } = await supabase.from('games').select('id,nba_game_id,weather,title').eq('id', g.game_id).single()
+        if (linked?.title) setLinkedTitle(linked.title)
         if (linked?.weather) {
           setWeather(typeof linked.weather === 'string' ? JSON.parse(linked.weather) : linked.weather)
         }
@@ -178,7 +180,8 @@ export default function NotablePage() {
           {isTier1 && <span className="at-badge-sm">&#9733; ALL-TIMER</span>}
           <SportBadge sport={sp}/>
         </div>
-        <div style={{ fontSize:26, color:'var(--ink)', lineHeight:1.15, marginBottom:14 }}>{game.title}</div>
+        <div style={{ fontSize:26, color:'var(--ink)', lineHeight:1.15, marginBottom:6 }}>{game.title}</div>
+        {linkedTitle && linkedTitle !== game.title && <div style={{ fontFamily:'var(--ui)', fontSize:13, color:'var(--muted)', marginBottom:14 }}>{linkedTitle}</div>}
         {!isGolf && (game.away_score != null && game.home_score != null) && (
           <div className="scoreboard">
             <div className="sb-team"><div className="sb-abbr">{game.away_team_abbr}</div><div className={`sb-score${awayWon ? " win" : " lose"}`}>{game.away_score}</div></div>
