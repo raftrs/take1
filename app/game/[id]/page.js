@@ -168,7 +168,7 @@ export default function GamePage() {
           <div style={{textAlign:'center'}}><div className="sb-final">FINAL</div></div>
           <div className="sb-team"><div className="sb-abbr">{game.home_team_abbr}</div><div className={`sb-score${homeWon ? ' win' : ' lose'}`}>{game.home_score}</div></div>
         </div>
-        <div className="sb-sub">{formatDate(game.game_date)}{game.series_info ? ` \u00B7 ${capType(game.series_info)}` : ''}{game.venue && ` \u00B7 ${game.venue}`}</div>
+        <div className="sb-sub">{formatDate(game.game_date)}{game.series_info ? ` \u00B7 ${capType(game.series_info)}` : ''}</div>
         <div className="sb-curtain"></div>
       </>) : null}
 

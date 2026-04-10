@@ -190,13 +190,13 @@ export default function NotablePage() {
           <div style={{textAlign:"center"}}><div className="sb-final">FINAL</div></div>
           <div className="sb-team"><div className="sb-abbr">{game.home_team_abbr}</div><div className={`sb-score${homeWon ? " win" : " lose"}`}>{game.home_score}</div></div>
         </div>
-        <div className="sb-sub">{formatDate(game.game_date)}{game.game_type ? ` \u00B7 ${capType(game.game_type)}` : ''}{game.venue ? ` \u00B7 ${game.venue}` : ''}</div>
+        <div className="sb-sub">{formatDate(game.game_date)}{game.game_type ? ` \u00B7 ${capType(game.game_type)}` : ''}</div>
         <div className="sb-curtain"></div>
       </>)}
 
-      <div style={{ padding:'0 20px' }}>
+      <div style={{ padding:'0 20px', marginTop:12 }}>
         <div className="game-meta">
-          {isGolf && <div>{formatDate(game.game_date)}{game.game_type ? ` \u00B7 ${capType(game.game_type)}` : ''}</div>}
+          {(isGolf || !(game.away_score != null && game.home_score != null)) && <div>{formatDate(game.game_date)}{game.game_type ? ` \u00B7 ${capType(game.game_type)}` : ''}</div>}
           {game.venue && <div><VL/>{game.venue_city && <> <span style={{color:'var(--dim)'}}>&middot;</span> <CL/></>}</div>}
           <WeatherDisplay weather={weather} sport={sp} />
         </div>
