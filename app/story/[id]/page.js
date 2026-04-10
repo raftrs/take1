@@ -79,6 +79,7 @@ export default function StoryPage() {
   const gameSport = notable?.sport || game?.sport
   const sc = game ? scoreWithWinner(game) : null
   const authorInitial = (author?.display_name || author?.username || '?')[0].toUpperCase()
+  const authorMemberNum = author?.member_number && author.member_number <= 1000 ? author.member_number : null
   const isGolf = gameSport === 'golf'
 
   return (
@@ -128,7 +129,7 @@ export default function StoryPage() {
       {/* Author + story body */}
       <div style={{ padding: '32px 24px 36px', background: 'var(--surface)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28, paddingBottom: 20, borderBottom: '1px solid var(--rule)' }}>
-          <div className="avatar avatar-md">{authorInitial}</div>
+          {authorMemberNum ? <div className="avatar avatar-md" style={{background:"var(--amber)",color:"var(--gold)",border:"none",fontWeight:800}}>{authorMemberNum}</div> : <div className="avatar avatar-md">{authorInitial}</div>}
           <div>
             <div>
               <Link href={author?.username ? `/user/${author.username}` : '#'} style={{ textDecoration: 'none' }}>

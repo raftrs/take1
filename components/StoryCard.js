@@ -26,6 +26,7 @@ export default function StoryCard({ s, currentUserId, onDelete }) {
   const isOwn = currentUserId && s.user_id === currentUserId
   const sc = g ? scoreWithWinner(g) : null
   const initial = (p?.display_name || p?.username || '?')[0].toUpperCase()
+  const memberNum = p?.member_number && p.member_number <= 1000 ? p.member_number : null
 
   useEffect(() => {
     async function loadCount() {
@@ -86,7 +87,7 @@ export default function StoryCard({ s, currentUserId, onDelete }) {
       {/* Byline */}
       <div className="byline" style={{ marginBottom: 16 }}>
         <Link href={p?.username ? `/user/${p.username}` : '#'} style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-          <div className="avatar">{initial}</div>
+          {memberNum ? <div className="avatar" style={{background:"var(--amber)",color:"var(--gold)",border:"none",fontWeight:800,fontSize:14}}>{memberNum}</div> : <div className="avatar">{initial}</div>}
           <div>
             <div><span className="author-name">{p?.display_name || p?.username || 'A fan'}</span><FounderBadge number={p?.member_number} /></div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>

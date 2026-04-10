@@ -181,10 +181,11 @@ export default function HomePage() {
               <div className="ac-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50 }}>
                 {userResults.map(p => {
                   const pi = (p.display_name || p.username || '?')[0].toUpperCase()
+                  const pMem = p.member_number && p.member_number <= 1000 ? p.member_number : null
                   return (
                     <Link key={p.id} href={`/user/${p.username}`} onClick={() => { setUserSearch(''); setUserResults([]) }}
                       className="ac-item" style={{ textDecoration: 'none' }}>
-                      <div className="avatar avatar-sm">{pi}</div>
+                      {pMem ? <div className="avatar avatar-sm" style={{background:'var(--amber)',color:'var(--gold)',border:'none',fontWeight:800,fontSize:9}}>{pMem}</div> : <div className="avatar avatar-sm">{pi}</div>}
                       <div style={{ flex: 1 }}>
                         <div className="author-name" style={{ fontSize: 13 }}>{p.display_name || p.username}<FounderBadge number={p.member_number} /></div>
                         {p.city && <div style={{ fontFamily: 'var(--ui)', fontSize: 10, color: 'var(--dim)' }}>{p.city}</div>}
@@ -202,13 +203,13 @@ export default function HomePage() {
             <div style={{ fontFamily: 'var(--ui)', fontSize: 10, fontWeight: 600, letterSpacing: 0.8, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 12 }}>Fans in {profile?.city || 'Your Area'}</div>
             {cityMembers.map(m => {
               const mi = (m.display_name || m.username || '?')[0].toUpperCase()
+              const mMem = m.member_number && m.member_number <= 1000 ? m.member_number : null
               return (
                 <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--rule-light)' }}>
                   <Link href={`/user/${m.username}`} style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, textDecoration: 'none' }}>
-                    <div className="avatar avatar-sm">{mi}</div>
+                    {mMem ? <div className="avatar avatar-sm" style={{background:'var(--amber)',color:'var(--gold)',border:'none',fontWeight:800,fontSize:9}}>{mMem}</div> : <div className="avatar avatar-sm">{mi}</div>}
                     <div>
                       <span className="author-name" style={{ fontSize: 13 }}>{m.display_name || m.username}</span>
-                      <FounderBadge number={m.member_number} />
                       {m.city && <div style={{ fontFamily: 'var(--ui)', fontSize: 10, color: 'var(--dim)' }}>{m.city}</div>}
                     </div>
                   </Link>
@@ -223,10 +224,11 @@ export default function HomePage() {
             <div style={{ fontFamily: 'var(--ui)', fontSize: 10, fontWeight: 600, letterSpacing: 0.8, color: 'var(--muted)', textTransform: 'uppercase', marginTop: 24, marginBottom: 12 }}>Fans Who Share Your Teams</div>
             {teamMembers.map(m => {
               const mi = (m.display_name || m.username || '?')[0].toUpperCase()
+              const mMem2 = m.member_number && m.member_number <= 1000 ? m.member_number : null
               return (
                 <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--rule-light)' }}>
                   <Link href={`/user/${m.username}`} style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, textDecoration: 'none' }}>
-                    <div className="avatar avatar-sm">{mi}</div>
+                    {mMem2 ? <div className="avatar avatar-sm" style={{background:'var(--amber)',color:'var(--gold)',border:'none',fontWeight:800,fontSize:9}}>{mMem2}</div> : <div className="avatar avatar-sm">{mi}</div>}
                     <div>
                       <span className="author-name" style={{ fontSize: 13 }}>{m.display_name || m.username}</span>
                       <FounderBadge number={m.member_number} />

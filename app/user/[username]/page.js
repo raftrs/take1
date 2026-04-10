@@ -75,6 +75,7 @@ export default function UserProfilePage() {
   if (!prof) return <div className="empty">User not found</div>
 
   const initial = (prof.display_name || prof.username || '?')[0].toUpperCase()
+  const memberNum = prof.member_number && prof.member_number <= 1000 ? prof.member_number : null
 
   return (
     <div>
@@ -83,7 +84,7 @@ export default function UserProfilePage() {
 
       <div style={{ padding: '24px 24px 20px', background: 'var(--surface)' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-          <div className="avatar avatar-lg">{initial}</div>
+          {memberNum ? <div className="avatar avatar-lg" style={{background:"var(--amber)",color:"var(--gold)",border:"none",fontWeight:800}}>{memberNum}</div> : <div className="avatar avatar-lg">{initial}</div>}
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: 'var(--display)', fontSize: 22, color: 'var(--ink)', lineHeight: 1.2 }}>{prof.display_name || prof.username}<FounderBadge number={prof.member_number}/></div>
             <div style={{ fontFamily: 'var(--ui)', fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>@{prof.username}</div>
