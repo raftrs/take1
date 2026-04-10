@@ -185,7 +185,7 @@ export default function HomePage() {
                   return (
                     <Link key={p.id} href={`/user/${p.username}`} onClick={() => { setUserSearch(''); setUserResults([]) }}
                       className="ac-item" style={{ textDecoration: 'none' }}>
-                      {pMem ? <div className="avatar avatar-sm" style={{background:'var(--amber)',color:'var(--gold)',border:'none',fontWeight:800,fontSize:9}}>{pMem}</div> : <div className="avatar avatar-sm">{pi}</div>}
+                      {pMem ? <div className="avatar avatar-sm" style={{background:'var(--amber)',color:'#f0d68a',border:'none',fontWeight:800,fontSize:9}}>{pMem}</div> : <div className="avatar avatar-sm">{pi}</div>}
                       <div style={{ flex: 1 }}>
                         <div className="author-name" style={{ fontSize: 13 }}>{p.display_name || p.username}<FounderBadge number={p.member_number} /></div>
                         {p.city && <div style={{ fontFamily: 'var(--ui)', fontSize: 10, color: 'var(--dim)' }}>{p.city}</div>}
@@ -207,7 +207,7 @@ export default function HomePage() {
               return (
                 <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--rule-light)' }}>
                   <Link href={`/user/${m.username}`} style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, textDecoration: 'none' }}>
-                    {mMem ? <div className="avatar avatar-sm" style={{background:'var(--amber)',color:'var(--gold)',border:'none',fontWeight:800,fontSize:9}}>{mMem}</div> : <div className="avatar avatar-sm">{mi}</div>}
+                    {mMem ? <div className="avatar avatar-sm" style={{background:'var(--amber)',color:'#f0d68a',border:'none',fontWeight:800,fontSize:9}}>{mMem}</div> : <div className="avatar avatar-sm">{mi}</div>}
                     <div>
                       <span className="author-name" style={{ fontSize: 13 }}>{m.display_name || m.username}</span>
                       {m.city && <div style={{ fontFamily: 'var(--ui)', fontSize: 10, color: 'var(--dim)' }}>{m.city}</div>}
@@ -228,7 +228,7 @@ export default function HomePage() {
               return (
                 <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--rule-light)' }}>
                   <Link href={`/user/${m.username}`} style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, textDecoration: 'none' }}>
-                    {mMem2 ? <div className="avatar avatar-sm" style={{background:'var(--amber)',color:'var(--gold)',border:'none',fontWeight:800,fontSize:9}}>{mMem2}</div> : <div className="avatar avatar-sm">{mi}</div>}
+                    {mMem2 ? <div className="avatar avatar-sm" style={{background:'var(--amber)',color:'#f0d68a',border:'none',fontWeight:800,fontSize:9}}>{mMem2}</div> : <div className="avatar avatar-sm">{mi}</div>}
                     <div>
                       <span className="author-name" style={{ fontSize: 13 }}>{m.display_name || m.username}</span>
                       <FounderBadge number={m.member_number} />
