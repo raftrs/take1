@@ -99,17 +99,15 @@ export default function StoryCard({ s, currentUserId, onDelete }) {
       </Link>
 
       {/* Story text */}
-      <div
-        onClick={() => { if (!expanded && isLong) setExpanded(true) }}
-        className="story-text"
-        style={{ cursor: isLong && !expanded ? 'pointer' : 'default' }}
-      >
-        {expanded || !isLong ? (
-          <><span className="story-opener">{s.story.split('. ')[0]}.</span>{s.story.indexOf('. ') > -1 ? ' ' + s.story.slice(s.story.indexOf('. ') + 2) : ''}</>
-        ) : (
-          <>{s.story.slice(0, 180)}... <span style={{ fontSize: 11, color: 'var(--amber)', fontWeight: 600, fontFamily: 'var(--ui)' }}>Read more</span></>
-        )}
-      </div>
+      <Link href={`/story/${s.id}`} style={{ textDecoration:'none', color:'inherit', display:'block' }}>
+        <div className="story-text" style={{ cursor: 'pointer' }}>
+          {isLong ? (
+            <>{s.story.slice(0, 180)}... <span style={{ fontSize: 11, color: 'var(--amber)', fontWeight: 600, fontFamily: 'var(--ui)' }}>Read more</span></>
+          ) : (
+            <><span className="story-opener">{s.story.split('. ')[0]}.</span>{s.story.indexOf('. ') > -1 ? ' ' + s.story.slice(s.story.indexOf('. ') + 2) : ''}</>
+          )}
+        </div>
+      </Link>
 
       {/* Stars */}
       {s.rating && (
