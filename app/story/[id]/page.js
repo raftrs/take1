@@ -26,7 +26,7 @@ export default function StoryPage() {
   useEffect(() => {
     async function load() {
       const { data: s } = await supabase.from('user_games')
-        .select('id,user_id,story,rating,attended,created_at,game_id')
+        .select('id,user_id,story,rating,attended,created_at,game_id,notable_game_id')
         .eq('id', id).single()
       if (!s || !s.story) { setLoading(false); return }
       setStory(s)
@@ -39,8 +39,17 @@ export default function StoryPage() {
           .eq('id', s.game_id).single()
         if (g) setGame(g)
         const { data: n } = await supabase.from('notable_games')
-          .select('id,title,sport,game_date,tier').eq('game_id', s.game_id).limit(1)
+          .select('id,title,sport,game_date,tier,away_team_abbr,home_team_abbr,away_score,home_score,description,venue,venue_city').eq('game_id', s.game_id).limit(1)
         if (n?.[0]) setNotable(n[0])
+      } else if (s.notable_game_id) {
+        const { data: n } = await supabase.from('notable_games')
+          .select('id,title,sport,game_date,tier,away_team_abbr,home_team_abbr,away_score,home_score,description,venue,venue_city')
+          .eq('id', s.notable_game_id).single()
+        if (n) {
+          setNotable(n)
+          // Create a game-like object for the scoreboard
+          if (n.away_score != null) setGame({ away_team_abbr: n.away_team_abbr, home_team_abbr: n.home_team_abbr, away_score: n.away_score, home_score: n.home_score, sport: n.sport, game_date: n.game_date, venue: n.venue })
+        }
       }
       await loadReplies(s.id)
       setLoading(false)
@@ -75,7 +84,7 @@ export default function StoryPage() {
   if (!story) return <div className="empty">Story not found</div>
 
   const gameTitle = notable?.title || game?.title || (game ? `${game.away_team_abbr} ${game.away_score} / ${game.home_score} ${game.home_team_abbr}` : '')
-  const gameHref = notable ? `/notable/${notable.id}` : `/game/${story.game_id}`
+  const gameHref = notable ? `/notable/${notable.id}` : story.game_id ? `/game/${story.game_id}` : '#'
   const gameSport = notable?.sport || game?.sport
   const sc = game ? scoreWithWinner(game) : null
   const authorInitial = (author?.display_name || author?.username || '?')[0].toUpperCase()

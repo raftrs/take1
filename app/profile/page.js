@@ -21,7 +21,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!user) return
     async function loadStats() {
-      const { data: ug } = await supabase.from('user_games').select('id,game_id,rating,attended,story,created_at').eq('user_id', user.id).order('created_at', { ascending: false })
+      const { data: ug } = await supabase.from('user_games').select('id,game_id,notable_game_id,rating,attended,story,created_at').eq('user_id', user.id).order('created_at', { ascending: false })
       const games = ug || []
       const logged = games.length
       const attended = games.filter(g => g.attended).length
@@ -56,9 +56,16 @@ export default function ProfilePage() {
       }
 
       if (games.length > 0) {
-        const ids = games.slice(0, 30).map(g => g.game_id)
-        const { data: gd } = await supabase.from('games').select('id,title,home_team_abbr,away_team_abbr,home_score,away_score,game_date,sport,series_info').in('id', ids)
-        setRecentLogs(games.slice(0, 30).map(ug => ({ ...ug, game: gd?.find(g => g.id === ug.game_id) })))
+        const recent = games.slice(0, 30)
+        const gIds = recent.filter(g => g.game_id).map(g => g.game_id)
+        const nIds = recent.filter(g => g.notable_game_id && !g.game_id).map(g => g.notable_game_id)
+        const { data: gd } = gIds.length > 0 ? await supabase.from('games').select('id,title,home_team_abbr,away_team_abbr,home_score,away_score,game_date,sport,series_info').in('id', gIds) : { data: [] }
+        const { data: nd } = nIds.length > 0 ? await supabase.from('notable_games').select('id,title,game_date,sport,away_team_abbr,home_team_abbr,away_score,home_score').in('id', nIds) : { data: [] }
+        setRecentLogs(recent.map(ug => ({
+          ...ug,
+          game: gd?.find(g => g.id === ug.game_id) || nd?.find(n => n.id === ug.notable_game_id) || null,
+          isNotable: !ug.game_id && !!ug.notable_game_id
+        })))
       }
 
       setStats({ logged, attended, stories, encounters: encCount || 0, venues: venueCount || 0, avgRating })
@@ -223,13 +230,13 @@ export default function ProfilePage() {
         <div>
           {recentLogs.filter(l => l.story).length > 0 ? recentLogs.filter(l => l.story).map(log => {
             const g = log.game
-            if (!g) return null
+            const title = g ? (g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`) : 'Game'
             return (
               <Link key={log.id} href={`/story/${log.id}`} style={{ textDecoration: 'none' }}>
                 <div className="book-entry">
                   <div className="book-date">{new Date(log.created_at).toLocaleDateString('en-US', { month: 'short' }).replace('.', '')}<br/>{new Date(log.created_at).getDate()}</div>
                   <div className="book-main">
-                    <div className="book-score">{g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</div>
+                    <div className="book-score">{title}</div>
                     {log.rating && <div className="stars" style={{ marginTop: 5 }}>{[1,2,3,4,5].map(i => <span key={i} className={`s${i <= log.rating ? ' on' : ''}`}>&#9733;</span>)}</div>}
                     <div className="book-excerpt">&ldquo;{log.story.slice(0, 120)}{log.story.length > 120 ? '...' : ''}&rdquo;</div>
                   </div>

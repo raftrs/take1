@@ -19,6 +19,7 @@ export default function TeamPage() {
   const [archiveSort, setArchiveSort] = useState('desc')
   const [showAllArchives, setShowAllArchives] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
+  const [retiredNumbers, setRetiredNumbers] = useState([])
 
   useEffect(() => {
     async function load() {
@@ -44,6 +45,9 @@ export default function TeamPage() {
       setGames(filtered)
 
       if (t.arena) { const { data: v } = await supabase.from('venues').select('id').eq('venue_name',t.arena).limit(1); if (v?.[0]) setVenueId(v[0].id) }
+      // Fetch retired numbers
+      const { data: rn } = await supabase.from('retired_numbers').select('*').eq('team_id', t.id).order('number')
+      setRetiredNumbers(rn || [])
       // Check if user has this team favorited
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
@@ -158,6 +162,23 @@ export default function TeamPage() {
           </div></>}
         </>
       })()}
+
+      {retiredNumbers.length > 0 && <><hr className="sec-rule"/><div style={{ padding:20 }}>
+        <div className="sec-head">RETIRED NUMBERS</div>
+        <div style={{ display:'flex', gap:10, overflowX:'auto', paddingBottom:8, WebkitOverflowScrolling:'touch' }}>
+          {retiredNumbers.map(rn => (
+            <div key={rn.id} style={{
+              minWidth:64, textAlign:'center', padding:'12px 8px 10px',
+              background:'var(--surface)', border:'1px solid var(--faint)',
+              borderTop:`3px solid ${color}`, flexShrink:0
+            }}>
+              <div style={{ fontFamily:'var(--display)', fontSize:22, color: color, lineHeight:1, fontWeight:600 }}>{rn.number}</div>
+              <div className="sans" style={{ fontSize:8, color:'var(--ink)', marginTop:6, fontWeight:600, lineHeight:1.3 }}>{rn.player_name}</div>
+              {rn.years_active && <div className="sans" style={{ fontSize:7, color:'var(--dim)', marginTop:3 }}>{rn.years_active}</div>}
+            </div>
+          ))}
+        </div>
+      </div></>}
 
       <hr className="sec-rule"/>
       <div style={{ padding:20 }}>

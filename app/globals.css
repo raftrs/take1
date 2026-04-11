@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Piazzolla:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Libre+Franklin:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Crete+Round&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Piazzolla:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Libre+Franklin:wght@300;400;500;600;700;800&display=swap');
 
 :root {
   /* ── Palette: modern, clean, amber accent ── */
@@ -233,7 +233,7 @@ input,select,textarea{font-size:16px !important;}
 
 /* ── Masthead ── */
 .masthead{padding:20px 20px 14px;text-align:center;border-bottom:1px solid var(--rule);}
-.masthead-title{font-family:var(--display);font-size:28px;color:var(--ink);letter-spacing:4px;}
+.masthead-title{font-family:Georgia,serif;font-size:28px;color:var(--ink);letter-spacing:4px;}
 .masthead-sub{font-family:var(--body);font-size:13px;color:var(--muted);font-style:italic;margin-top:4px;}
 
 /* ── Hero ── */

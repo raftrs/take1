@@ -8,11 +8,8 @@ import HighFive from '@/components/HighFive'
 import FounderBadge from '@/components/FounderBadge'
 
 export default function StoryCard({ s, currentUserId, onDelete }) {
-  const [expanded, setExpanded] = useState(false)
-  const [comments, setComments] = useState([])
-  const [newComment, setNewComment] = useState('')
-  const [loadingComments, setLoadingComments] = useState(false)
   const [commentCount, setCommentCount] = useState(0)
+  const [expanded, setExpanded] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   const p = s.profile
@@ -58,23 +55,7 @@ export default function StoryCard({ s, currentUserId, onDelete }) {
     loadComments()
   }, [expanded, s.id])
 
-  async function submitComment() {
-    if (!newComment.trim()) return
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { alert('Sign in to comment'); return }
-    setSubmitting(true)
-    const { data: inserted } = await supabase.from('story_comments')
-      .insert({ user_game_id: s.id, user_id: user.id, comment: newComment.trim() })
-      .select('id,user_id,comment,created_at').single()
-    if (inserted) {
-      const { data: pr } = await supabase.from('profiles')
-        .select('id,username,display_name,member_number').eq('id', user.id).single()
-      setComments(prev => [...prev, { ...inserted, profile: pr }])
-      setCommentCount(c => c + 1)
-    }
-    setNewComment('')
-    setSubmitting(false)
-  }
+
 
   async function handleDelete() {
     if (!confirm('Delete this story?')) return
@@ -140,68 +121,18 @@ export default function StoryCard({ s, currentUserId, onDelete }) {
       {/* Actions */}
       <div className="story-actions">
         <HighFive userGameId={s.id} />
-        <button onClick={() => setExpanded(!expanded)} className="action-btn">
+        <Link href={`/story/${s.id}`} className="action-btn" style={{ textDecoration:'none' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
           {commentCount > 0 && <span>{commentCount}</span>}
-        </button>
+        </Link>
         <span style={{ flex: 1 }}></span>
         <span className="timestamp">
           {new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
         </span>
       </div>
 
-      {/* Expanded: comments */}
-      {expanded && (
-        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--rule-light)' }}>
-          {loadingComments ? (
-            <div style={{ fontSize: 11, color: 'var(--dim)', fontFamily: 'var(--ui)', padding: '8px 0' }}>Loading...</div>
-          ) : (
-            <>
-              {comments.map(c => {
-                const ci = (c.profile?.display_name || c.profile?.username || '?')[0].toUpperCase()
-                return (
-                  <div key={c.id} className="convo-item">
-                    <div className="avatar avatar-sm">{ci}</div>
-                    <div style={{ flex: 1 }}>
-                      <div>
-                        <Link href={c.profile?.username ? `/user/${c.profile.username}` : '#'} style={{ textDecoration: 'none' }}>
-                          <span className="convo-name">{c.profile?.display_name || c.profile?.username || 'Someone'}</span>
-                        </Link>
-                        <FounderBadge number={c.profile?.member_number} />
-                        <span className="timestamp" style={{ marginLeft: 8 }}>
-                          {new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </span>
-                      </div>
-                      <div className="convo-body">{c.comment}</div>
-                    </div>
-                  </div>
-                )
-              })}
-              {comments.length === 0 && (
-                <div style={{ fontSize: 11, color: 'var(--dim)', fontFamily: 'var(--ui)', padding: '4px 0 8px' }}>No comments yet. Be the first.</div>
-              )}
-              <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'flex-end' }}>
-                <input
-                  type="text"
-                  value={newComment}
-                  onChange={e => setNewComment(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && !submitting) submitComment() }}
-                  placeholder="Add a comment..."
-                  style={{
-                    flex: 1, padding: '10px 14px', fontSize: 13,
-                    border: '1px solid var(--rule)', borderRadius: 4,
-                    background: 'var(--surface)', color: 'var(--ink)',
-                    outline: 'none', fontFamily: 'var(--body)',
-                  }}
-                />
-                <button onClick={submitComment} disabled={submitting || !newComment.trim()} className={`post-btn${newComment.trim() ? '' : ' off'}`}>Post</button>
-              </div>
-            </>
-          )}
-        </div>
-      )}
     </div>
   )
 }
