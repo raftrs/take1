@@ -1,10 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
+let _supabase
+function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    )
+  }
+  return _supabase
+}
 
 // Fetch NBA box score from ESPN
 async function fetchNBABoxScore(espnGameId) {
@@ -170,7 +176,7 @@ async function processGames(sport, days = 2) {
 
     if (sport === 'basketball') {
       // Check if box scores exist
-      const { count } = await supabase.from('box_scores')
+      const { count } = await getSupabase().from('box_scores')
         .select('id', { count: 'exact', head: true })
         .eq('nba_game_id', espnId)
       if (count > 0) continue
@@ -179,7 +185,7 @@ async function processGames(sport, days = 2) {
       if (!data) continue
       const rows = parseNBAPlayers(data, espnId)
       if (rows.length) {
-        const { error: insErr } = await supabase.from('box_scores').insert(rows)
+        const { error: insErr } = await getSupabase().from('box_scores').insert(rows)
         if (!insErr) inserted += rows.length
         else console.error(`NBA box insert error: ${insErr.message}`)
       }
@@ -187,7 +193,7 @@ async function processGames(sport, days = 2) {
     }
 
     if (sport === 'football') {
-      const { count } = await supabase.from('nfl_box_scores')
+      const { count } = await getSupabase().from('nfl_box_scores')
         .select('id', { count: 'exact', head: true })
         .eq('espn_game_id', espnId)
       if (count > 0) continue
@@ -196,7 +202,7 @@ async function processGames(sport, days = 2) {
       if (!data) continue
       const rows = parseNFLPlayers(data, espnId)
       if (rows.length) {
-        const { error: insErr } = await supabase.from('nfl_box_scores').insert(rows)
+        const { error: insErr } = await getSupabase().from('nfl_box_scores').insert(rows)
         if (!insErr) inserted += rows.length
         else console.error(`NFL box insert error: ${insErr.message}`)
       }
@@ -204,7 +210,7 @@ async function processGames(sport, days = 2) {
     }
 
     if (sport === 'baseball') {
-      const { count } = await supabase.from('mlb_box_scores')
+      const { count } = await getSupabase().from('mlb_box_scores')
         .select('id', { count: 'exact', head: true })
         .eq('espn_game_id', espnId)
       if (count > 0) continue
@@ -213,7 +219,7 @@ async function processGames(sport, days = 2) {
       if (!data) continue
       const rows = parseMLBPlayers(data, espnId)
       if (rows.length) {
-        const { error: insErr } = await supabase.from('mlb_box_scores').insert(rows)
+        const { error: insErr } = await getSupabase().from('mlb_box_scores').insert(rows)
         if (!insErr) inserted += rows.length
         else console.error(`MLB box insert error: ${insErr.message}`)
       }

@@ -1,14 +1,20 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
+let _supabase
+function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    )
+  }
+  return _supabase
+}
 
 async function updateNBAPlayerStats() {
   // Aggregate career stats from box_scores
-  const { data: stats, error } = await supabase.rpc('aggregate_nba_career_stats')
+  const { data: stats, error } = await getSupabase().rpc('aggregate_nba_career_stats')
 
   if (error) {
     console.error('NBA stats aggregation error:', error.message)
@@ -45,13 +51,13 @@ async function updateNBAPlayerStats() {
 
 async function updateNFLPlayerStats() {
   // Update games_played from nfl_box_scores
-  const { error } = await supabase.rpc('aggregate_nfl_career_stats')
+  const { error } = await getSupabase().rpc('aggregate_nfl_career_stats')
   if (error) return { sport: 'football', updated: 0, error: error.message }
   return { sport: 'football', updated: 'via rpc' }
 }
 
 async function updateMLBPlayerStats() {
-  const { error } = await supabase.rpc('aggregate_mlb_career_stats')
+  const { error } = await getSupabase().rpc('aggregate_mlb_career_stats')
   if (error) return { sport: 'baseball', updated: 0, error: error.message }
   return { sport: 'baseball', updated: 'via rpc' }
 }
@@ -61,10 +67,10 @@ async function syncNewPlayers() {
   let inserted = 0
 
   // NBA
-  const { data: newNba } = await supabase.rpc('find_new_nba_players')
+  const { data: newNba } = await getSupabase().rpc('find_new_nba_players')
   if (newNba?.length) {
     for (const p of newNba) {
-      const { error } = await supabase.from('players').insert({
+      const { error } = await getSupabase().from('players').insert({
         player_name: p.player_name,
         sport: 'basketball',
         active: true
@@ -74,10 +80,10 @@ async function syncNewPlayers() {
   }
 
   // NFL
-  const { data: newNfl } = await supabase.rpc('find_new_nfl_players')
+  const { data: newNfl } = await getSupabase().rpc('find_new_nfl_players')
   if (newNfl?.length) {
     for (const p of newNfl) {
-      const { error } = await supabase.from('players').insert({
+      const { error } = await getSupabase().from('players').insert({
         player_name: p.player_name,
         sport: 'football',
         active: true
@@ -87,10 +93,10 @@ async function syncNewPlayers() {
   }
 
   // MLB
-  const { data: newMlb } = await supabase.rpc('find_new_mlb_players')
+  const { data: newMlb } = await getSupabase().rpc('find_new_mlb_players')
   if (newMlb?.length) {
     for (const p of newMlb) {
-      const { error } = await supabase.from('players').insert({
+      const { error } = await getSupabase().from('players').insert({
         player_name: p.player_name,
         sport: 'baseball',
         position: p.is_pitcher ? 'P' : 'Position',

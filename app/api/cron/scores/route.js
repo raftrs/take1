@@ -1,10 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
+let _supabase
+function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    )
+  }
+  return _supabase
+}
 
 // ESPN scoreboard endpoints
 const SPORTS = [
@@ -136,7 +142,7 @@ async function syncScores(sport, dateStr) {
       continue
     }
 
-    const { error } = await supabase.from('games').insert(game)
+    const { error } = await getSupabase().from('games').insert(game)
     if (error) {
       console.error(`Insert error: ${error.message}`, game)
     } else {
