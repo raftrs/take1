@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { formatDate, capType, sortPerformers, getWinner, showScore, normalizeCity } from '@/lib/utils'
+import { formatDate, capType, sortPerformers, getWinner, showScore, normalizeCity, TEAM_COLORS, sportColor } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import SportBadge from '@/components/SportBadge'
 import YourCall from '@/components/YourCall'
@@ -111,31 +111,24 @@ export default function GamePage() {
   let rawPerf = []
   if (sp === 'basketball') rawPerf = box.filter(p => p.points >= 15).slice(0, 8)
   else if (sp === 'football') {
-    // Get stat leaders per team by category
-    const teams = [game.away_team_abbr, game.home_team_abbr].filter(Boolean)
     const leaders = []
-    teams.forEach(team => {
-      const tb = box.filter(b => b.team_abbr === team)
-      const passLdr = tb.filter(r => (r.pass_yards||0) > 0).sort((a,b) => (b.pass_yards||0) - (a.pass_yards||0))[0]
-      const rushLdr = tb.filter(r => (r.rush_yards||0) > 0).sort((a,b) => (b.rush_yards||0) - (a.rush_yards||0))[0]
-      const recLdr = tb.filter(r => (r.receiving_yards||0) > 0).sort((a,b) => (b.receiving_yards||0) - (a.receiving_yards||0))[0]
-      if (passLdr) leaders.push(passLdr)
-      if (rushLdr) leaders.push(rushLdr)
-      if (recLdr && recLdr.player_name !== rushLdr?.player_name) leaders.push(recLdr)
-    })
+    const passLdr = box.filter(r => (r.pass_yards||0) > 0).sort((a,b) => (b.pass_yards||0) - (a.pass_yards||0))[0]
+    const rushLdr = box.filter(r => (r.rush_yards||0) > 0).sort((a,b) => (b.rush_yards||0) - (a.rush_yards||0))[0]
+    const recLdr = box.filter(r => (r.receiving_yards||0) > 0).sort((a,b) => (b.receiving_yards||0) - (a.receiving_yards||0))[0]
+    const defLdr = box.filter(r => (r.sacks||0) + (r.def_interceptions||0) + (r.tackles||0) > 2).sort((a,b) => (b.sacks||0)+(b.def_interceptions||0)+(b.tackles||0) - (a.sacks||0)-(a.def_interceptions||0)-(a.tackles||0))[0]
+    if (passLdr) leaders.push(passLdr)
+    if (rushLdr) leaders.push(rushLdr)
+    if (recLdr && recLdr.player_name !== rushLdr?.player_name) leaders.push(recLdr)
+    if (defLdr && !leaders.find(l => l.player_name === defLdr.player_name)) leaders.push(defLdr)
     rawPerf = leaders
   } else if (sp === 'baseball') {
-    const teams = [game.away_team_abbr, game.home_team_abbr].filter(Boolean)
     const leaders = []
-    teams.forEach(team => {
-      const tb = box.filter(b => b.team_abbr === team)
-      const hitLdr = tb.filter(r => (r.hits||0) > 0 && !(r.innings_pitched > 0)).sort((a,b) => (b.hits||0)+(b.rbi||0) - (a.hits||0)-(a.rbi||0))[0]
-      const hrLdr = tb.filter(r => (r.home_runs||0) > 0).sort((a,b) => (b.home_runs||0) - (a.home_runs||0))[0]
-      const pitchLdr = tb.filter(r => (r.innings_pitched||0) > 0).sort((a,b) => (b.innings_pitched||0) - (a.innings_pitched||0))[0]
-      if (hitLdr) leaders.push(hitLdr)
-      if (hrLdr && hrLdr.player_name !== hitLdr?.player_name) leaders.push(hrLdr)
-      if (pitchLdr) leaders.push(pitchLdr)
-    })
+    const hitLdr = box.filter(r => (r.hits||0) > 0 && !(r.innings_pitched > 0)).sort((a,b) => (b.hits||0)+(b.rbi||0) - (a.hits||0)-(a.rbi||0))[0]
+    const hrLdr = box.filter(r => (r.home_runs||0) > 0).sort((a,b) => (b.home_runs||0) - (a.home_runs||0))[0]
+    const pitchLdr = box.filter(r => (r.innings_pitched||0) > 0).sort((a,b) => (b.innings_pitched||0) - (a.innings_pitched||0))[0]
+    if (hitLdr) leaders.push(hitLdr)
+    if (hrLdr && hrLdr.player_name !== hitLdr?.player_name) leaders.push(hrLdr)
+    if (pitchLdr) leaders.push(pitchLdr)
     rawPerf = leaders
   }
   const perfs = sp === 'football' ? rawPerf : sortPerformers(rawPerf, winner)
@@ -227,8 +220,8 @@ export default function GamePage() {
             <div key={i} className="perf-card" onClick={() => {
               if (playerMap[p.player_name]) window.location.href=`/player/${playerMap[p.player_name]}`
               else window.location.href=`/search?q=${encodeURIComponent(p.player_name)}`
-            }} style={{ cursor:'pointer' }}>
-              <div className="perf-name">{p.player_name}</div><div className="perf-big">{s.big}</div><div className="perf-label">{s.label}</div><div className="perf-sub">{s.sub}</div><div className="perf-team">{p.team_abbr}</div>
+            }} style={{ cursor:'pointer', borderTopColor: TEAM_COLORS[p.team_abbr] || sportColor(sp) }}>
+              <div className="perf-name">{p.player_name}</div><div className="perf-big">{s.big}</div><div className="perf-label">{s.label}</div><div className="perf-sub">{s.sub}</div><div className="perf-team" style={{ color: TEAM_COLORS[p.team_abbr] || 'var(--dim)' }}>{p.team_abbr}</div>
             </div>)})}</div></div></>)}
 
       {sp === 'basketball' && box.length > 0 && (<><hr className="sec-rule" style={{marginTop:16}}/><div style={{ padding:20 }}>

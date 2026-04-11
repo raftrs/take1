@@ -28,6 +28,7 @@ export default function HomePage() {
   const [cityMembers, setCityMembers] = useState([])
   const [teamMembers, setTeamMembers] = useState([])
   const [userSearch, setUserSearch] = useState('')
+  const [lastNight, setLastNight] = useState([])
   const [userResults, setUserResults] = useState([])
 
   useEffect(() => {
@@ -76,6 +77,19 @@ export default function HomePage() {
         .select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,venue,context_blurb,sport,series_info')
         .not('context_blurb', 'is', null).order('game_date', { ascending: false }).limit(6)
       setRecent(rg || [])
+
+      // Last Night: yesterday's and today's completed games
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+      const yStr = yesterday.toISOString().split('T')[0]
+      const tStr = new Date().toISOString().split('T')[0]
+      const { data: ln } = await supabase.from('games')
+        .select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,sport,series_info,venue')
+        .gte('game_date', yStr).lte('game_date', tStr)
+        .gt('home_score', 0)
+        .order('sport').order('game_date', { ascending: false })
+        .limit(50)
+      setLastNight(ln || [])
 
       // Feed: recent stories from all users
       const { data: st } = await supabase.from('user_games')
@@ -257,6 +271,39 @@ export default function HomePage() {
           {hero.description && <div className="hero-blurb">{hero.description}</div>}
         </Link>
       </>)}
+
+      {/* LAST NIGHT */}
+      {lastNight.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
+        <div className="sec-head">LAST NIGHT</div>
+        {(() => {
+          const bySport = {}
+          lastNight.forEach(g => {
+            if (!bySport[g.sport]) bySport[g.sport] = []
+            bySport[g.sport].push(g)
+          })
+          const sportOrder = ['basketball', 'football', 'baseball', 'golf']
+          const sportNames = { basketball: 'NBA', football: 'NFL', baseball: 'MLB', golf: 'Golf' }
+          return sportOrder.filter(s => bySport[s]).map(s => (
+            <div key={s} style={{ marginBottom:16 }}>
+              <div className="sans" style={{ fontSize:10, fontWeight:700, color:'var(--muted)', letterSpacing:1.5, marginBottom:8 }}>{sportNames[s]}</div>
+              {bySport[s].map(g => {
+                const aw = g.away_score > g.home_score
+                return (
+                  <Link key={g.id} href={`/game/${g.id}`} className="game-row" style={{ padding:'6px 0', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                    <div>
+                      <span style={{ fontFamily:'var(--ui)', fontSize:13, fontWeight: aw ? 700 : 400, color: aw ? 'var(--ink)' : 'var(--dim)' }}>{g.away_team_abbr} {g.away_score}</span>
+                      <span style={{ fontFamily:'var(--ui)', fontSize:11, color:'var(--dim)', margin:'0 6px' }}>/</span>
+                      <span style={{ fontFamily:'var(--ui)', fontSize:13, fontWeight: !aw ? 700 : 400, color: !aw ? 'var(--ink)' : 'var(--dim)' }}>{g.home_score} {g.home_team_abbr}</span>
+                      {g.series_info && g.series_info !== 'Regular Season' && <span style={{ fontFamily:'var(--ui)', fontSize:9, color:'var(--amber)', fontWeight:700, marginLeft:8 }}>{g.series_info}</span>}
+                    </div>
+                    <span className="sans" style={{ fontSize:9, color:'var(--dim)' }}>FINAL</span>
+                  </Link>
+                )
+              })}
+            </div>
+          ))
+        })()}
+      </div></>)}
 
       {/* FIND A GAME */}
       <hr className="sec-rule"/>
