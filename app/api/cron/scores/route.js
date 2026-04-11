@@ -1,185 +1,101 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-let _supabase
 function getSupabase() {
-  if (!_supabase) {
-    _supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    )
-  }
-  return _supabase
-}
-
-// ESPN scoreboard endpoints
-const SPORTS = [
-  {
-    key: 'basketball',
-    espnPath: 'basketball/nba',
-    dbSport: 'basketball',
-    getSeriesInfo: (comp) => {
-      const notes = comp.notes?.[0]?.headline || ''
-      return notes || (comp.series?.summary || '') || null
-    }
-  },
-  {
-    key: 'football',
-    espnPath: 'football/nfl',
-    dbSport: 'football',
-    getSeriesInfo: (comp) => {
-      const notes = comp.notes?.[0]?.headline || ''
-      const type = comp.notes?.[0]?.type || ''
-      if (type === 'event' || notes) return notes || null
-      return null
-    }
-  },
-  {
-    key: 'baseball',
-    espnPath: 'baseball/mlb',
-    dbSport: 'baseball',
-    getSeriesInfo: (comp) => {
-      const notes = comp.notes?.[0]?.headline || ''
-      return notes || null
-    }
-  }
-]
-
-function getDateStr(daysAgo = 1) {
-  const d = new Date()
-  d.setDate(d.getDate() - daysAgo)
-  return d.toISOString().split('T')[0].replace(/-/g, '')
-}
-
-function toGameDate(dateStr) {
-  // ESPN dates are UTC, convert to YYYY-MM-DD
-  try {
-    const d = new Date(dateStr)
-    return d.toISOString().split('T')[0]
-  } catch { return null }
-}
-
-async function fetchESPN(sport, dateStr) {
-  const url = `https://site.api.espn.com/apis/site/v2/sports/${sport.espnPath}/scoreboard?dates=${dateStr}`
-  try {
-    const res = await fetch(url, { next: { revalidate: 0 } })
-    if (!res.ok) return []
-    const data = await res.json()
-    return data.events || []
-  } catch (e) {
-    console.error(`ESPN fetch error for ${sport.key}: ${e.message}`)
-    return []
-  }
-}
-
-function parseGame(event, sport) {
-  const comp = event.competitions?.[0]
-  if (!comp) return null
-
-  // Skip if game not completed
-  const status = comp.status?.type?.name
-  if (status !== 'STATUS_FINAL') return null
-
-  const competitors = comp.competitors || []
-  const home = competitors.find(c => c.homeAway === 'home')
-  const away = competitors.find(c => c.homeAway === 'away')
-  if (!home || !away) return null
-
-  const venue = comp.venue
-  const seriesInfo = sport.getSeriesInfo(comp)
-
-  // Determine week for NFL regular season
-  let week = null
-  if (sport.key === 'football') {
-    const seasonType = event.season?.type
-    const weekNum = event.week?.number
-    if (seasonType === 2 && weekNum) week = `Week ${weekNum}`
-    else if (seasonType === 3) week = seriesInfo || 'Playoffs'
-  }
-
-  return {
-    espn_game_id: event.id,
-    game_date: toGameDate(comp.date || event.date),
-    home_team_abbr: home.team?.abbreviation,
-    away_team_abbr: away.team?.abbreviation,
-    home_score: parseInt(home.score) || 0,
-    away_score: parseInt(away.score) || 0,
-    sport: sport.dbSport,
-    venue: venue?.fullName || null,
-    venue_city: venue?.address ? `${venue.address.city}, ${venue.address.state}` : null,
-    series_info: sport.key === 'football' ? (seriesInfo || week || 'Regular Season') : (seriesInfo || 'Regular Season'),
-    title: null,
-    // Store ESPN ID for box score fetching later
-    nba_game_id: sport.key === 'basketball' ? event.id : null,
-  }
-}
-
-async function syncScores(sport, dateStr) {
-  const events = await fetchESPN(sport, dateStr)
-  if (!events.length) return { sport: sport.key, date: dateStr, found: 0, inserted: 0, skipped: 0 }
-
-  const games = events.map(e => parseGame(e, sport)).filter(Boolean)
-  let inserted = 0, skipped = 0
-
-  for (const game of games) {
-    // Check if game already exists (by date + teams)
-    const { data: existing } = await supabase
-      .from('games')
-      .select('id')
-      .eq('game_date', game.game_date)
-      .eq('home_team_abbr', game.home_team_abbr)
-      .eq('away_team_abbr', game.away_team_abbr)
-      .eq('sport', game.sport)
-      .limit(1)
-
-    if (existing?.length) {
-      // Update score if it changed (game might have been inserted before final)
-      await supabase
-        .from('games')
-        .update({ home_score: game.home_score, away_score: game.away_score })
-        .eq('id', existing[0].id)
-      skipped++
-      continue
-    }
-
-    const { error } = await getSupabase().from('games').insert(game)
-    if (error) {
-      console.error(`Insert error: ${error.message}`, game)
-    } else {
-      inserted++
-    }
-  }
-
-  return { sport: sport.key, date: dateStr, found: games.length, inserted, skipped }
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wnvbncbyrhbkbburzvzy.supabase.co',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndudmJuY2J5cmhia2JidXJ6dnp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjY1NzEsImV4cCI6MjA5MDg0MjU3MX0.xt-8x-fqxKs9KfgkuVCBaVFos0ZHZ2rKEFu4T5VABsc'
+  )
 }
 
 export async function GET(request) {
-  // Verify cron secret in production
-  const authHeader = request.headers.get('authorization')
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const results = []
-
-  // Fetch yesterday and today (covers timezone gaps)
-  for (const daysAgo of [0, 1]) {
-    const dateStr = getDateStr(daysAgo)
-    for (const sport of SPORTS) {
-      const result = await syncScores(sport, dateStr)
-      results.push(result)
-      console.log(`[scores] ${result.sport} ${result.date}: ${result.found} found, ${result.inserted} new, ${result.skipped} existing`)
+  try {
+    const authHeader = request.headers.get('authorization')
+    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const sb = getSupabase()
+    const results = []
+
+    // Get yesterday and today
+    for (const daysAgo of [0, 1]) {
+      const d = new Date()
+      d.setDate(d.getDate() - daysAgo)
+      const dateStr = d.toISOString().split('T')[0].replace(/-/g, '')
+
+      for (const sport of [
+        { key: 'basketball', path: 'basketball/nba' },
+        { key: 'football', path: 'football/nfl' },
+        { key: 'baseball', path: 'baseball/mlb' },
+      ]) {
+        try {
+          const url = `https://site.api.espn.com/apis/site/v2/sports/${sport.path}/scoreboard?dates=${dateStr}`
+          const res = await fetch(url)
+          if (!res.ok) { results.push({ sport: sport.key, date: dateStr, error: `ESPN HTTP ${res.status}` }); continue }
+          const data = await res.json()
+          const events = data.events || []
+
+          let inserted = 0, skipped = 0
+
+          for (const event of events) {
+            const comp = event.competitions?.[0]
+            if (!comp) continue
+            if (comp.status?.type?.name !== 'STATUS_FINAL') continue
+
+            const competitors = comp.competitors || []
+            const home = competitors.find(c => c.homeAway === 'home')
+            const away = competitors.find(c => c.homeAway === 'away')
+            if (!home || !away) continue
+
+            const gameDate = new Date(comp.date || event.date).toISOString().split('T')[0]
+            const homeAbbr = home.team?.abbreviation
+            const awayAbbr = away.team?.abbreviation
+            const homeScore = parseInt(home.score) || 0
+            const awayScore = parseInt(away.score) || 0
+            const venue = comp.venue
+            const notes = comp.notes?.[0]?.headline || ''
+            
+            let seriesInfo = notes || 'Regular Season'
+            if (sport.key === 'football' && !notes) {
+              const weekNum = event.week?.number
+              const seasonType = event.season?.type
+              seriesInfo = seasonType === 2 && weekNum ? `Week ${weekNum}` : (seasonType === 3 ? 'Playoffs' : 'Regular Season')
+            }
+
+            // Check if exists
+            const { data: existing } = await sb.from('games').select('id').eq('game_date', gameDate).eq('home_team_abbr', homeAbbr).eq('away_team_abbr', awayAbbr).eq('sport', sport.key).limit(1)
+
+            if (existing?.length) {
+              await sb.from('games').update({ home_score: homeScore, away_score: awayScore }).eq('id', existing[0].id)
+              skipped++
+            } else {
+              const { error } = await sb.from('games').insert({
+                game_date: gameDate,
+                home_team_abbr: homeAbbr,
+                away_team_abbr: awayAbbr,
+                home_score: homeScore,
+                away_score: awayScore,
+                sport: sport.key,
+                venue: venue?.fullName || null,
+                venue_city: venue?.address ? `${venue.address.city}, ${venue.address.state}` : null,
+                series_info: seriesInfo,
+                nba_game_id: event.id,
+              })
+              if (error) results.push({ sport: sport.key, insertError: error.message })
+              else inserted++
+            }
+          }
+
+          results.push({ sport: sport.key, date: dateStr, found: events.length, finals: inserted + skipped, inserted, skipped })
+        } catch (sportErr) {
+          results.push({ sport: sport.key, date: dateStr, error: sportErr.message })
+        }
+      }
+    }
+
+    return NextResponse.json({ success: true, timestamp: new Date().toISOString(), results })
+  } catch (err) {
+    return NextResponse.json({ error: err.message, stack: err.stack }, { status: 500 })
   }
-
-  const totalInserted = results.reduce((a, r) => a + r.inserted, 0)
-  const totalFound = results.reduce((a, r) => a + r.found, 0)
-
-  return NextResponse.json({
-    success: true,
-    timestamp: new Date().toISOString(),
-    totalFound,
-    totalInserted,
-    results
-  })
 }

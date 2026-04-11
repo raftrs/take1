@@ -5,8 +5,8 @@ let _supabase
 function getSupabase() {
   if (!_supabase) {
     _supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wnvbncbyrhbkbburzvzy.supabase.co',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndudmJuY2J5cmhia2JidXJ6dnp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjY1NzEsImV4cCI6MjA5MDg0MjU3MX0.xt-8x-fqxKs9KfgkuVCBaVFos0ZHZ2rKEFu4T5VABsc'
     )
   }
   return _supabase
@@ -19,7 +19,7 @@ async function fetchNBABoxScore(espnGameId) {
     const res = await fetch(url, { next: { revalidate: 0 } })
     if (!res.ok) return null
     return await res.json()
-  } catch { return null }
+  } catch(e) { return null }
 }
 
 async function fetchNFLBoxScore(espnGameId) {
@@ -28,7 +28,7 @@ async function fetchNFLBoxScore(espnGameId) {
     const res = await fetch(url, { next: { revalidate: 0 } })
     if (!res.ok) return null
     return await res.json()
-  } catch { return null }
+  } catch(e) { return null }
 }
 
 async function fetchMLBBoxScore(espnGameId) {
@@ -37,7 +37,7 @@ async function fetchMLBBoxScore(espnGameId) {
     const res = await fetch(url, { next: { revalidate: 0 } })
     if (!res.ok) return null
     return await res.json()
-  } catch { return null }
+  } catch(e) { return null }
 }
 
 function parseNBAPlayers(data, espnGameId) {
@@ -231,21 +231,20 @@ async function processGames(sport, days = 2) {
 }
 
 export async function GET(request) {
-  const authHeader = request.headers.get('authorization')
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  try {
+    const authHeader = request.headers.get('authorization')
+    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-  const results = []
-  for (const sport of ['basketball', 'football', 'baseball']) {
-    const result = await processGames(sport)
-    results.push(result)
-    console.log(`[boxscores] ${result.sport}: ${result.processed} games processed, ${result.inserted} rows inserted`)
-  }
+    const results = []
+    for (const sport of ['basketball', 'football', 'baseball']) {
+      const result = await processGames(sport)
+      results.push(result)
+    }
 
-  return NextResponse.json({
-    success: true,
-    timestamp: new Date().toISOString(),
-    results
-  })
+    return NextResponse.json({ success: true, timestamp: new Date().toISOString(), results })
+  } catch (err) {
+    return NextResponse.json({ error: err.message, stack: err.stack }, { status: 500 })
+  }
 }
