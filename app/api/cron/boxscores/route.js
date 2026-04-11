@@ -176,7 +176,7 @@ async function processGames(sport, days = 2) {
   const { data: games, error } = await query
   if (error || !games?.length) return { sport, processed: 0, inserted: 0 }
 
-  let processed = 0, inserted = 0
+  let processed = 0, inserted = 0, errors = []
 
   for (const game of games) {
     const espnId = game.nba_game_id // We store ESPN ID here for all sports
@@ -195,7 +195,7 @@ async function processGames(sport, days = 2) {
       if (rows.length) {
         const { error: insErr } = await getSupabase().from('box_scores').insert(rows)
         if (!insErr) inserted += rows.length
-        else console.error(`NBA box insert error: ${insErr.message}`)
+        else errors.push(`NBA: ${insErr.message}`)
       }
       processed++
     }
@@ -212,7 +212,7 @@ async function processGames(sport, days = 2) {
       if (rows.length) {
         const { error: insErr } = await getSupabase().from('nfl_box_scores').insert(rows)
         if (!insErr) inserted += rows.length
-        else console.error(`NFL box insert error: ${insErr.message}`)
+        else errors.push(`NFL: ${insErr.message}`)
       }
       processed++
     }
@@ -229,13 +229,13 @@ async function processGames(sport, days = 2) {
       if (rows.length) {
         const { error: insErr } = await getSupabase().from('mlb_box_scores').insert(rows)
         if (!insErr) inserted += rows.length
-        else console.error(`MLB box insert error: ${insErr.message}`)
+        else errors.push(`MLB: ${insErr.message}`)
       }
       processed++
     }
   }
 
-  return { sport, processed, inserted }
+  return { sport, processed, inserted, errors: errors.length ? errors : undefined }
 }
 
 export async function GET(request) {
