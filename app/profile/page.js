@@ -109,7 +109,7 @@ export default function ProfilePage() {
       {/* Header with avatar */}
       <div style={{ padding: '32px 24px 24px', background: 'var(--surface)' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-          {memberNum ? <div className="avatar avatar-lg" style={{background:"var(--amber)",color:"var(--gold)",border:"none",fontWeight:800}}>{memberNum}</div> : <div className="avatar avatar-lg">{initial}</div>}
+          {memberNum ? <div className="avatar avatar-lg" style={{background:"var(--amber)",color:"#fff",border:"none",fontWeight:800}}>{memberNum}</div> : <div className="avatar avatar-lg">{initial}</div>}
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: 'var(--display)', fontSize: 22, color: 'var(--ink)', lineHeight: 1.2 }}>
               {profile?.display_name || profile?.username || 'Fan'}

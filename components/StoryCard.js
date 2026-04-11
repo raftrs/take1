@@ -42,7 +42,7 @@ export default function StoryCard({ s, currentUserId, onDelete }) {
       {/* Byline */}
       <div className="byline" style={{ marginBottom: 16 }}>
         <Link href={p?.username ? `/user/${p.username}` : '#'} style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-          {memberNum ? <div className="avatar" style={{background:"var(--amber)",color:"#f0d68a",border:"none",fontWeight:800,fontSize:14}}>{memberNum}</div> : <div className="avatar">{initial}</div>}
+          {memberNum ? <div className="avatar" style={{background:"var(--amber)",color:"#fff",border:"none",fontWeight:800,fontSize:14}}>{memberNum}</div> : <div className="avatar">{initial}</div>}
           <div>
             <div><span className="author-name">{p?.display_name || p?.username || 'A fan'}</span></div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>

@@ -112,7 +112,7 @@ export default function StoryPage() {
           </div>
           <div className="sb-sub">
             {game?.series_info && <div><span className="sb-series">{game.series_info}</span></div>}
-            <div>{formatDate(game?.game_date)} {game?.venue ? `\u00B7 ${game.venue}` : ''}</div>
+            <div>{formatDate(game?.game_date)} {game?.venue ? `· ${game.venue}` : ''}</div>
           </div>
           <div className="sb-curtain"></div>
         </div>
@@ -122,7 +122,7 @@ export default function StoryPage() {
           <div style={{ fontFamily: 'var(--display)', fontSize: 22, color: 'var(--ink)', lineHeight: 1.3 }}>{gameTitle}</div>
           <div style={{ fontFamily: 'var(--ui)', fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
             {formatDate(game?.game_date || notable?.game_date)}
-            {game?.venue ? ` \u00B7 ${game.venue}` : ''}
+            {game?.venue ? ` · ${game.venue}` : ''}
           </div>
           <div className="sb-curtain" style={{ marginTop: 16 }}></div>
         </div>
@@ -138,7 +138,7 @@ export default function StoryPage() {
       {/* Author + story body */}
       <div style={{ padding: '32px 24px 36px', background: 'var(--surface)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28, paddingBottom: 20, borderBottom: '1px solid var(--rule)' }}>
-          {authorMemberNum ? <div className="avatar avatar-md" style={{background:"var(--amber)",color:"var(--gold)",border:"none",fontWeight:800}}>{authorMemberNum}</div> : <div className="avatar avatar-md">{authorInitial}</div>}
+          {authorMemberNum ? <div className="avatar avatar-md" style={{background:"var(--amber)",color:"#fff",border:"none",fontWeight:800}}>{authorMemberNum}</div> : <div className="avatar avatar-md">{authorInitial}</div>}
           <div>
             <div>
               <Link href={author?.username ? `/user/${author.username}` : '#'} style={{ textDecoration: 'none' }}>
@@ -149,7 +149,7 @@ export default function StoryPage() {
             <div style={{ fontFamily: 'var(--ui)', fontSize: 10, color: 'var(--muted)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
               {story.attended && <span className="attended-badge">WAS THERE</span>}
               {story.rating && <span style={{ color: 'var(--amber)', letterSpacing: 1 }}>{'★'.repeat(story.rating)}</span>}
-              <span>\u00B7 {new Date(story.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+              <span>· {new Date(story.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
             </div>
           </div>
         </div>
