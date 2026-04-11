@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/scores",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/boxscores",
+      "schedule": "30 10 * * *"
+    },
+    {
+      "path": "/api/cron/players",
+      "schedule": "0 11 * * 0"
+    }
+  ]
+}
