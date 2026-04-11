@@ -52,6 +52,9 @@ function parseNBAPlayers(data, espnGameId) {
         const values = athlete.stats || []
         labels.forEach((label, i) => { stats[label.toLowerCase()] = values[i] })
 
+        const fgParts = (stats.fg || '0-0').split('-')
+        const tpParts = (stats['3pt'] || '0-0').split('-')
+        const ftParts = (stats.ft || '0-0').split('-')
         rows.push({
           nba_game_id: espnGameId,
           player_name: athlete.athlete?.displayName,
@@ -63,9 +66,13 @@ function parseNBAPlayers(data, espnGameId) {
           steals: parseInt(stats.stl) || 0,
           blocks: parseInt(stats.blk) || 0,
           turnovers: parseInt(stats.to) || 0,
-          fg: stats.fg || null,
-          three_pt: stats['3pt'] || null,
-          ft: stats.ft || null,
+          fg_made: parseInt(fgParts[0]) || 0,
+          fg_attempted: parseInt(fgParts[1]) || 0,
+          tp_made: parseInt(tpParts[0]) || 0,
+          tp_attempted: parseInt(tpParts[1]) || 0,
+          ft_made: parseInt(ftParts[0]) || 0,
+          ft_attempted: parseInt(ftParts[1]) || 0,
+          plus_minus: parseInt(stats['+/-']) || 0,
         })
       }
     }
@@ -86,25 +93,26 @@ function parseNFLPlayers(data, espnGameId) {
         const values = athlete.stats || []
         labels.forEach((label, i) => { stats[label.toLowerCase()] = values[i] })
 
+        const catt = (stats['c/att'] || '0/0').split('/')
         rows.push({
           espn_game_id: espnGameId,
           player_name: athlete.athlete?.displayName,
           team_abbr: teamAbbr,
-          category: category,
+          position: category,
           // Passing
-          pass_comp: category === 'passing' ? stats['c/att']?.split('/')[0] : null,
-          pass_att: category === 'passing' ? stats['c/att']?.split('/')[1] : null,
+          pass_completions: category === 'passing' ? parseInt(catt[0]) || 0 : null,
+          pass_attempts: category === 'passing' ? parseInt(catt[1]) || 0 : null,
           pass_yards: category === 'passing' ? parseInt(stats.yds) || 0 : null,
-          pass_td: category === 'passing' ? parseInt(stats.td) || 0 : null,
-          interceptions: category === 'passing' ? parseInt(stats.int) || 0 : null,
+          pass_tds: category === 'passing' ? parseInt(stats.td) || 0 : null,
+          interceptions_thrown: category === 'passing' ? parseInt(stats.int) || 0 : null,
           // Rushing
-          rush_att: category === 'rushing' ? parseInt(stats.car) || 0 : null,
+          rush_attempts: category === 'rushing' ? parseInt(stats.car) || 0 : null,
           rush_yards: category === 'rushing' ? parseInt(stats.yds) || 0 : null,
-          rush_td: category === 'rushing' ? parseInt(stats.td) || 0 : null,
+          rush_tds: category === 'rushing' ? parseInt(stats.td) || 0 : null,
           // Receiving
           receptions: category === 'receiving' ? parseInt(stats.rec) || 0 : null,
-          rec_yards: category === 'receiving' ? parseInt(stats.yds) || 0 : null,
-          rec_td: category === 'receiving' ? parseInt(stats.td) || 0 : null,
+          receiving_yards: category === 'receiving' ? parseInt(stats.yds) || 0 : null,
+          receiving_tds: category === 'receiving' ? parseInt(stats.td) || 0 : null,
           targets: category === 'receiving' ? parseInt(stats.tgts) || 0 : null,
         })
       }
@@ -142,7 +150,7 @@ function parseMLBPlayers(data, espnGameId) {
           // Pitching
           innings_pitched: isPitching ? stats.ip || null : null,
           earned_runs: isPitching ? parseInt(stats.er) || 0 : null,
-          pitch_strikeouts: isPitching ? parseInt(stats.k || stats.so) || 0 : null,
+          strikeouts_pitched: isPitching ? parseInt(stats.k || stats.so) || 0 : null,
           walks_allowed: isPitching ? parseInt(stats.bb) || 0 : null,
           hits_allowed: isPitching ? parseInt(stats.h) || 0 : null,
         })
