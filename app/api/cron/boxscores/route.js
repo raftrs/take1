@@ -158,7 +158,7 @@ async function processGames(sport, days = 2) {
   since.setDate(since.getDate() - days)
   const sinceStr = since.toISOString().split('T')[0]
 
-  let query = supabase.from('games')
+  let query = getSupabase().from('games')
     .select('id,nba_game_id,sport,game_date,home_team_abbr,away_team_abbr')
     .eq('sport', sport)
     .gte('game_date', sinceStr)
