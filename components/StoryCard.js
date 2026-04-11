@@ -5,12 +5,9 @@ import { supabase } from '@/lib/supabase'
 import { formatDate, scoreWithWinner } from '@/lib/utils'
 import SportBadge from '@/components/SportBadge'
 import HighFive from '@/components/HighFive'
-import FounderBadge from '@/components/FounderBadge'
 
 export default function StoryCard({ s, currentUserId, onDelete }) {
   const [commentCount, setCommentCount] = useState(0)
-  const [expanded, setExpanded] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
 
   const p = s.profile
   const g = s.game
@@ -34,29 +31,6 @@ export default function StoryCard({ s, currentUserId, onDelete }) {
     loadCount()
   }, [s.id])
 
-  useEffect(() => {
-    if (!expanded) return
-    async function loadComments() {
-      setLoadingComments(true)
-      const { data: cm } = await supabase.from('story_comments')
-        .select('id,user_id,comment,created_at')
-        .eq('user_game_id', s.id)
-        .order('created_at', { ascending: true }).limit(50)
-      if (cm?.length) {
-        const uids = [...new Set(cm.map(c => c.user_id))]
-        const { data: profiles } = await supabase.from('profiles')
-          .select('id,username,display_name,member_number').in('id', uids)
-        const pMap = {}
-        if (profiles) profiles.forEach(pr => { pMap[pr.id] = pr })
-        setComments(cm.map(c => ({ ...c, profile: pMap[c.user_id] })))
-      }
-      setLoadingComments(false)
-    }
-    loadComments()
-  }, [expanded, s.id])
-
-
-
   async function handleDelete() {
     if (!confirm('Delete this story?')) return
     await supabase.from('user_games').update({ story: null }).eq('id', s.id)
@@ -68,9 +42,9 @@ export default function StoryCard({ s, currentUserId, onDelete }) {
       {/* Byline */}
       <div className="byline" style={{ marginBottom: 16 }}>
         <Link href={p?.username ? `/user/${p.username}` : '#'} style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-          {memberNum ? <div className="avatar" style={{background:"var(--amber)",color:"var(--gold)",border:"none",fontWeight:800,fontSize:14}}>{memberNum}</div> : <div className="avatar">{initial}</div>}
+          {memberNum ? <div className="avatar" style={{background:"var(--amber)",color:"#f0d68a",border:"none",fontWeight:800,fontSize:14}}>{memberNum}</div> : <div className="avatar">{initial}</div>}
           <div>
-            <div><span className="author-name">{p?.display_name || p?.username || 'A fan'}</span><FounderBadge number={p?.member_number} /></div>
+            <div><span className="author-name">{p?.display_name || p?.username || 'A fan'}</span></div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
               {s.attended && <span className="attended-badge">WAS THERE</span>}
               <span className="timestamp">{p?.city || ''}</span>
@@ -82,9 +56,10 @@ export default function StoryCard({ s, currentUserId, onDelete }) {
         )}
       </div>
 
-      {/* Game ref (ticket stub) */}
-      <Link href={gameHref} style={{ textDecoration: 'none', display: 'block', marginBottom: 16 }}>
-        <div className="game-ref" style={{ width: 'fit-content', maxWidth: '100%' }}>
+      {/* Whole card links to story page */}
+      <Link href={`/story/${s.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+        {/* Game ref */}
+        <div className="game-ref" style={{ width: 'fit-content', maxWidth: '100%', marginBottom: 16 }}>
           {gameSport && <SportBadge sport={gameSport} />}
           {sc ? (
             <span className="game-ref-score">
@@ -96,10 +71,8 @@ export default function StoryCard({ s, currentUserId, onDelete }) {
           {g?.series_info && <span className="game-ref-series">{g.series_info}</span>}
           {gameDate && <span className="game-ref-detail" style={{ marginLeft: 'auto' }}>{formatDate(gameDate)}</span>}
         </div>
-      </Link>
 
-      {/* Story text */}
-      <Link href={`/story/${s.id}`} style={{ textDecoration:'none', color:'inherit', display:'block' }}>
+        {/* Story text */}
         <div className="story-text" style={{ cursor: 'pointer' }}>
           {isLong ? (
             <>{s.story.slice(0, 180)}... <span style={{ fontSize: 11, color: 'var(--amber)', fontWeight: 600, fontFamily: 'var(--ui)' }}>Read more</span></>
@@ -107,17 +80,17 @@ export default function StoryCard({ s, currentUserId, onDelete }) {
             <><span className="story-opener">{s.story.split('. ')[0]}.</span>{s.story.indexOf('. ') > -1 ? ' ' + s.story.slice(s.story.indexOf('. ') + 2) : ''}</>
           )}
         </div>
+
+        {/* Stars */}
+        {s.rating && (
+          <div className="stars" style={{ marginTop: 12 }}>
+            {[1,2,3,4,5].map(i => <span key={i} className={`s${i <= s.rating ? ' on' : ''}`}>&#9733;</span>)}
+          </div>
+        )}
       </Link>
 
-      {/* Stars */}
-      {s.rating && (
-        <div className="stars" style={{ marginTop: 12 }}>
-          {[1,2,3,4,5].map(i => <span key={i} className={`s${i <= s.rating ? ' on' : ''}`}>&#9733;</span>)}
-        </div>
-      )}
-
       {/* Actions */}
-      <div className="story-actions">
+      <div className="story-actions" style={{ marginTop: 12 }}>
         <HighFive userGameId={s.id} />
         <Link href={`/story/${s.id}`} className="action-btn" style={{ textDecoration:'none' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -130,7 +103,6 @@ export default function StoryCard({ s, currentUserId, onDelete }) {
           {new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
         </span>
       </div>
-
     </div>
   )
 }
