@@ -108,7 +108,7 @@ export default function AuthPage() {
 
         <div onClick={handleSubmit} style={{
           padding:'14px 0', background:'var(--copper)', color:'#fff', textAlign:'center',
-          fontSize:13, fontFamily:"'Libre Franklin',sans-serif", fontWeight:600, letterSpacing:1,
+          fontSize:13, fontFamily:'var(--ui)', fontWeight:600, letterSpacing:1,
           cursor: submitting ? 'wait' : 'pointer', opacity: submitting ? 0.7 : 1,
           marginBottom:16
         }}>

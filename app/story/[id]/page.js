@@ -26,7 +26,7 @@ export default function StoryPage() {
   useEffect(() => {
     async function load() {
       const { data: s } = await supabase.from('user_games')
-        .select('id,user_id,story,rating,attended,created_at,game_id')
+        .select('id,user_id,story,rating,attended,created_at,game_id,notable_game_id')
         .eq('id', id).single()
       if (!s || !s.story) { setLoading(false); return }
       setStory(s)
@@ -39,8 +39,17 @@ export default function StoryPage() {
           .eq('id', s.game_id).single()
         if (g) setGame(g)
         const { data: n } = await supabase.from('notable_games')
-          .select('id,title,sport,game_date,tier').eq('game_id', s.game_id).limit(1)
+          .select('id,title,sport,game_date,tier,away_team_abbr,home_team_abbr,away_score,home_score,description,venue,venue_city').eq('game_id', s.game_id).limit(1)
         if (n?.[0]) setNotable(n[0])
+      } else if (s.notable_game_id) {
+        const { data: n } = await supabase.from('notable_games')
+          .select('id,title,sport,game_date,tier,away_team_abbr,home_team_abbr,away_score,home_score,description,venue,venue_city')
+          .eq('id', s.notable_game_id).single()
+        if (n) {
+          setNotable(n)
+          // Create a game-like object for the scoreboard
+          if (n.away_score != null) setGame({ away_team_abbr: n.away_team_abbr, home_team_abbr: n.home_team_abbr, away_score: n.away_score, home_score: n.home_score, sport: n.sport, game_date: n.game_date, venue: n.venue })
+        }
       }
       await loadReplies(s.id)
       setLoading(false)
@@ -75,80 +84,85 @@ export default function StoryPage() {
   if (!story) return <div className="empty">Story not found</div>
 
   const gameTitle = notable?.title || game?.title || (game ? `${game.away_team_abbr} ${game.away_score} / ${game.home_score} ${game.home_team_abbr}` : '')
-  const gameHref = notable ? `/notable/${notable.id}` : `/game/${story.game_id}`
+  const gameHref = notable ? `/notable/${notable.id}` : story.game_id ? `/game/${story.game_id}` : '#'
   const gameSport = notable?.sport || game?.sport
   const sc = game ? scoreWithWinner(game) : null
   const authorInitial = (author?.display_name || author?.username || '?')[0].toUpperCase()
+  const authorMemberNum = author?.member_number && author.member_number <= 1000 ? author.member_number : null
+  const isGolf = gameSport === 'golf'
 
   return (
     <div>
       <TopLogo />
       <BackButton />
 
-      {/* Dark scoreboard header */}
-      {sc ? (<>
-        <div className="scoreboard">
-          <div className="sb-team">
-            <div className="sb-abbr">{sc.away.abbr}</div>
-            <div className={`sb-score${!sc.away.won ? ' lose' : ''}`}>{sc.away.score}</div>
+      {/* Theatrical dark scoreboard */}
+      {sc ? (
+        <div style={{ position: 'relative' }}>
+          <div className="scoreboard">
+            <div className="sb-team">
+              <div className="sb-abbr">{sc.away.abbr}</div>
+              <div className={`sb-score${sc.away.won ? ' win' : ' lose'}`}>{sc.away.score}</div>
+            </div>
+            <div style={{ textAlign: 'center' }}><div className="sb-final">FINAL</div></div>
+            <div className="sb-team">
+              <div className="sb-abbr">{sc.home.abbr}</div>
+              <div className={`sb-score${sc.home.won ? ' win' : ' lose'}`}>{sc.home.score}</div>
+            </div>
           </div>
-          <div style={{ textAlign: 'center' }}><div className="sb-final">FINAL</div></div>
-          <div className="sb-team">
-            <div className="sb-abbr">{sc.home.abbr}</div>
-            <div className={`sb-score${!sc.home.won ? ' lose' : ''}`}>{sc.home.score}</div>
+          <div className="sb-sub">
+            {game?.series_info && <div><span className="sb-series">{game.series_info}</span></div>}
+            <div>{formatDate(game?.game_date)} {game?.venue ? `· ${game.venue}` : ''}</div>
           </div>
+          <div className="sb-curtain"></div>
         </div>
-        <div className="sb-sub">
-          {formatDate(game?.game_date || notable?.game_date)}
-          {game?.series_info ? ` \u00B7 ${game.series_info}` : ''}
-          {game?.venue ? ` \u00B7 ${game.venue}` : ''}
-        </div>
-      </>) : (
-        <div style={{ padding: '16px 20px' }}>
+      ) : (
+        <div style={{ padding: '20px 24px', background: 'var(--surface)', borderTop: '2px solid var(--amber)', borderBottom: '1px solid var(--rule)' }}>
           {gameSport && <div style={{ marginBottom: 8 }}><SportBadge sport={gameSport} /></div>}
-          <Link href={gameHref} style={{ textDecoration: 'none' }}>
-            <div style={{ fontSize: 22, color: 'var(--ink)', lineHeight: 1.3, fontFamily: 'var(--display)' }}>{gameTitle}</div>
-          </Link>
-          <div className="mono" style={{ fontSize: 11, color: 'var(--dim)', marginTop: 6 }}>
+          <div style={{ fontFamily: 'var(--display)', fontSize: 22, color: 'var(--ink)', lineHeight: 1.3 }}>{gameTitle}</div>
+          <div style={{ fontFamily: 'var(--ui)', fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
             {formatDate(game?.game_date || notable?.game_date)}
-            {game?.venue ? ` \u00B7 ${game.venue}` : ''}
+            {game?.venue ? ` · ${game.venue}` : ''}
           </div>
+          <div className="sb-curtain" style={{ marginTop: 16 }}></div>
         </div>
       )}
 
-      {/* If scoreboard shown, add link to game */}
-      {sc && (
-        <div style={{ padding: '8px 20px 0', textAlign: 'center' }}>
-          <Link href={gameHref} className="mono" style={{ fontSize: 11, color: 'var(--copper)', fontWeight: 600 }}>
-            {notable?.title || gameTitle} &rarr;
-          </Link>
-        </div>
-      )}
+      {/* Link to game page */}
+      <div style={{ padding: '10px 24px', textAlign: 'center', borderBottom: '1px solid var(--rule)', background: 'var(--surface)' }}>
+        <Link href={gameHref} style={{ fontFamily: 'var(--ui)', fontSize: 11, color: 'var(--amber)', fontWeight: 600, textDecoration: 'none' }}>
+          {notable?.title || gameTitle} &rarr;
+        </Link>
+      </div>
 
-      <hr className="sec-rule" style={{ marginTop: 16 }} /><hr className="sec-rule-thin" />
-
-      {/* Author byline + story */}
-      <div style={{ padding: '24px 20px 28px', background: 'var(--surface)' }}>
-        <div className="story-page-byline">
-          <div className="avatar avatar-lg" style={{ width: 36, height: 36, fontSize: 14 }}>{authorInitial}</div>
+      {/* Author + story body */}
+      <div style={{ padding: '32px 24px 36px', background: 'var(--surface)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28, paddingBottom: 20, borderBottom: '1px solid var(--rule)' }}>
+          {authorMemberNum ? <div className="avatar avatar-md" style={{background:"var(--amber)",color:"#fff",border:"none",fontWeight:800}}>{authorMemberNum}</div> : <div className="avatar avatar-md">{authorInitial}</div>}
           <div>
-            <Link href={author?.username ? `/user/${author.username}` : '#'} style={{ textDecoration: 'none' }}>
-              <span className="author-name" style={{ fontSize: 14 }}>{author?.display_name || author?.username || 'A fan'}</span>
-            </Link>
-            <FounderBadge number={author?.member_number} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-              {story.rating && <span className="stars">{[1,2,3,4,5].map(i => <span key={i} className={`s${i <= story.rating ? ' on' : ''}`}>&#9733;</span>)}</span>}
-              {story.attended && <span className="mono" style={{ fontSize: 9, color: 'var(--copper)', fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', border: '1px solid var(--copper)', borderRadius: 2 }}>WAS THERE</span>}
+            <div>
+              <Link href={author?.username ? `/user/${author.username}` : '#'} style={{ textDecoration: 'none' }}>
+                <span className="author-name" style={{ fontSize: 14 }}>{author?.display_name || author?.username || 'A fan'}</span>
+              </Link>
+              <FounderBadge number={author?.member_number} />
+            </div>
+            <div style={{ fontFamily: 'var(--ui)', fontSize: 10, color: 'var(--muted)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
+              {story.attended && <span className="attended-badge">WAS THERE</span>}
+              {story.rating && <span style={{ color: 'var(--amber)', letterSpacing: 1 }}>{'★'.repeat(story.rating)}</span>}
+              <span>· {new Date(story.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
             </div>
           </div>
         </div>
 
-        <div className="story-text-full">
-          <p>{story.story}</p>
+        {/* Story text with drop cap */}
+        <div className="story-full-text">
+          {story.story.split('\n').filter(p => p.trim()).map((para, i) => (
+            <p key={i} className={i === 0 ? 'story-drop-cap' : ''} style={i > 0 ? { marginTop: 18 } : {}}>{para}</p>
+          ))}
         </div>
 
-        <div className="story-page-foot">
-          <HighFive userGameId={story.id} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 32, paddingTop: 18, borderTop: '1px solid var(--rule)' }}>
+          <HighFive userGameId={story.id} size={22} />
           <span className="timestamp">
             {new Date(story.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
           </span>
@@ -156,15 +170,14 @@ export default function StoryPage() {
       </div>
 
       {/* Conversation */}
-      <hr className="sec-rule" /><hr className="sec-rule-thin" />
-      <div style={{ padding: 20 }}>
-        <div className="sec-head">{replies.length > 0 ? `CONVERSATION (${replies.length})` : 'START THE CONVERSATION'}</div>
+      <div style={{ padding: '28px 24px 36px', background: 'var(--bg)', borderTop: '1px solid var(--rule)' }}>
+        <div className="sec-head">{replies.length > 0 ? `Conversation (${replies.length})` : 'Start the conversation'}</div>
 
         {replies.map(r => {
           const ri = (r.profile?.display_name || r.profile?.username || '?')[0].toUpperCase()
           return (
             <div key={r.id} className="convo-item">
-              <div className="avatar" style={{ width: 24, height: 24, fontSize: 10 }}>{ri}</div>
+              <div className="avatar avatar-sm">{ri}</div>
               <div style={{ flex: 1 }}>
                 <div>
                   <Link href={`/user/${r.profile?.username || ''}`} style={{ textDecoration: 'none' }}>
@@ -185,18 +198,18 @@ export default function StoryPage() {
           )
         })}
 
-        {/* Reply input */}
-        <div className="convo-write">
-          <div style={{ flex: 1 }}>
-            <textarea value={replyText} onChange={e => setReplyText(e.target.value)}
-              placeholder="Add to the conversation..." rows={3}
-              className="story-textarea" style={{ background: 'var(--surface)', width: '100%' }}
-            />
-          </div>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-          <button onClick={submitReply} disabled={sending || !replyText.trim()} className={`post-btn${replyText.trim() ? '' : ' off'}`}>
-            {sending ? 'Posting...' : 'Reply'}
+        <div style={{ display: 'flex', gap: 10, marginTop: 20, alignItems: 'flex-end' }}>
+          <textarea value={replyText} onChange={e => setReplyText(e.target.value)}
+            placeholder="Join the conversation..." rows={1}
+            style={{
+              flex: 1, padding: '12px 14px', fontFamily: 'var(--body)', fontSize: 14,
+              color: 'var(--ink)', background: 'var(--surface)', border: '1px solid var(--rule)',
+              borderRadius: 4, outline: 'none', resize: 'none', minHeight: 44,
+            }}
+          />
+          <button onClick={submitReply} disabled={sending || !replyText.trim()}
+            className={`post-btn${replyText.trim() ? '' : ' off'}`}>
+            {sending ? '...' : 'Reply'}
           </button>
         </div>
       </div>
