@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/lib/auth'
 import { formatDate, showScore, savePlaylist, isPlayoff } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import TopLogo from '@/components/TopLogo'
@@ -10,6 +11,7 @@ import TopLogo from '@/components/TopLogo'
 
 export default function VenuePage() {
   const { id } = useParams()
+  const { user } = useAuth()
   const [venue, setVenue] = useState(null)
   const [notable, setNotable] = useState([])
   const [games, setGames] = useState([])
@@ -18,6 +20,9 @@ export default function VenuePage() {
   const [beenHere, setBeenHere] = useState(false)
   const [wantVisit, setWantVisit] = useState(false)
   const [story, setStory] = useState('')
+  const [storySaving, setStorySaving] = useState(false)
+  const [storySaved, setStorySaved] = useState(false)
+  const [fanNotes, setFanNotes] = useState([])
   const [archiveSort, setArchiveSort] = useState('desc')
 
   useEffect(() => {
@@ -35,6 +40,14 @@ export default function VenuePage() {
       if (v.sport !== 'golf') gq = gq.gt('home_score', 0)
       const { data: gs } = await gq
       setGames((gs||[]).filter(g => !notableGameIds.includes(g.id) && isPlayoff(g.series_info)))
+      // Fetch fan notes
+      const { data: notes } = await supabase.from('fan_notes').select('id,note,created_at,user_id').eq('entity_type', 'venue').eq('entity_id', id).order('created_at', { ascending: false }).limit(20)
+      if (notes?.length) {
+        const uids = [...new Set(notes.map(n => n.user_id))]
+        const { data: profs } = await supabase.from('profiles').select('id,username,display_name').in('id', uids)
+        const pMap = {}; (profs||[]).forEach(p => { pMap[p.id] = p })
+        setFanNotes(notes.map(n => ({ ...n, profile: pMap[n.user_id] })))
+      }
       setLoading(false)
     }
     load()
@@ -119,6 +132,28 @@ export default function VenuePage() {
         <div className="sec-head">SAY SOMETHING ABOUT {venue.venue_name.toUpperCase()}</div>
         <div style={{ fontFamily:'var(--ui)', fontSize:11, color:'var(--dim)', marginBottom:12, lineHeight:1.6, fontStyle:'italic' }}>The layout. The food. The smells. The parking lot. The pre-game tailgate. The post-game walkout.</div>
         <textarea className="story-textarea" placeholder={`Say something about ${venue.venue_name}...`} value={story} onChange={e => setStory(e.target.value)} />
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:10 }}>
+          <button onClick={async () => {
+            if (!user || !story.trim()) return
+            setStorySaving(true)
+            await supabase.from('fan_notes').insert({ user_id: user.id, entity_type: 'venue', entity_id: parseInt(id), note: story.trim() })
+            setStorySaved(true); setStorySaving(false)
+            const newNote = { id: Date.now(), note: story.trim(), created_at: new Date().toISOString(), user_id: user.id, profile: { username: user.user_metadata?.username, display_name: user.user_metadata?.display_name } }
+            setFanNotes(prev => [newNote, ...prev])
+            setTimeout(() => { setStory(''); setStorySaved(false) }, 1500)
+          }} disabled={!user || !story.trim() || storySaving} className={`post-btn${user && story.trim() ? '' : ' off'}`}>
+            {storySaving ? 'Posting...' : storySaved ? 'Posted!' : 'Post'}
+          </button>
+          {!user && <span style={{ fontFamily:'var(--ui)', fontSize:10, color:'var(--dim)' }}>Sign in to post</span>}
+        </div>
+        {fanNotes.length > 0 && <div style={{ marginTop:20 }}>
+          {fanNotes.map(n => (
+            <div key={n.id} className="fan-note">
+              <div className="fan-note-text">{n.note}</div>
+              <div className="fan-note-meta">{n.profile?.display_name || n.profile?.username || 'Fan'} &middot; {formatDate(n.created_at?.split('T')[0])}</div>
+            </div>
+          ))}
+        </div>}
       </div>
 
       {games.length > 0 && <><hr className="sec-rule"/><div style={{ padding:20 }}>

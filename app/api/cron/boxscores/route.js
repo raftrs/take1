@@ -86,7 +86,7 @@ function parseNFLPlayers(data, espnGameId) {
   for (const team of boxScore) {
     const teamAbbr = team.team?.abbreviation
     for (const statGroup of (team.statistics || [])) {
-      const category = statGroup.name // passing, rushing, receiving, etc
+      const category = statGroup.name || statGroup.type // passing, rushing, receiving, etc
       for (const athlete of (statGroup.athletes || [])) {
         const stats = {}
         const labels = statGroup.labels || []
@@ -127,7 +127,7 @@ function parseMLBPlayers(data, espnGameId) {
   for (const team of boxScore) {
     const teamAbbr = team.team?.abbreviation
     for (const statGroup of (team.statistics || [])) {
-      const isPitching = statGroup.name === 'pitching'
+      const isPitching = statGroup.name === 'pitching' || statGroup.type === 'pitching'
       for (const athlete of (statGroup.athletes || [])) {
         const stats = {}
         const labels = statGroup.labels || []

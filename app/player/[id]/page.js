@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/lib/auth'
 import { formatDate, savePlaylist, isPlayoff } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import SportBadge from '@/components/SportBadge'
@@ -75,6 +76,7 @@ function ScrollList({ children, maxH = 300 }) {
 
 export default function PlayerPage() {
   const { id } = useParams()
+  const { user } = useAuth()
   const [player, setPlayer] = useState(null)
   const [gameLog, setGameLog] = useState([])
   const [allTimers, setAllTimers] = useState([])
@@ -84,6 +86,9 @@ export default function PlayerPage() {
   const [majorBreakdown, setMajorBreakdown] = useState(null)
   const [golfResults, setGolfResults] = useState([])
   const [story, setStory] = useState('')
+  const [storySaving, setStorySaving] = useState(false)
+  const [storySaved, setStorySaved] = useState(false)
+  const [fanNotes, setFanNotes] = useState([])
   const [loading, setLoading] = useState(true)
   const [gameSort, setGameSort] = useState('desc')
   const [gameLogFilter, setGameLogFilter] = useState('playoff')
@@ -193,6 +198,14 @@ export default function PlayerPage() {
             }
           }
         }
+      }
+      // Fetch fan notes
+      const { data: notes } = await supabase.from('fan_notes').select('id,note,created_at,user_id').eq('entity_type', 'player').eq('entity_id', id).order('created_at', { ascending: false }).limit(20)
+      if (notes?.length) {
+        const uids = [...new Set(notes.map(n => n.user_id))]
+        const { data: profs } = await supabase.from('profiles').select('id,username,display_name').in('id', uids)
+        const pMap = {}; (profs||[]).forEach(pr => { pMap[pr.id] = pr })
+        setFanNotes(notes.map(n => ({ ...n, profile: pMap[n.user_id] })))
       }
       setLoading(false)
     }
@@ -385,6 +398,35 @@ export default function PlayerPage() {
           </Link>)}
         </ScrollList>
       </div></>)}
+
+      {/* Say Something */}
+      <hr className="sec-rule"/>
+      <div style={{ padding:20 }}>
+        <div className="sec-head">SAY SOMETHING ABOUT {(player.player_name || '').toUpperCase()}</div>
+        <textarea className="story-textarea" placeholder={`Say something about ${player.player_name}...`} value={story} onChange={e => setStory(e.target.value)} />
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:10 }}>
+          <button onClick={async () => {
+            if (!user || !story.trim()) return
+            setStorySaving(true)
+            await supabase.from('fan_notes').insert({ user_id: user.id, entity_type: 'player', entity_id: parseInt(id), note: story.trim() })
+            setStorySaved(true); setStorySaving(false)
+            const newNote = { id: Date.now(), note: story.trim(), created_at: new Date().toISOString(), user_id: user.id, profile: { username: user.user_metadata?.username, display_name: user.user_metadata?.display_name } }
+            setFanNotes(prev => [newNote, ...prev])
+            setTimeout(() => { setStory(''); setStorySaved(false) }, 1500)
+          }} disabled={!user || !story.trim() || storySaving} className={`post-btn${user && story.trim() ? '' : ' off'}`}>
+            {storySaving ? 'Posting...' : storySaved ? 'Posted!' : 'Post'}
+          </button>
+          {!user && <span style={{ fontFamily:'var(--ui)', fontSize:10, color:'var(--dim)' }}>Sign in to post</span>}
+        </div>
+        {fanNotes.length > 0 && <div style={{ marginTop:20 }}>
+          {fanNotes.map(n => (
+            <div key={n.id} className="fan-note">
+              <div className="fan-note-text">{n.note}</div>
+              <div className="fan-note-meta">{n.profile?.display_name || n.profile?.username || 'Fan'} &middot; {formatDate(n.created_at?.split('T')[0])}</div>
+            </div>
+          ))}
+        </div>}
+      </div>
 
       <div style={{ height:80 }}></div>
     </div>
