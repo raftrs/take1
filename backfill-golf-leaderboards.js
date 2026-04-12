@@ -1,0 +1,140 @@
+#!/usr/bin/env node
+// Backfill golf leaderboards for tournaments that exist in DB but have no leaderboard data
+// Run: cd ~/Downloads/raftrs-app && node backfill-golf-leaderboards.js
+
+const { createClient } = require('@supabase/supabase-js')
+const supabase = createClient(
+  'https://wnvbncbyrhbkbburzvzy.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndudmJuY2J5cmhia2JidXJ6dnp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjY1NzEsImV4cCI6MjA5MDg0MjU3MX0.xt-8x-fqxKs9KfgkuVCBaVFos0ZHZ2rKEFu4T5VABsc'
+)
+
+const delay = ms => new Promise(r => setTimeout(r, ms))
+
+async function fetchLeaderboard(eventId) {
+  const url = `https://site.api.espn.com/apis/site/v2/sports/golf/pga/leaderboard?event=${eventId}`
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return null
+    return await res.json()
+  } catch(e) { return null }
+}
+
+function parseLeaderboard(data, eventId, gameId) {
+  const rows = []
+  const competitors = data?.events?.[0]?.competitions?.[0]?.competitors || []
+  
+  for (const player of competitors) {
+    const name = player.athlete?.displayName
+    if (!name) continue
+    
+    const pos = player.status?.position?.id ? parseInt(player.status.position.id) : (parseInt(player.sortOrder) || null)
+    const totalScore = player.score?.displayValue || player.statistics?.[0]?.displayValue || null
+    const espnPlayerId = player.athlete?.id || null
+    
+    const rounds = player.linescores || []
+    const r1 = rounds[0]?.displayValue || rounds[0]?.value || null
+    const r2 = rounds[1]?.displayValue || rounds[1]?.value || null
+    const r3 = rounds[2]?.displayValue || rounds[2]?.value || null
+    const r4 = rounds[3]?.displayValue || rounds[3]?.value || null
+    const roundsPlayed = rounds.filter(r => r.displayValue || r.value).length
+
+    rows.push({
+      espn_event_id: eventId,
+      game_id: gameId,
+      player_name: name,
+      espn_player_id: espnPlayerId,
+      position: pos,
+      total_score: totalScore,
+      round_1: r1 ? String(r1) : null,
+      round_2: r2 ? String(r2) : null,
+      round_3: r3 ? String(r3) : null,
+      round_4: r4 ? String(r4) : null,
+      rounds_played: roundsPlayed || null,
+      sport: 'golf',
+      league: 'pga',
+    })
+  }
+  return rows
+}
+
+async function main() {
+  const today = new Date().toISOString().split('T')[0]
+  
+  // Get all golf games with dates in the past that have no leaderboard data
+  const { data: games, error } = await supabase
+    .from('games')
+    .select('id, title, game_date, nba_game_id')
+    .eq('sport', 'golf')
+    .not('nba_game_id', 'is', null)
+    .lte('game_date', today)
+    .order('game_date', { ascending: false })
+    .limit(200)
+
+  if (error) { console.error('Query error:', error.message); return }
+  console.log(`Found ${games.length} past golf tournaments\n`)
+
+  const stats = { checked: 0, alreadyHas: 0, fetched: 0, inserted: 0, noData: 0, errors: 0 }
+
+  for (const g of games) {
+    stats.checked++
+    const eventId = g.nba_game_id
+
+    // Check if leaderboard exists
+    const { count } = await supabase.from('golf_leaderboard')
+      .select('id', { count: 'exact', head: true })
+      .eq('espn_event_id', eventId)
+
+    if (count > 0) {
+      stats.alreadyHas++
+      continue
+    }
+
+    console.log(`[FETCH] ${g.title} (${g.game_date}) ESPN: ${eventId}`)
+    const data = await fetchLeaderboard(eventId)
+    
+    if (!data) {
+      console.log(`  No response from ESPN`)
+      stats.noData++
+      await delay(300)
+      continue
+    }
+
+    const rows = parseLeaderboard(data, eventId, g.id)
+    if (rows.length === 0) {
+      console.log(`  No players in leaderboard`)
+      stats.noData++
+      await delay(300)
+      continue
+    }
+
+    // Insert in batches
+    let batchInserted = 0
+    for (let i = 0; i < rows.length; i += 50) {
+      const batch = rows.slice(i, i + 50)
+      const { error: insErr } = await supabase.from('golf_leaderboard').insert(batch)
+      if (insErr) {
+        console.log(`  Insert error: ${insErr.message}`)
+        stats.errors++
+      } else {
+        batchInserted += batch.length
+      }
+    }
+    
+    if (batchInserted > 0) {
+      console.log(`  Inserted ${batchInserted} rows`)
+      stats.fetched++
+      stats.inserted += batchInserted
+    }
+
+    await delay(300)
+  }
+
+  console.log('\n=== RESULTS ===')
+  console.log(`Checked: ${stats.checked}`)
+  console.log(`Already had data: ${stats.alreadyHas}`)
+  console.log(`New leaderboards: ${stats.fetched} (${stats.inserted} rows)`)
+  console.log(`No ESPN data: ${stats.noData}`)
+  console.log(`Errors: ${stats.errors}`)
+}
+
+main().catch(console.error)

@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
+const DG_KEY = '696bc24a4e7aef6124332cf9810d'
+
 let _supabase
 function getSupabase() {
   if (!_supabase) {
@@ -12,63 +14,30 @@ function getSupabase() {
   return _supabase
 }
 
-// Fetch current/recent PGA events from ESPN scoreboard
-async function fetchGolfScoreboard() {
-  const url = 'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard'
+// Fetch live tournament data from Data Golf
+async function fetchDGInPlay() {
   try {
-    const res = await fetch(url, { next: { revalidate: 0 } })
+    const res = await fetch(`https://feeds.datagolf.com/preds/in-play?file_format=json&key=${DG_KEY}`)
     if (!res.ok) return null
     return await res.json()
   } catch(e) { return null }
 }
 
-// Fetch leaderboard for a specific event
-async function fetchLeaderboard(eventId) {
-  const url = `https://site.api.espn.com/apis/site/v2/sports/golf/pga/leaderboard?event=${eventId}`
+// Fetch ESPN scoreboard to match event IDs
+async function fetchESPNScoreboard() {
   try {
-    const res = await fetch(url, { next: { revalidate: 0 } })
+    const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard')
     if (!res.ok) return null
     return await res.json()
   } catch(e) { return null }
 }
 
-function parseLeaderboard(data, eventId, gameId) {
-  const rows = []
-  const competitors = data?.events?.[0]?.competitions?.[0]?.competitors || []
-  
-  for (const player of competitors) {
-    const name = player.athlete?.displayName
-    if (!name) continue
-    
-    const pos = player.status?.position?.id ? parseInt(player.status.position.id) : (parseInt(player.sortOrder) || null)
-    const totalScore = player.score?.displayValue || player.statistics?.[0]?.displayValue || null
-    const espnPlayerId = player.athlete?.id || null
-    
-    // Parse round scores from linescores
-    const rounds = player.linescores || []
-    const r1 = rounds[0]?.displayValue || rounds[0]?.value || null
-    const r2 = rounds[1]?.displayValue || rounds[1]?.value || null
-    const r3 = rounds[2]?.displayValue || rounds[2]?.value || null
-    const r4 = rounds[3]?.displayValue || rounds[3]?.value || null
-    const roundsPlayed = rounds.filter(r => r.displayValue || r.value).length
-
-    rows.push({
-      espn_event_id: eventId,
-      game_id: gameId,
-      player_name: name,
-      espn_player_id: espnPlayerId,
-      position: pos,
-      total_score: totalScore,
-      round_1: r1 ? String(r1) : null,
-      round_2: r2 ? String(r2) : null,
-      round_3: r3 ? String(r3) : null,
-      round_4: r4 ? String(r4) : null,
-      rounds_played: roundsPlayed || null,
-      sport: 'golf',
-      league: 'pga',
-    })
-  }
-  return rows
+// Normalize player name from "Last, First" to "First Last"
+function normalizeName(dgName) {
+  if (!dgName) return null
+  if (!dgName.includes(',')) return dgName
+  const parts = dgName.split(',').map(s => s.trim())
+  return `${parts[1]} ${parts[0]}`
 }
 
 export async function GET(request) {
@@ -79,78 +48,94 @@ export async function GET(request) {
     }
 
     const sb = getSupabase()
-    const results = { tournaments: 0, newTournaments: 0, leaderboardRows: 0, errors: [] }
+    const results = { event: null, status: null, players: 0, action: null }
 
-    // Get ESPN scoreboard (shows current/recent events)
-    const scoreboard = await fetchGolfScoreboard()
-    if (!scoreboard) {
-      return NextResponse.json({ success: false, error: 'Could not fetch ESPN golf scoreboard' })
+    // Get Data Golf in-play data
+    const dg = await fetchDGInPlay()
+    if (!dg || !dg.data?.length) {
+      return NextResponse.json({ success: true, message: 'No active tournament from Data Golf', timestamp: new Date().toISOString() })
     }
 
-    const events = scoreboard.events || []
-    results.tournaments = events.length
+    const eventName = dg.info?.event_name
+    const currentRound = dg.info?.current_round
+    const players = dg.data || []
+    results.event = eventName
+    results.status = `Round ${currentRound}`
+    results.players = players.length
 
-    for (const event of events) {
-      const eventId = event.id
-      const status = event.status?.type?.name || ''
-      const isComplete = status === 'STATUS_FINAL' || event.status?.type?.completed === true
-      if (!isComplete) continue
+    // Find matching game in our DB via ESPN scoreboard
+    const espn = await fetchESPNScoreboard()
+    const espnEvent = espn?.events?.[0]
+    const espnId = espnEvent?.id
+    const isComplete = espnEvent?.status?.type?.completed === true || espnEvent?.status?.type?.name === 'STATUS_FINAL'
 
-      const comp = event.competitions?.[0]
-      const title = event.name || event.shortName || 'PGA Tour Event'
-      const endDate = comp?.endDate || event.date
-      const gameDate = endDate ? new Date(endDate).toISOString().split('T')[0] : null
-      if (!gameDate) continue
+    if (!espnId) {
+      return NextResponse.json({ success: true, message: 'Could not match ESPN event', event: eventName, timestamp: new Date().toISOString() })
+    }
 
-      const venue = comp?.venue
-      const venueName = venue?.fullName || null
-      const venueCity = venue?.address ? `${venue.address.city || ''}, ${venue.address.state || ''}`.replace(/^, |, $/g, '') : null
+    // Find or create game
+    const { data: existing } = await sb.from('games')
+      .select('id').eq('nba_game_id', espnId).eq('sport', 'golf').limit(1)
 
-      // Check if tournament exists in games table
-      const { data: existing } = await sb.from('games')
-        .select('id').eq('nba_game_id', eventId).eq('sport', 'golf').limit(1)
+    let gameId
+    if (existing?.length) {
+      gameId = existing[0].id
+    } else {
+      const venue = espnEvent.competitions?.[0]?.venue
+      const endDate = espnEvent.competitions?.[0]?.endDate || espnEvent.date
+      const gameDate = endDate ? new Date(endDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+      const { data: inserted, error } = await sb.from('games').insert({
+        title: eventName,
+        game_date: gameDate,
+        sport: 'golf',
+        venue: venue?.fullName || null,
+        venue_city: venue?.address ? `${venue.address.city || ''}, ${venue.address.state || ''}`.replace(/^, |, $/g, '') : null,
+        nba_game_id: espnId,
+        series_info: 'PGA Tour',
+      }).select('id').single()
+      if (error) return NextResponse.json({ success: false, error: error.message })
+      gameId = inserted.id
+      results.action = 'created_game'
+    }
 
-      let gameId
-      if (existing?.length) {
-        gameId = existing[0].id
-      } else {
-        // Insert new tournament
-        const { data: inserted, error: insErr } = await sb.from('games').insert({
-          title,
-          game_date: gameDate,
-          sport: 'golf',
-          venue: venueName,
-          venue_city: venueCity,
-          nba_game_id: eventId,
-          series_info: 'PGA Tour',
-        }).select('id').single()
-
-        if (insErr) { results.errors.push(`Insert game: ${insErr.message}`); continue }
-        gameId = inserted.id
-        results.newTournaments++
-      }
-
-      // Check if leaderboard already exists
+    // Only write leaderboard data when tournament is complete
+    // (avoids partial data and duplicate rows during the tournament)
+    if (isComplete) {
+      // Check if we already have leaderboard
       const { count } = await sb.from('golf_leaderboard')
         .select('id', { count: 'exact', head: true })
-        .eq('espn_event_id', eventId)
+        .eq('espn_event_id', espnId)
 
-      if (count > 0) continue // Already have leaderboard
+      if (count > 0) {
+        results.action = 'leaderboard_exists'
+      } else {
+        // Build leaderboard rows from Data Golf
+        const rows = players.map(p => ({
+          espn_event_id: espnId,
+          game_id: gameId,
+          player_name: normalizeName(p.player_name),
+          position: p.current_pos ? parseInt(String(p.current_pos).replace('T', '')) || null : null,
+          total_score: p.current_score != null ? String(p.current_score) : null,
+          round_1: (p.R1 != null && !isNaN(parseInt(p.R1))) ? parseInt(p.R1) : null,
+          round_2: (p.R2 != null && !isNaN(parseInt(p.R2))) ? parseInt(p.R2) : null,
+          round_3: (p.R3 != null && !isNaN(parseInt(p.R3))) ? parseInt(p.R3) : null,
+          round_4: (p.R4 != null && !isNaN(parseInt(p.R4))) ? parseInt(p.R4) : null,
+          rounds_played: [p.R1, p.R2, p.R3, p.R4].filter(r => r != null && !isNaN(parseInt(r))).length,
+          sport: 'golf',
+          league: 'pga',
+        })).filter(r => r.player_name)
 
-      // Fetch and insert leaderboard
-      const lbData = await fetchLeaderboard(eventId)
-      if (!lbData) { results.errors.push(`Leaderboard fetch failed for ${eventId}`); continue }
-
-      const rows = parseLeaderboard(lbData, eventId, gameId)
-      if (rows.length > 0) {
-        // Insert in batches of 50
+        // Insert in batches
+        let inserted = 0
         for (let i = 0; i < rows.length; i += 50) {
           const batch = rows.slice(i, i + 50)
-          const { error: lbErr } = await sb.from('golf_leaderboard').insert(batch)
-          if (lbErr) results.errors.push(`LB insert: ${lbErr.message}`)
-          else results.leaderboardRows += batch.length
+          const { error } = await sb.from('golf_leaderboard').insert(batch)
+          if (!error) inserted += batch.length
         }
+        results.action = `inserted_leaderboard_${inserted}_rows`
       }
+    } else {
+      results.action = 'tournament_in_progress'
     }
 
     return NextResponse.json({ success: true, timestamp: new Date().toISOString(), results })
