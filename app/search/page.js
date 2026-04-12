@@ -177,7 +177,7 @@ export default function SearchPage() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--faint)" strokeWidth="1.5"><path d="M9 18l6-6-6-6"/></svg>
         </Link>)}</>}
         {notable.length > 0 && <><div className="sec-head" style={{ marginTop:16 }}>ALL-TIMERS</div>{notable.map(g => <Link key={g.id} href={`/notable/${g.id}`} className="game-row" style={{ padding:'8px 0', display:'flex', alignItems:'center', gap:8 }}><SportBadge sport={g.sport}/><div style={{ flex:1 }}><div style={{ fontSize:14, color:'var(--ink)' }}>{g.title}</div><div className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</div></div></Link>)}</>}
-        {hasEnt && games.length > 0 && <><hr className="sec-rule" style={{ marginTop:16 }}/></>}
+        {hasEnt && games.length > 0 && <><hr className="sec-rule" style={{ marginTop:16 }}/><hr className="sec-rule-thin"/></>}
         {games.length > 0 && <><div className="sec-head" style={{ marginTop:hasEnt?14:0 }}>GAMES</div>{games.map(g => <Link key={g.id} href={`/game/${g.id}`} className="game-row" style={{ padding:'10px 0' }}>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}><SportBadge sport={g.sport}/><span style={{ fontSize:14, color:'var(--ink)' }}>{showScore(g) || g.title || `${g.away_team_abbr} @ ${g.home_team_abbr}`}</span></div>
           <div style={{ display:'flex', justifyContent:'space-between', marginTop:3 }}><span className="sans" style={{ fontSize:10, color:'var(--copper)' }}>{g.series_info}</span><span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</span></div>

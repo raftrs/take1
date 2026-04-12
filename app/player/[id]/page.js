@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/lib/auth'
 import { formatDate, savePlaylist, isPlayoff } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import SportBadge from '@/components/SportBadge'
@@ -76,7 +75,6 @@ function ScrollList({ children, maxH = 300 }) {
 
 export default function PlayerPage() {
   const { id } = useParams()
-  const { user } = useAuth()
   const [player, setPlayer] = useState(null)
   const [gameLog, setGameLog] = useState([])
   const [allTimers, setAllTimers] = useState([])
@@ -86,9 +84,6 @@ export default function PlayerPage() {
   const [majorBreakdown, setMajorBreakdown] = useState(null)
   const [golfResults, setGolfResults] = useState([])
   const [story, setStory] = useState('')
-  const [storySaving, setStorySaving] = useState(false)
-  const [storySaved, setStorySaved] = useState(false)
-  const [fanNotes, setFanNotes] = useState([])
   const [loading, setLoading] = useState(true)
   const [gameSort, setGameSort] = useState('desc')
   const [gameLogFilter, setGameLogFilter] = useState('playoff')
@@ -199,14 +194,6 @@ export default function PlayerPage() {
           }
         }
       }
-      // Fetch fan notes
-      const { data: notes } = await supabase.from('fan_notes').select('id,note,created_at,user_id').eq('entity_type', 'player').eq('entity_id', id).order('created_at', { ascending: false }).limit(20)
-      if (notes?.length) {
-        const uids = [...new Set(notes.map(n => n.user_id))]
-        const { data: profs } = await supabase.from('profiles').select('id,username,display_name').in('id', uids)
-        const pMap = {}; (profs||[]).forEach(pr => { pMap[pr.id] = pr })
-        setFanNotes(notes.map(n => ({ ...n, profile: pMap[n.user_id] })))
-      }
       setLoading(false)
     }
     load()
@@ -237,10 +224,10 @@ export default function PlayerPage() {
         {player.draft_info && <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{player.draft_info}</div>}
         <div style={{ marginTop:8 }}>
           {(() => {
-            const isActive = player.active
+            const isActive = player.active && (!player.debut_year || player.debut_year >= 2010)
             return <span className="sans" style={{ fontSize:10, fontWeight:600, letterSpacing:1, padding:'3px 8px', background:isActive?'rgba(181,86,58,0.08)':'var(--surface)', color:isActive?'var(--copper)':'var(--dim)', border:`1px solid ${isActive?'var(--copper)':'var(--faint)'}` }}>{isActive?'ACTIVE':'RETIRED'}</span>
           })()}
-          {player.debut_year && <span className="sans" style={{ fontSize:10, color:'var(--dim)', marginLeft:8 }}>{player.active ? 'Since' : ''} {player.debut_year}</span>}
+          {player.debut_year && <span className="sans" style={{ fontSize:10, color:'var(--dim)', marginLeft:8 }}>{player.active && (!player.debut_year || player.debut_year >= 2010) ? 'Since' : ''} {player.debut_year}</span>}
         </div>
       </div>
 
@@ -320,7 +307,7 @@ export default function PlayerPage() {
       </div>)}
 
       {/* ALL-TIMERS - scrollable */}
-      {allTimers.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
+      {allTimers.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div className="sec-head">ALL-TIMERS ({allTimers.length})</div>
         <ScrollList maxH={280}>
           {allTimers.map((g, idx) => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => {
@@ -339,15 +326,14 @@ export default function PlayerPage() {
       </div></>)}
 
       {/* FROM THE STANDS */}
-      <hr className="sec-rule"/>
+      <hr className="sec-rule"/><hr className="sec-rule-thin"/>
       <div style={{ padding:20 }}>
-        <div className="sec-head">SAY SOMETHING ABOUT {player.player_name.toUpperCase()}</div>
-        <div style={{ fontFamily:'var(--ui)', fontSize:11, color:'var(--dim)', marginBottom:12, lineHeight:1.6, fontStyle:'italic' }}>A game where they took over. The play you still think about. Where they rank all time. How they changed the game.</div>
+        <div className="sec-head">SAY SOMETHING</div>
         <textarea className="story-textarea" placeholder={`Say something about ${player.player_name}...`} value={story} onChange={e => setStory(e.target.value)} />
       </div>
 
       {/* NBA/NFL GAME LOG - scrollable */}
-      {rawGameLog.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
+      {rawGameLog.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
           <div className="sec-head" style={{ marginBottom:0 }}>{gameLogFilter === 'playoff' ? 'PLAYOFF' : 'ALL'} GAMES ({activeGameLog.length})</div>
           <div style={{ display:'flex', gap:0 }}>
@@ -379,7 +365,7 @@ export default function PlayerPage() {
       </div></>)}
 
       {/* GOLF TOURNAMENT HISTORY - scrollable */}
-      {isGolf && golfResults.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
+      {isGolf && golfResults.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
           <div className="sec-head" style={{ marginBottom:0 }}>MAJOR RESULTS ({golfResults.length})</div>
           <div style={{ display:'flex', gap:0 }}>
@@ -398,35 +384,6 @@ export default function PlayerPage() {
           </Link>)}
         </ScrollList>
       </div></>)}
-
-      {/* Say Something */}
-      <hr className="sec-rule"/>
-      <div style={{ padding:20 }}>
-        <div className="sec-head">SAY SOMETHING ABOUT {(player.player_name || '').toUpperCase()}</div>
-        <textarea className="story-textarea" placeholder={`Say something about ${player.player_name}...`} value={story} onChange={e => setStory(e.target.value)} />
-        <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:10 }}>
-          <button onClick={async () => {
-            if (!user || !story.trim()) return
-            setStorySaving(true)
-            await supabase.from('fan_notes').insert({ user_id: user.id, entity_type: 'player', entity_id: parseInt(id), note: story.trim() })
-            setStorySaved(true); setStorySaving(false)
-            const newNote = { id: Date.now(), note: story.trim(), created_at: new Date().toISOString(), user_id: user.id, profile: { username: user.user_metadata?.username, display_name: user.user_metadata?.display_name } }
-            setFanNotes(prev => [newNote, ...prev])
-            setTimeout(() => { setStory(''); setStorySaved(false) }, 1500)
-          }} disabled={!user || !story.trim() || storySaving} className={`post-btn${user && story.trim() ? '' : ' off'}`}>
-            {storySaving ? 'Posting...' : storySaved ? 'Posted!' : 'Post'}
-          </button>
-          {!user && <span style={{ fontFamily:'var(--ui)', fontSize:10, color:'var(--dim)' }}>Sign in to post</span>}
-        </div>
-        {fanNotes.length > 0 && <div style={{ marginTop:20 }}>
-          {fanNotes.map(n => (
-            <div key={n.id} className="fan-note">
-              <div className="fan-note-text">{n.note}</div>
-              <div className="fan-note-meta">{n.profile?.display_name || n.profile?.username || 'Fan'} &middot; {formatDate(n.created_at?.split('T')[0])}</div>
-            </div>
-          ))}
-        </div>}
-      </div>
 
       <div style={{ height:80 }}></div>
     </div>

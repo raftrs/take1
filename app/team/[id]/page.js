@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/lib/auth'
 import { formatDate, sportLabel, scoreWithWinner, savePlaylist, isPlayoff } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import TopLogo from '@/components/TopLogo'
@@ -11,20 +10,15 @@ import TopLogo from '@/components/TopLogo'
 
 export default function TeamPage() {
   const { id } = useParams()
-  const { user } = useAuth()
   const [team, setTeam] = useState(null)
   const [notable, setNotable] = useState([])
   const [games, setGames] = useState([])
   const [venueId, setVenueId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [story, setStory] = useState('')
-  const [storySaving, setStorySaving] = useState(false)
-  const [storySaved, setStorySaved] = useState(false)
-  const [fanNotes, setFanNotes] = useState([])
   const [archiveSort, setArchiveSort] = useState('desc')
   const [showAllArchives, setShowAllArchives] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
-  const [retiredNumbers, setRetiredNumbers] = useState([])
 
   useEffect(() => {
     async function load() {
@@ -50,9 +44,6 @@ export default function TeamPage() {
       setGames(filtered)
 
       if (t.arena) { const { data: v } = await supabase.from('venues').select('id').eq('venue_name',t.arena).limit(1); if (v?.[0]) setVenueId(v[0].id) }
-      // Fetch retired numbers
-      const { data: rn } = await supabase.from('retired_numbers').select('*').eq('team_id', t.id).order('number')
-      setRetiredNumbers(rn || [])
       // Check if user has this team favorited
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
@@ -60,14 +51,6 @@ export default function TeamPage() {
         const favs = prof?.favorite_teams || []
         const abbr = t.team_abbr||t.abbreviation
         if (favs.includes(t.id) || favs.includes(abbr)) setIsFavorite(true)
-      }
-      // Fetch fan notes
-      const { data: notes } = await supabase.from('fan_notes').select('id,note,created_at,user_id').eq('entity_type', 'team').eq('entity_id', id).order('created_at', { ascending: false }).limit(20)
-      if (notes?.length) {
-        const uids = [...new Set(notes.map(n => n.user_id))]
-        const { data: profs } = await supabase.from('profiles').select('id,username,display_name').in('id', uids)
-        const pMap = {}; (profs||[]).forEach(p => { pMap[p.id] = p })
-        setFanNotes(notes.map(n => ({ ...n, profile: pMap[n.user_id] })))
       }
       setLoading(false)
     }
@@ -153,7 +136,7 @@ export default function TeamPage() {
           savePlaylist(allNotablePlaylist, idx >= 0 ? idx : 0)
         }
         return <>
-          {allTimerGames.length > 0 && <><hr className="sec-rule" style={{marginTop:16}}/><div style={{ padding:20 }}>
+          {allTimerGames.length > 0 && <><hr className="sec-rule" style={{marginTop:16}}/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
             <div className="sec-head">ALL-TIMERS</div>
             <div style={{ maxHeight:300, overflowY:'auto' }}>
               {allTimerGames.map(g => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleNotableClick(g)} className="game-row" style={{ padding:'10px 0' }}>
@@ -163,7 +146,7 @@ export default function TeamPage() {
               </Link>)}
             </div>
           </div></>}
-          {otherNotable.length > 0 && <><hr className="sec-rule"/><div style={{ padding:20 }}>
+          {otherNotable.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
             <div className="sec-head">{sp === 'golf' ? 'NOTABLE TOURNAMENTS' : 'NOTABLE GAMES'}</div>
             <div style={{ maxHeight:300, overflowY:'auto' }}>
               {otherNotable.map(g => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleNotableClick(g)} className="game-row" style={{ padding:'10px 0' }}>
@@ -176,60 +159,20 @@ export default function TeamPage() {
         </>
       })()}
 
-      {retiredNumbers.length > 0 && <><hr className="sec-rule"/><div style={{ padding:20 }}>
-        <div className="sec-head">RETIRED NUMBERS</div>
-        <div style={{ display:'flex', gap:10, overflowX:'auto', paddingBottom:8, WebkitOverflowScrolling:'touch' }}>
-          {retiredNumbers.map(rn => (
-            <div key={rn.id} style={{
-              minWidth:64, textAlign:'center', padding:'12px 8px 10px',
-              background:'var(--surface)', border:'1px solid var(--faint)',
-              borderTop:`3px solid ${color}`, flexShrink:0
-            }}>
-              <div style={{ fontFamily:'var(--display)', fontSize:22, color: color, lineHeight:1, fontWeight:600 }}>{rn.number}</div>
-              <div className="sans" style={{ fontSize:8, color:'var(--ink)', marginTop:6, fontWeight:600, lineHeight:1.3 }}>{rn.player_name}</div>
-              {rn.years_active && <div className="sans" style={{ fontSize:7, color:'var(--dim)', marginTop:3 }}>{rn.years_active}</div>}
-            </div>
-          ))}
-        </div>
-      </div></>}
-
-      <hr className="sec-rule"/>
+      <hr className="sec-rule"/><hr className="sec-rule-thin"/>
       <div style={{ padding:20 }}>
-        <div className="sec-head">SAY SOMETHING ABOUT THE {(team.full_name || team.team_name).toUpperCase()}</div>
-        <div style={{ fontFamily:'var(--ui)', fontSize:11, color:'var(--dim)', marginBottom:12, lineHeight:1.6, fontStyle:'italic' }}>Favorite players who have worn the jersey. Games you'll never forget. The best seasons. The most disappointing moments.</div>
+        <div className="sec-head">SAY SOMETHING</div>
         <textarea className="story-textarea" placeholder={`Say something about the ${team.full_name || team.team_name}...`} value={story} onChange={e => setStory(e.target.value)} />
-        <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:10 }}>
-          <button onClick={async () => {
-            if (!user || !story.trim()) return
-            setStorySaving(true)
-            await supabase.from('fan_notes').insert({ user_id: user.id, entity_type: 'team', entity_id: parseInt(id), note: story.trim() })
-            setStorySaved(true); setStorySaving(false)
-            const newNote = { id: Date.now(), note: story.trim(), created_at: new Date().toISOString(), user_id: user.id, profile: { username: user.user_metadata?.username, display_name: user.user_metadata?.display_name } }
-            setFanNotes(prev => [newNote, ...prev])
-            setTimeout(() => { setStory(''); setStorySaved(false) }, 1500)
-          }} disabled={!user || !story.trim() || storySaving} className={`post-btn${user && story.trim() ? '' : ' off'}`}>
-            {storySaving ? 'Posting...' : storySaved ? 'Posted!' : 'Post'}
-          </button>
-          {!user && <span style={{ fontFamily:'var(--ui)', fontSize:10, color:'var(--dim)' }}>Sign in to post</span>}
-        </div>
-        {fanNotes.length > 0 && <div style={{ marginTop:20 }}>
-          {fanNotes.map(n => (
-            <div key={n.id} className="fan-note">
-              <div className="fan-note-text">{n.note}</div>
-              <div className="fan-note-meta">{n.profile?.display_name || n.profile?.username || 'Fan'} &middot; {formatDate(n.created_at?.split('T')[0])}</div>
-            </div>
-          ))}
-        </div>}
       </div>
 
-      {games.length > 0 && <><hr className="sec-rule"/><div style={{ padding:20 }}>
+      {games.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
           <div className="sec-head" style={{ marginBottom:0 }}>FROM THE ARCHIVES ({games.length})</div>
           <div style={{ display:'flex', gap:0 }}>
             {['Recent','Oldest'].map(s => <button key={s} onClick={() => setArchiveSort(s==='Recent'?'desc':'asc')} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===archiveSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===archiveSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
           </div>
         </div>
-        <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Playoff Games</div>
+        <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Playoff and championship games</div>
         {(() => {
           const sorted = [...games].sort((a,b) => archiveSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||''))
           const display = showAllArchives ? sorted : sorted.slice(0, 20)

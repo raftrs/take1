@@ -123,7 +123,7 @@ export default function CityPage() {
       </div>
 
       {/* TEAMS */}
-      {teams.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
+      {teams.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div className="sec-head">TEAMS</div>
         {teams.map(t => {
           const color = t.primary_color || 'var(--copper)'
@@ -141,7 +141,7 @@ export default function CityPage() {
       </div></>)}
 
       {/* VENUES */}
-      {venues.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
+      {venues.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div className="sec-head">VENUES</div>
         {venues.map(v => <Link key={v.id} href={`/venue/${v.id}`} className="game-row" style={{ padding:'10px 0', display:'flex', alignItems:'center', gap:10 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--copper)" strokeWidth="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
@@ -154,9 +154,8 @@ export default function CityPage() {
       </div></>)}
 
       {/* ALL-TIMERS */}
-      {allTimers.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
-        <div className="sec-head">{cityName.toUpperCase()} ALL-TIMERS ({allTimers.length})</div>
-        <div style={{ maxHeight:480, overflowY:'auto' }}>
+      {allTimers.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
+        <div className="sec-head">{cityName.toUpperCase()} ALL-TIMERS</div>
         {allTimers.map((g, idx) => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => {
           const playlist = allTimers.map(a => ({ href: `/notable/${a.id}`, title: a.title }))
           savePlaylist(playlist, idx)
@@ -168,27 +167,24 @@ export default function CityPage() {
           <div style={{ fontSize:14, color:'var(--ink)', marginTop:4 }}>{g.title}</div>
           <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{formatDate(g.game_date)}{g.venue ? ` \u00B7 ${g.venue}` : ''}</div>
         </Link>)}
-        </div>
       </div></>)}
 
-      {teams.length >= 2 && (<><hr className="sec-rule"/>
+      {teams.length >= 2 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/>
       <div style={{ padding:20 }}>
-        <div className="sec-head">SAY SOMETHING ABOUT {cityName.toUpperCase()} SPORTS</div>
-        <div style={{ fontFamily:'var(--ui)', fontSize:11, color:'var(--dim)', marginBottom:12, lineHeight:1.6, fontStyle:'italic' }}>The city on gameday. The fans. The best places to watch a game. What makes {cityName} sports different.</div>
-        <textarea className="story-textarea" placeholder={`What's it like being a sports fan in ${cityName}?`} value={story} onChange={e => setStory(e.target.value)} />
+        <div className="sec-head">SAY SOMETHING</div>
+        <textarea className="story-textarea" placeholder={`Say something about ${cityName}...`} value={story} onChange={e => setStory(e.target.value)} />
       </div></>)}
 
       {/* GAMES */}
-      {games.length > 0 && (<><hr className="sec-rule"/><div style={{ padding:20 }}>
+      {games.length > 0 && (<><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
           <div className="sec-head" style={{ marginBottom:0 }}>FROM THE ARCHIVES</div>
           <div style={{ display:'flex', gap:0 }}>
             {['Recent','Oldest'].map(s => <button key={s} onClick={() => setArchiveSort(s==='Recent'?'desc':'asc')} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===archiveSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===archiveSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
           </div>
         </div>
-        <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Playoff Games in {cityName}</div>
-        <div style={{ maxHeight:480, overflowY:'auto' }}>
-        {[...games].sort((a,b) => archiveSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||'')).map((g, idx) => <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
+        <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Playoff and championship games in {cityName}</div>
+        {[...displayGames].sort((a,b) => archiveSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||'')).map((g, idx) => <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
           const playlist = games.map(gm => ({ href: `/game/${gm.id}`, title: showScore(gm) || gm.title || `${gm.away_team_abbr} @ ${gm.home_team_abbr}` }))
           savePlaylist(playlist, idx)
         }} className="game-row" style={{ padding:'10px 0' }}>
@@ -201,7 +197,8 @@ export default function CityPage() {
             <span className="sans" style={{ fontSize:10, color:'var(--dim)' }}>{formatDate(g.game_date)}</span>
           </div>
         </Link>)}
-        </div>
+        {!showAllGames && games.length > 15 && <div className="box-toggle" onClick={() => setShowAllGames(true)} style={{ textAlign:'center', marginTop:8 }}>Show all {games.length} games &darr;</div>}
+        {showAllGames && games.length > 15 && <div className="box-toggle" onClick={() => setShowAllGames(false)} style={{ textAlign:'center', marginTop:8 }}>Show fewer &uarr;</div>}
       </div></>)}
 
       <div style={{ height:80 }}></div>

@@ -1,3 +1,6 @@
 export default function FounderBadge({ number }) {
-  return null
+  if (!number || number > 1000) return null
+  return (
+    <span className="founder-mark">#{number}</span>
+  )
 }

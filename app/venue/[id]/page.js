@@ -3,15 +3,13 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/lib/auth'
-import { formatDate, showScore, savePlaylist, isPlayoff } from '@/lib/utils'
+import { formatDate, showScore, savePlaylist } from '@/lib/utils'
 import BackButton from '@/components/BackButton'
 import TopLogo from '@/components/TopLogo'
 
 
 export default function VenuePage() {
   const { id } = useParams()
-  const { user } = useAuth()
   const [venue, setVenue] = useState(null)
   const [notable, setNotable] = useState([])
   const [games, setGames] = useState([])
@@ -20,9 +18,6 @@ export default function VenuePage() {
   const [beenHere, setBeenHere] = useState(false)
   const [wantVisit, setWantVisit] = useState(false)
   const [story, setStory] = useState('')
-  const [storySaving, setStorySaving] = useState(false)
-  const [storySaved, setStorySaved] = useState(false)
-  const [fanNotes, setFanNotes] = useState([])
   const [archiveSort, setArchiveSort] = useState('desc')
 
   useEffect(() => {
@@ -36,18 +31,10 @@ export default function VenuePage() {
       const notableGameIds = (ng||[]).map(n => n.game_id).filter(Boolean)
       // FIX #52: Get more games. FIX #65: no home_score filter for golf
       let gq = supabase.from('games').select('id,game_date,home_team_abbr,away_team_abbr,home_score,away_score,series_info,sport,title')
-        .eq('venue', v.venue_name).order('game_date', {ascending:false}).limit(200)
+        .eq('venue', v.venue_name).order('game_date', {ascending:false}).limit(50)
       if (v.sport !== 'golf') gq = gq.gt('home_score', 0)
       const { data: gs } = await gq
-      setGames((gs||[]).filter(g => !notableGameIds.includes(g.id) && isPlayoff(g.series_info)))
-      // Fetch fan notes
-      const { data: notes } = await supabase.from('fan_notes').select('id,note,created_at,user_id').eq('entity_type', 'venue').eq('entity_id', id).order('created_at', { ascending: false }).limit(20)
-      if (notes?.length) {
-        const uids = [...new Set(notes.map(n => n.user_id))]
-        const { data: profs } = await supabase.from('profiles').select('id,username,display_name').in('id', uids)
-        const pMap = {}; (profs||[]).forEach(p => { pMap[p.id] = p })
-        setFanNotes(notes.map(n => ({ ...n, profile: pMap[n.user_id] })))
-      }
+      setGames((gs||[]).filter(g => !notableGameIds.includes(g.id)))
       setLoading(false)
     }
     load()
@@ -98,7 +85,7 @@ export default function VenuePage() {
           savePlaylist(allNotablePlaylist, idx >= 0 ? idx : 0)
         }
         return <>
-          {allTimerGames.length > 0 && <><hr className="sec-rule" style={{marginTop:16}}/><div style={{ padding:20 }}>
+          {allTimerGames.length > 0 && <><hr className="sec-rule" style={{marginTop:16}}/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
             <div className="sec-head">ALL-TIMERS HERE</div>
             {allTimerGames.map(g => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleNotableClick(g)} className="game-row" style={{ padding:'10px 0' }}>
               <span className="at-badge-sm">&#9733; ALL-TIMER</span>
@@ -106,7 +93,7 @@ export default function VenuePage() {
               <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{formatDate(g.game_date)}</div>
             </Link>)}
           </div></>}
-          {superBowls.length > 0 && <><hr className="sec-rule"/><div style={{ padding:20 }}>
+          {superBowls.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
             <div className="sec-head">SUPER BOWLS</div>
             {superBowls.map(g => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleNotableClick(g)} className="game-row" style={{ padding:'10px 0' }}>
               <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -116,7 +103,7 @@ export default function VenuePage() {
               <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginTop:2, marginLeft:22 }}>{formatDate(g.game_date)}</div>
             </Link>)}
           </div></>}
-          {otherNotable.length > 0 && <><hr className="sec-rule"/><div style={{ padding:20 }}>
+          {otherNotable.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
             <div className="sec-head">{isGolf ? 'NOTABLE TOURNAMENTS' : 'NOTABLE GAMES'}</div>
             {otherNotable.map(g => <Link key={g.id} href={`/notable/${g.id}`} onClick={() => handleNotableClick(g)} className="game-row" style={{ padding:'10px 0' }}>
               <div style={{ fontSize:14, color:'var(--ink)' }}>{g.title}</div>
@@ -127,43 +114,20 @@ export default function VenuePage() {
         </>
       })()}
 
-      <hr className="sec-rule"/>
+      <hr className="sec-rule"/><hr className="sec-rule-thin"/>
       <div style={{ padding:20 }}>
-        <div className="sec-head">SAY SOMETHING ABOUT {venue.venue_name.toUpperCase()}</div>
-        <div style={{ fontFamily:'var(--ui)', fontSize:11, color:'var(--dim)', marginBottom:12, lineHeight:1.6, fontStyle:'italic' }}>The layout. The food. The smells. The parking lot. The pre-game tailgate. The post-game walkout.</div>
+        <div className="sec-head">SAY SOMETHING</div>
         <textarea className="story-textarea" placeholder={`Say something about ${venue.venue_name}...`} value={story} onChange={e => setStory(e.target.value)} />
-        <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:10 }}>
-          <button onClick={async () => {
-            if (!user || !story.trim()) return
-            setStorySaving(true)
-            await supabase.from('fan_notes').insert({ user_id: user.id, entity_type: 'venue', entity_id: parseInt(id), note: story.trim() })
-            setStorySaved(true); setStorySaving(false)
-            const newNote = { id: Date.now(), note: story.trim(), created_at: new Date().toISOString(), user_id: user.id, profile: { username: user.user_metadata?.username, display_name: user.user_metadata?.display_name } }
-            setFanNotes(prev => [newNote, ...prev])
-            setTimeout(() => { setStory(''); setStorySaved(false) }, 1500)
-          }} disabled={!user || !story.trim() || storySaving} className={`post-btn${user && story.trim() ? '' : ' off'}`}>
-            {storySaving ? 'Posting...' : storySaved ? 'Posted!' : 'Post'}
-          </button>
-          {!user && <span style={{ fontFamily:'var(--ui)', fontSize:10, color:'var(--dim)' }}>Sign in to post</span>}
-        </div>
-        {fanNotes.length > 0 && <div style={{ marginTop:20 }}>
-          {fanNotes.map(n => (
-            <div key={n.id} className="fan-note">
-              <div className="fan-note-text">{n.note}</div>
-              <div className="fan-note-meta">{n.profile?.display_name || n.profile?.username || 'Fan'} &middot; {formatDate(n.created_at?.split('T')[0])}</div>
-            </div>
-          ))}
-        </div>}
       </div>
 
-      {games.length > 0 && <><hr className="sec-rule"/><div style={{ padding:20 }}>
+      {games.length > 0 && <><hr className="sec-rule"/><hr className="sec-rule-thin"/><div style={{ padding:20 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
           <div className="sec-head" style={{ marginBottom:0 }}>{isGolf ? 'MAJORS HOSTED' : 'FROM THE ARCHIVES'}</div>
           <div style={{ display:'flex', gap:0 }}>
             {['Recent','Oldest'].map(s => <button key={s} onClick={() => setArchiveSort(s==='Recent'?'desc':'asc')} className="sans" style={{ padding:'3px 10px', fontSize:10, fontWeight:600, background:'none', border:'none', cursor:'pointer', color:(s==='Recent'?'desc':'asc')===archiveSort?'var(--copper)':'var(--dim)', borderBottom:(s==='Recent'?'desc':'asc')===archiveSort?'2px solid var(--copper)':'2px solid transparent' }}>{s}</button>)}
           </div>
         </div>
-        {!isGolf && <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Playoff Games</div>}
+        {!isGolf && <div className="sans" style={{ fontSize:10, color:'var(--dim)', marginBottom:14 }}>Playoff and championship games</div>}
         {(() => { const sorted = [...(showAllGames ? games : games.slice(0, 10))].sort((a,b) => archiveSort==='desc' ? (b.game_date||'').localeCompare(a.game_date||'') : (a.game_date||'').localeCompare(b.game_date||'')); return sorted.map((g, idx) => <Link key={g.id} href={`/game/${g.id}`} onClick={() => {
           const playlist = games.map(gm => ({ href: `/game/${gm.id}`, title: isGolf ? gm.title : (showScore(gm) || `${gm.away_team_abbr} @ ${gm.home_team_abbr}`) }))
           savePlaylist(playlist, idx)

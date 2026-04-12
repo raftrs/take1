@@ -62,7 +62,7 @@ export default function GameNav({ position = 'top' }) {
 
   // Top: compact prev/next arrows with breathing room below
   return (
-    <div style={{ display:'flex', alignItems:'stretch', borderBottom:'1px solid var(--faint)', marginBottom:8, fontFamily:'var(--ui)' }}>
+    <div style={{ display:'flex', alignItems:'stretch', borderBottom:'1px solid var(--faint)', marginBottom:8, fontFamily:"'Libre Franklin',sans-serif" }}>
       <div
         onClick={() => prev && go(prev)}
         style={{ flex:1, padding:'10px 14px', cursor: prev ? 'pointer' : 'default', color: prev ? 'var(--copper)' : 'transparent', display:'flex', alignItems:'center', gap:4, minWidth:0 }}

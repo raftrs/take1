@@ -20,7 +20,7 @@ export default function StoryOverlay({ game, onSave, onSkip }) {
       position: 'fixed',
       top: 0, left: 0, right: 0, bottom: 0,
       zIndex: 9999,
-      backgroundColor: 'var(--surface)',
+      backgroundColor: '#f5f0e8',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -39,7 +39,7 @@ export default function StoryOverlay({ game, onSave, onSkip }) {
           background: 'none',
           border: 'none',
           fontSize: 32,
-          color: 'var(--dim)',
+          color: '#a09888',
           cursor: 'pointer',
           padding: 8,
           lineHeight: 1,
@@ -52,9 +52,9 @@ export default function StoryOverlay({ game, onSave, onSkip }) {
       <div style={{ maxWidth: 420, width: '100%', paddingTop: 72 }}>
         {/* Header */}
         <p style={{
-          fontFamily: 'var(--body)',
+          fontFamily: "'Crete Round', Georgia, serif",
           fontSize: 14,
-          color: 'var(--dim)',
+          color: '#a09888',
           textTransform: 'uppercase',
           letterSpacing: 1.5,
           marginBottom: 8,
@@ -64,9 +64,9 @@ export default function StoryOverlay({ game, onSave, onSkip }) {
         </p>
 
         <h2 style={{
-          fontFamily: 'var(--body)',
+          fontFamily: "'Crete Round', Georgia, serif",
           fontSize: 22,
-          color: 'var(--ink)',
+          color: '#2c2a25',
           textAlign: 'center',
           marginBottom: 6,
           lineHeight: 1.3,
@@ -75,9 +75,9 @@ export default function StoryOverlay({ game, onSave, onSkip }) {
         </h2>
 
         <p style={{
-          fontFamily: 'var(--body)',
+          fontFamily: "'Crete Round', Georgia, serif",
           fontSize: 15,
-          color: 'var(--dim)',
+          color: '#a09888',
           textAlign: 'center',
           marginBottom: 40,
         }}>
@@ -93,10 +93,10 @@ export default function StoryOverlay({ game, onSave, onSkip }) {
             width: '100%',
             minHeight: 160,
             padding: 16,
-            fontFamily: 'var(--body)',
+            fontFamily: "'Crete Round', Georgia, serif",
             fontSize: 16,
-            color: 'var(--ink)',
-            backgroundColor: 'var(--surface)',
+            color: '#2c2a25',
+            backgroundColor: '#faf7f2',
             border: '1px solid #e5ddd1',
             borderRadius: 4,
             resize: 'vertical',
@@ -116,11 +116,11 @@ export default function StoryOverlay({ game, onSave, onSkip }) {
             width: '100%',
             padding: '14px 0',
             marginTop: 20,
-            backgroundColor: 'var(--amber)',
-            color: 'var(--surface)',
+            backgroundColor: '#b5563a',
+            color: '#f5f0e8',
             border: 'none',
             borderRadius: 4,
-            fontFamily: 'var(--body)',
+            fontFamily: "'Crete Round', Georgia, serif",
             fontSize: 16,
             fontWeight: 700,
             letterSpacing: 1,
@@ -132,9 +132,9 @@ export default function StoryOverlay({ game, onSave, onSkip }) {
         </button>
 
         <p style={{
-          fontFamily: 'var(--ui)',
+          fontFamily: "'Libre Franklin', sans-serif",
           fontSize: 12,
-          color: 'var(--dim)',
+          color: '#a09888',
           textAlign: 'center',
           marginTop: 12,
           fontStyle: 'italic',

@@ -54,8 +54,7 @@ export default function RaftersButton({ gameId, notableGameId }) {
       const row = { user_id: user.id, position: nextPos }
       if (notableGameId) row.notable_game_id = parseInt(notableGameId)
       else if (gameId) row.game_id = parseInt(gameId)
-      const { error } = await supabase.from('favorite_games').insert(row)
-      if (error) { console.error('Rafters insert error:', error); alert('Rafters error: ' + error.message); setLoading(false); return }
+      await supabase.from('favorite_games').insert(row)
       setIsRafted(true)
       setLoading(false)
     } else {
@@ -74,8 +73,7 @@ export default function RaftersButton({ gameId, notableGameId }) {
     const row = { user_id: user.id, position }
     if (notableGameId) row.notable_game_id = parseInt(notableGameId)
     else if (gameId) row.game_id = parseInt(gameId)
-    const { error } = await supabase.from('favorite_games').insert(row)
-      if (error) { console.error('Rafters insert error:', error); alert('Rafters error: ' + error.message); setLoading(false); return }
+    await supabase.from('favorite_games').insert(row)
     setIsRafted(true)
     setShowSlots(false)
     setLoading(false)
